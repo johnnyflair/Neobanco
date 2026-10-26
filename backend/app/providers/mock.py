@@ -90,10 +90,24 @@ def _pick(seed: str, items: list[str], salt: str = "") -> str:
     return items[h % len(items)]
 
 
+# Directorio fijo para que los datos de prueba sean coherentes (contactos frecuentes, asociados demo).
+KNOWN_PHONES = {
+    "88112030": ("Ana Rojas M.", "Coopecaja"),
+    "70231188": ("Carlos Mora S.", "Coopecaja"),
+    "61049932": ("Lucía Vargas A.", "Coopecaja"),
+    "88124455": ("María Rojas M.", "BAC Credomatic"),
+    "88902210": ("Marta Araya V.", "Banco Nacional"),
+    "60145522": ("Luis Castro Q.", "Banco Popular"),
+}
+
+
 class MockSinpe:
     async def lookup_phone(self, phone: str) -> SinpeContact | None:
         if phone.endswith("0000"):
             return None  # número sin SINPE Móvil
+        if phone in KNOWN_PHONES:
+            known, bank = KNOWN_PHONES[phone]
+            return SinpeContact(phone=phone, display_name=known, bank=bank)
         name = f"{_pick(phone, _FIRST)} {_pick(phone, _LAST, 'a')} {_pick(phone, _LAST, 'b')[0]}."
         return SinpeContact(phone=phone, display_name=name, bank=_pick(phone, _BANKS))
 

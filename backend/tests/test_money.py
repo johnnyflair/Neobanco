@@ -143,3 +143,13 @@ async def test_rewards_redeem_to_account(client, ana):
 async def test_loan_simulation_is_public(client):
     r = await client.post("/v1/loans/simulate", json={"amount": "1500000", "term_months": 36})
     assert r.status_code == 200 and r.json()["monthly_payment"] == "54228.59"
+
+
+async def test_sinpe_recent_recipients(client, ana, carlos):
+    recent = (await client.get("/v1/transfers/sinpe/recent", headers=ana)).json()
+    phones = [r["phone"] for r in recent]
+    assert len(phones) == len(set(phones)) and "88112030" not in phones  # sin repetidos ni ella misma
+    assert recent[0]["name"]
+    # Cada quien ve solo los suyos: Carlos sí le envió a Ana.
+    carlos_recent = (await client.get("/v1/transfers/sinpe/recent", headers=carlos)).json()
+    assert "88112030" in [r["phone"] for r in carlos_recent] and "70231188" not in [r["phone"] for r in carlos_recent]

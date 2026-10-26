@@ -1,14 +1,21 @@
+import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { api, hasSavedSession, refreshSession, setSessionLostHandler } from './src/api/client';
-import { HomeScreen } from './src/screens/HomeScreen';
+import { RootNavigator } from './src/navigation';
 import { LoginScreen } from './src/screens/LoginScreen';
+import { SessionContext } from './src/session';
 import { colors } from './src/theme';
+import { Loading } from './src/ui/kit';
+import { PinProvider } from './src/ui/PinSheet';
 
 type Stage = 'booting' | 'signedOut' | 'signedIn';
+
+const theme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.white, primary: colors.primary } };
 
 export default function App() {
   const [stage, setStage] = useState<Stage>('booting');
@@ -18,7 +25,10 @@ export default function App() {
     (async () => {
       // Si hay sesión guardada, se desbloquea con Face ID / huella antes de renovarla.
       if (await hasSavedSession()) {
-        const bio = await LocalAuthentication.authenticateAsync({ promptMessage: 'Ingresá a tu cuenta' });
+        const bio =
+          Platform.OS === 'web'
+            ? { success: true }
+            : await LocalAuthentication.authenticateAsync({ promptMessage: 'Ingresá a tu cuenta' });
         if (bio.success && (await refreshSession())) {
           setStage('signedIn');
           return;
@@ -28,27 +38,32 @@ export default function App() {
     })();
   }, []);
 
-  if (stage === 'booting') {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.white }}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
-  }
+  const session = useMemo(
+    () => ({
+      signOut: async () => {
+        await api.logout();
+        setStage('signedOut');
+      },
+    }),
+    [],
+  );
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="dark" />
-      {stage === 'signedIn' ? (
-        <HomeScreen
-          onSignOut={async () => {
-            await api.logout();
-            setStage('signedOut');
-          }}
-        />
+      {stage === 'booting' ? (
+        <Loading />
+      ) : stage === 'signedIn' ? (
+        <SessionContext.Provider value={session}>
+          <PinProvider>
+            <NavigationContainer theme={theme}>
+              <RootNavigator />
+            </NavigationContainer>
+          </PinProvider>
+        </SessionContext.Provider>
       ) : (
         <LoginScreen onSignedIn={() => setStage('signedIn')} />
       )}
-    </>
+    </SafeAreaProvider>
   );
 }

@@ -40,6 +40,7 @@ def account_out(a: Account) -> AccountOut:
 @router.get("/me", response_model=MeOut)
 async def me(member: Member = Depends(current_member)):
     return MeOut(id=member.id, full_name=member.full_name, phone_masked=mask_phone(member.phone),
+                 sinpe_phone=member.phone,
                  email=member.email, province=member.province, canton=member.canton,
                  kyc_status=member.kyc_status.value, points=member.points, member_since=member.created_at)
 

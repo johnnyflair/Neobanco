@@ -1,20 +1,33 @@
 // Pantalla de inicio aprobada: "Mis cuentas" con borde degradado, saldos reales por cuenta,
 // ojito para ocultar saldos, botones rápidos y movimientos de la cuenta en colones.
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError, api } from '../api/client';
 import type { Account, Me, Transaction } from '../api/types';
 import { money, shortDate } from '../format';
+import { secureStore } from '../secureStore';
+import { useSession } from '../session';
 import { accountsGlow, colors, radius, type } from '../theme';
+import { Icon, type IconName } from '../ui/Icon';
 
 const HIDE_KEY = 'neo.hideBalances';
-const QUICK = ['SINPE Móvil', 'Transferir dinero', 'Pagar recibos', 'Pedí un préstamo'];
 const ICON: Record<string, string> = { savings: '', capital: '◈', envelope: '◎', term: '◷' };
 
-export function HomeScreen({ onSignOut }: { onSignOut: () => void }) {
+export function HomeScreen() {
+  const nav = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { signOut } = useSession();
+  const soon = (what: string) => Alert.alert(what, 'Esta sección se construye en la próxima etapa.');
+  const QUICK: { label: string; icon: IconName; go: () => void }[] = [
+    { label: 'SINPE Móvil', icon: 'phone', go: () => nav.navigate('SinpeNumber') },
+    { label: 'Transferir dinero', icon: 'swap', go: () => nav.navigate('TransferHub') },
+    { label: 'Pagar recibos', icon: 'receipt', go: () => soon('Pagar recibos') },
+    { label: 'Pedí un préstamo', icon: 'cash', go: () => soon('Préstamos') },
+  ];
   const [me, setMe] = useState<Me | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [moves, setMoves] = useState<Transaction[]>([]);
@@ -38,14 +51,19 @@ export function HomeScreen({ onSignOut }: { onSignOut: () => void }) {
   }, []);
 
   useEffect(() => {
-    SecureStore.getItemAsync(HIDE_KEY).then((v) => setHidden(v === '1'));
-    load();
-  }, [load]);
+    secureStore.get(HIDE_KEY).then((v) => setHidden(v === '1'));
+  }, []);
+  // Recarga saldos cada vez que se vuelve al inicio (por ejemplo, después de un SINPE).
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   function toggleHidden() {
     const next = !hidden;
     setHidden(next);
-    SecureStore.setItemAsync(HIDE_KEY, next ? '1' : '0');
+    secureStore.set(HIDE_KEY, next ? '1' : '0');
   }
 
   const mask = (v: string) => (hidden ? '••••••' : v);
@@ -55,7 +73,7 @@ export function HomeScreen({ onSignOut }: { onSignOut: () => void }) {
   }
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
+    <ScrollView style={s.screen} contentContainerStyle={[s.content, { paddingTop: insets.top + 12 }]} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
       <View style={s.header}>
         <View>
           <Text style={type.itemSub}>Hola,</Text>
@@ -63,7 +81,7 @@ export function HomeScreen({ onSignOut }: { onSignOut: () => void }) {
         </View>
         <View style={s.headerRight}>
           <View style={s.pill}><Text style={s.pillText}>★ {me?.points.toLocaleString('en-US')}</Text></View>
-          <Pressable style={s.avatar} onPress={onSignOut} accessibilityLabel="Mi perfil">
+          <Pressable style={s.avatar} onPress={signOut} accessibilityLabel="Mi perfil">
             <Text style={s.pillText}>{me?.full_name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</Text>
           </Pressable>
         </View>
@@ -82,10 +100,7 @@ export function HomeScreen({ onSignOut }: { onSignOut: () => void }) {
           {accounts.map((a) => (
             <View key={a.id} style={s.row}>
               <Text style={s.icon}>{a.type === 'savings' ? (a.currency === 'USD' ? '$' : '₡') : ICON[a.type]}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={type.itemTitle}>{a.name}</Text>
-                <Text style={type.itemSub}>{a.subtitle}</Text>
-              </View>
+              <Text style={[type.itemTitle, { flex: 1 }]}>{a.name}</Text>
               <Text style={type.amount}>{mask(money(a.balance, a.currency))}</Text>
             </View>
           ))}
@@ -94,10 +109,12 @@ export function HomeScreen({ onSignOut }: { onSignOut: () => void }) {
 
       <View style={s.quick}>
         {QUICK.map((q) => (
-          <View key={q} style={s.quickItem}>
-            <View style={s.quickIcon} />
-            <Text style={s.quickText}>{q}</Text>
-          </View>
+          <Pressable key={q.label} style={s.quickItem} onPress={q.go} accessibilityRole="button">
+            <View style={s.quickIcon}>
+              <Icon name={q.icon} color={colors.emeraldDark} />
+            </View>
+            <Text style={s.quickText}>{q.label}</Text>
+          </Pressable>
         ))}
       </View>
 
@@ -119,7 +136,7 @@ export function HomeScreen({ onSignOut }: { onSignOut: () => void }) {
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.white },
-  content: { padding: 18, paddingTop: 64, paddingBottom: 40 },
+  content: { padding: 18, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { ...type.title, fontSize: 19 },
@@ -144,7 +161,7 @@ const s = StyleSheet.create({
   icon: { width: 28, textAlign: 'center', fontSize: 20, fontWeight: '600', color: colors.primary },
   quick: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 18, marginBottom: 6 },
   quickItem: { width: '24%', alignItems: 'center', gap: 6 },
-  quickIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primarySoft },
+  quickIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   quickText: { fontSize: 11, textAlign: 'center', color: colors.ink },
   section: { fontSize: 12, fontWeight: '600', color: colors.muted, marginTop: 16, marginBottom: 4 },
 });

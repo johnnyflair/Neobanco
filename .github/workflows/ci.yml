@@ -109,7 +109,7 @@ jobs:
           quiet: true
 
   mobile:
-    name: App · tipos y lint
+    name: App · tipos, empaquetado y dependencias
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -123,5 +123,10 @@ jobs:
           cache-dependency-path: mobile/package-lock.json
       - run: npm ci
       - run: npx tsc --noEmit
+      - name: Empaquetar (iOS, Android y web)
+        run: |
+          npx expo export --platform ios --output-dir /tmp/bundle-ios
+          npx expo export --platform android --output-dir /tmp/bundle-android
+          npx expo export --platform web --output-dir /tmp/bundle-web
       - name: Vulnerabilidades en dependencias (con excepciones documentadas)
         run: npx --yes audit-ci@7.1.0 --config audit-ci.jsonc

@@ -124,6 +124,7 @@ class MeOut(Out):
     id: uuid.UUID
     full_name: str
     phone_masked: str
+    sinpe_phone: str = Field(description="Número propio completo, para compartir en Recibir dinero")
     email: str
     province: str
     canton: str

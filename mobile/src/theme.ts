@@ -15,6 +15,14 @@ export const colors = {
   white: '#FFFFFF',
   danger: '#A32D2D',
   dangerSoft: '#FCEBEB',
+  emeraldDark: '#0F6E56',
+  mint: '#E1F5EE',
+  amberBg: '#FAEEDA',
+  amberFg: '#633806',
+  fieldBorder: '#CBD2DC',
+  optOn: '#F7FCFA',
+  whatsapp: '#DCF8C6',
+  heroSub: '#9FE1CB',
 };
 
 export const radius = { sm: 10, md: 14, lg: 18, xl: 24 };

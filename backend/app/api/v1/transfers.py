@@ -39,6 +39,17 @@ async def sinpe_lookup(phone: Phone = Query(...), member: Member = Depends(curre
     return {"phone": c.phone, "name": c.display_name, "bank": c.bank}
 
 
+@router.get("/sinpe/recent")
+async def sinpe_recent(member: Member = Depends(current_member), session: AsyncSession = Depends(get_session)):
+    """Últimos destinatarios de SINPE Móvil (sin repetir), para la fila de "Frecuentes"."""
+    last = func.max(Transfer.created_at).label("last")
+    rows = await session.execute(
+        select(Transfer.counterparty, func.max(Transfer.counterparty_name), last)
+        .where(Transfer.member_id == member.id, Transfer.kind == TransferKind.sinpe)
+        .group_by(Transfer.counterparty).order_by(last.desc()).limit(6))
+    return [{"phone": phone, "name": name} for phone, name, _ in rows]
+
+
 @router.post("/sinpe", status_code=201)
 async def sinpe(body: SinpeIn, request: Request, key: str = Depends(idempotency_key),
                 member: Member = Depends(current_member), p: Providers = Depends(get_providers),

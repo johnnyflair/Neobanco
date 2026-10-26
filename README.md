@@ -26,6 +26,8 @@ La App:
 cd mobile && cp .env.example .env && npm install && npx expo start
 ```
 
+Para revisar pantallas sin teléfono hay una vista previa web de desarrollo (`npx expo start --web`, con `NEO_CORS_ORIGINS='["http://localhost:8081"]'` en la API). En el navegador la sesión vive en `sessionStorage` porque no existe llavero; las apps de iOS y Android siempre usan el llavero del teléfono.
+
 Sin Docker: Postgres 16 local, `cd backend && pip install -r requirements-dev.txt && alembic upgrade head && python -m app.seed && uvicorn app.main:app --reload`.
 
 ## Cómo está hecho
@@ -84,4 +86,4 @@ Conectar una cooperativa = implementar esas clases contra sus sistemas y elegirl
 
 - Endurecimiento previo a producción: usuario de base de datos propio de la App (no el maestro), certificate pinning en la App, rotación programada de las llaves JWT, pentest externo y revisión de cumplimiento con la cooperativa (SUGEF, ley 8204).
 - Tasas, límites y reglas de puntos son de ejemplo hasta tener las de la cooperativa.
-- La App hoy tiene ingreso e inicio; el resto de pantallas del prototipo se construye sobre esta base.
+- La App tiene ingreso, inicio, Transferir dinero (SINPE Móvil, IBAN, traer de otro banco, recibir) y Tarjetas (débito y crédito). Faltan onboarding, Pagar recibos, Invertir, Préstamos, Recompensas, Ayuda y Perfil; sus endpoints ya existen.

@@ -32,8 +32,12 @@ from app.db.models import (
     RewardEntry,
     SavedBill,
     Transaction,
+    Transfer,
+    TransferKind,
 )
 from app.db.session import get_engine, sessionmaker
+from app.providers.mock import KNOWN_PHONES
+from app.services import new_reference
 
 CATALOG = {
     "Acueductos y ASADAS": ("Número de servicio (NIS)", ["AyA", "ESPH Agua", "ASADA San Rafael de Aserrí"]),
@@ -132,10 +136,19 @@ async def seed(reset: bool = False) -> None:
                     amt = -Decimal(rnd.choice([2500, 4500, 8900, 12500, 18200, 23400]))
                     flows.append((when, amt, rnd.choice(MERCHANTS), "card"))
             flows.append((now - timedelta(hours=2), Decimal("15000"), "SINPE de María Rojas", "sinpe"))
-            opening = Decimal("180000")
-            diff = Decimal("248500") - opening - sum(f[1] for f in flows)
-            label = "Pago de alquiler" if diff < 0 else "Transferencia recibida"
-            flows.append((now - timedelta(days=5), diff, label, "iban"))
+            # SINPE enviados recientes: alimentan "Frecuentes" en la App.
+            others = [p for p in ("88124455", "88902210", "60145522", *(d[2] for d in DEMO_MEMBERS)) if p != phone]
+            sent = [(others[k], Decimal(v), now - timedelta(days=dd, hours=3))
+                    for k, v, dd in ((0, 8000, 1), (1, 12000, 4), (3, 5000, 9), (2, 3500, 16))]
+            for to, amt, when in sent:
+                flows.append((when, -amt, f"SINPE a {KNOWN_PHONES[to][0]}", "sinpe"))
+            flows.append((now - timedelta(days=5), Decimal("-285000"), "Pago de alquiler", "iban"))
+            # Saldo inicial que hace que la cuenta termine en ₡248,500.00; si quedara muy bajo,
+            # entra un traspaso de ahorro para que la historia se vea normal.
+            opening = Decimal("248500") - sum(f[1] for f in flows)
+            if opening < Decimal("60000"):
+                flows.append((now - timedelta(days=31), Decimal("120000") - opening, "Traspaso desde mi BAC", "pull"))
+                opening = Decimal("120000")
             flows.sort(key=lambda f: f[0])
             bal = opening
             txs: list[Transaction] = [Transaction(account_id=crc.id, amount=opening, balance_after=opening,
@@ -147,6 +160,9 @@ async def seed(reset: bool = False) -> None:
                                        category=cat, created_at=when))
             crc.balance = bal
             s.add_all(txs)
+            s.add_all([Transfer(member_id=m.id, kind=TransferKind.sinpe, account_id=crc.id, amount=amt,
+                                currency=Currency.CRC, counterparty=to, counterparty_name=KNOWN_PHONES[to][0],
+                                reference=new_reference("SM"), created_at=when) for to, amt, when in sent])
 
             s.add(Card(member_id=m.id, kind=CardKind.debit, product_name="Débito digital", brand="Mastercard",
                        last4=f"44{17 + i}", processor_token=new_opaque_token()[:40],

@@ -7,10 +7,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, newIdempotencyKey } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
 import type { SinpeContact } from '../../api/types';
-import { formatPhone, money } from '../../format';
+import { formatPhone, money, parseAmount } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors } from '../../theme';
-import { Btn, ErrorText, Field, Screen, Sect, Small } from '../../ui/kit';
+import { AmountInput, Btn, ErrorText, Field, Screen, Sect, Small } from '../../ui/kit';
 
 const AV_COLORS = [
   ['#FAECE7', '#712B13'],
@@ -105,8 +105,6 @@ export function SinpeNumberScreen() {
   );
 }
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', '⌫'];
-
 export function SinpeAmountScreen({ route }: RootProps<'SinpeAmount'>) {
   const nav = useNavigation();
   const { phone, name } = route.params;
@@ -118,20 +116,15 @@ export function SinpeAmountScreen({ route }: RootProps<'SinpeAmount'>) {
   // Misma llave mientras el monto no cambie: si se reintenta por mala señal, no se cobra dos veces.
   const key = useRef({ amt: '', key: newIdempotencyKey() });
 
-  function press(k: string) {
-    setError(null);
-    setAmt((a) => (k === '⌫' ? a.slice(0, -1) : (a + k).slice(0, 8)).replace(/^0+/, ''));
-  }
-
   async function send() {
     if (!crc) return;
-    const n = Number(amt || '0');
-    if (n <= 0) return setError('Escribí cuánto querés enviar.');
-    if (n > Number(crc.balance)) return setError('No te alcanza el saldo disponible.');
+    const value = parseAmount(amt);
+    if (!value) return setError('Escribí cuánto querés enviar.');
+    if (Number(value) > Number(crc.balance)) return setError('No te alcanza el saldo disponible.');
     if (key.current.amt !== amt) key.current = { amt, key: newIdempotencyKey() };
     setBusy(true);
     try {
-      const t = await api.sinpe(crc.id, phone, `${n}.00`, key.current.key);
+      const t = await api.sinpe(crc.id, phone, value, key.current.key);
       nav.reset({
         index: 1,
         routes: [
@@ -159,23 +152,15 @@ export function SinpeAmountScreen({ route }: RootProps<'SinpeAmount'>) {
       <Small center>
         Para {name} · {formatPhone(phone)}
       </Small>
-      <Text style={st.amount} accessibilityLiveRegion="polite">
-        {money(amt || '0')}
-      </Text>
+      <AmountInput
+        value={amt}
+        onChange={(v) => {
+          setError(null);
+          setAmt(v);
+        }}
+        label="Monto a enviar"
+      />
       <Small center>Disponible {crc ? money(crc.balance) : '…'}</Small>
-      <View style={st.keypad}>
-        {KEYS.map((k) => (
-          <Pressable
-            key={k}
-            style={({ pressed }) => [st.key, pressed && { backgroundColor: colors.line }]}
-            onPress={() => press(k)}
-            accessibilityRole="button"
-            accessibilityLabel={k === '⌫' ? 'Borrar' : k}
-          >
-            <Text style={st.keyText}>{k}</Text>
-          </Pressable>
-        ))}
-      </View>
       <ErrorText>{error ?? accounts.error}</ErrorText>
     </Screen>
   );
@@ -186,16 +171,4 @@ const st = StyleSheet.create({
   av: { alignItems: 'center', gap: 4, width: 56 },
   avCircle: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   avName: { fontSize: 11, color: colors.ink },
-  amount: {
-    fontSize: 30,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginTop: 14,
-    marginBottom: 2,
-    color: colors.ink,
-    fontVariant: ['tabular-nums'],
-  },
-  keypad: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 12 },
-  key: { width: '32.6%', backgroundColor: colors.card, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  keyText: { fontSize: 18, fontWeight: '600', color: colors.ink },
 });

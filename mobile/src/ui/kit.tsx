@@ -1,9 +1,12 @@
 // Piezas de interfaz estandarizadas del prototipo: encabezado con volver, botones, filas,
 // opciones seleccionables, campos, interruptores y pantalla de éxito.
 import { useNavigation } from '@react-navigation/native';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -32,8 +35,13 @@ export function Screen({
 }) {
   const nav = useNavigation();
   const insets = useSafeAreaInsets();
+  const keyboardOpen = useKeyboardOpen();
+  // Con el teclado abierto, el botón principal (Enviar, Continuar…) sube y queda justo encima.
   return (
-    <View style={[s.screen, { paddingTop: insets.top + 8 }]}>
+    <KeyboardAvoidingView
+      style={[s.screen, { paddingTop: insets.top + 8 }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         {title !== undefined && (
           <View style={s.top}>
@@ -49,8 +57,61 @@ export function Screen({
         )}
         {children}
       </ScrollView>
-      {footer && <View style={[s.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>{footer}</View>}
-    </View>
+      {footer && (
+        <View style={[s.footer, { paddingBottom: keyboardOpen ? 10 : Math.max(insets.bottom, 12) }]}>{footer}</View>
+      )}
+    </KeyboardAvoidingView>
+  );
+}
+
+function useKeyboardOpen() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setOpen(true));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return open;
+}
+
+/** "005000.507" → "5000.50": solo dígitos y un punto, máximo 2 decimales y 10 enteros. */
+export function cleanAmount(text: string): string {
+  const [int = '', ...rest] = text.replace(/[^0-9.]/g, '').split('.');
+  const i = int.replace(/^0+(?=\d)/, '').slice(0, 10);
+  return rest.length ? `${i || '0'}.${rest.join('').slice(0, 2)}` : i;
+}
+
+/** Monto grande escrito con el teclado numérico del sistema, con separador de miles al escribir. */
+export function AmountInput({
+  value,
+  onChange,
+  currency = 'CRC',
+  autoFocus = true,
+  label = 'Monto',
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  currency?: 'CRC' | 'USD';
+  autoFocus?: boolean;
+  label?: string;
+}) {
+  const symbol = currency === 'USD' ? '$' : '₡';
+  const [int, dec] = value.split('.');
+  const shown = value === '' ? '' : `${symbol}${Number(int || '0').toLocaleString('en-US')}${dec !== undefined ? `.${dec}` : ''}`;
+  return (
+    <TextInput
+      value={shown}
+      onChangeText={(t) => onChange(cleanAmount(t))}
+      placeholder={`${symbol}0`}
+      placeholderTextColor={colors.fieldBorder}
+      keyboardType="decimal-pad"
+      autoFocus={autoFocus}
+      accessibilityLabel={label}
+      style={s.amountInput}
+    />
   );
 }
 
@@ -377,6 +438,17 @@ export const s = StyleSheet.create({
   // outlineWidth: en la vista previa web, el borde del campo ya marca el foco.
   fieldInput: { flex: 1, fontSize: 15, color: colors.ink, textAlign: 'right', paddingVertical: 12, outlineWidth: 0 },
   fieldValue: { flex: 1, fontSize: 14, color: colors.ink, textAlign: 'right' },
+  amountInput: {
+    fontSize: 36,
+    fontWeight: '700',
+    textAlign: 'center',
+    color: colors.ink,
+    marginTop: 14,
+    marginBottom: 2,
+    paddingVertical: 6,
+    fontVariant: ['tabular-nums'],
+    outlineWidth: 0,
+  },
   tag: {
     alignSelf: 'flex-start',
     backgroundColor: colors.mint,

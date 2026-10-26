@@ -1,0 +1,12 @@
+{
+  // Falla CI ante vulnerabilidades altas o críticas en dependencias de la App.
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "high": true,
+  "skip-dev": true,
+  "allowlist": [
+    // Ambas llegan solo por @expo/cli (herramienta de desarrollo y compilación). No viajan
+    // dentro de la App que se publica en las tiendas. Revisar en cada actualización de Expo.
+    "GHSA-86w9-cpqp-85rv", // node-forge: verificación de firmas RSA (certificados de desarrollo de @expo/cli)
+    "GHSA-mrhx-c7xc-m3w5" // zod: validación de colecciones enormes (configuración de @expo/cli)
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "App",
+    "slug": "neobanco",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "cr.neobanco.app",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Usamos Face ID para que ingreses a tu cuenta de forma segura.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "cr.neobanco.app",
+      "allowBackup": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "neobanco",
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Usamos Face ID para que ingreses a tu cuenta de forma segura."
+        }
+      ]
+    ]
+  }
+}

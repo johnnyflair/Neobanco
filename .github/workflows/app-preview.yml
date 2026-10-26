@@ -78,16 +78,16 @@ jobs:
 
       - name: QR para Expo Go
         run: |
-          QR="https://qr.expo.dev/eas-update?projectId=$PROJECT_ID&runtimeVersion=$SDK_RUNTIME&channel=preview"
+          test -n "$PROJECT_ID" || { echo "::error::No se obtuvo el projectId de Expo"; exit 1; }
+          QR=$(printf 'https://qr.expo.dev/eas-update?projectId=%s&runtimeVersion=%s&channel=preview' "$PROJECT_ID" "$SDK_RUNTIME")
           LINK=$(curl -fsS "$QR&format=url" || echo "")
-          {
-            echo "## Abrí la App en tu teléfono"
-            echo "1. Instalá **Expo Go** (App Store o Google Play)."
-            echo "2. Escaneá este QR con la cámara (iPhone) o desde Expo Go (Android):"
-            echo ""
-            echo "![QR]($QR)"
-            echo ""
-            [ -n "$LINK" ] && echo "Link directo: \`$LINK\`"
-            echo ""
-            echo "API: $EXPO_PUBLIC_API_URL · Asociada de prueba: 88112030 / 482915"
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "QR: $QR"
+          echo "Link: $LINK"
+          printf '%s\n' \
+            "## Abrí la App en tu teléfono" \
+            "1. Instalá **Expo Go** (App Store o Google Play)." \
+            "2. Escaneá este QR con la cámara (iPhone) o desde Expo Go (Android):" \
+            "" "![QR]($QR)" "" \
+            "Link para Expo Go: \`$LINK\`" \
+            "" "También: expo.dev → proyecto **neobanco** → Updates → la última → **Preview**." \
+            "" "API: $EXPO_PUBLIC_API_URL · Asociada de prueba: 88112030 / 482915" >> "$GITHUB_STEP_SUMMARY"

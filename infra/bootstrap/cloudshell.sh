@@ -56,11 +56,20 @@ paso "Repositorio"
 if [ -d "$HOME/Neobanco/.git" ]; then git -C "$HOME/Neobanco" pull -q --ff-only; else git clone -q --depth 1 "$REPO_URL" "$HOME/Neobanco"; fi
 cd "$HOME/Neobanco"
 
+# El disco de CloudShell ($HOME) es de 1 GB y cada copia del proveedor de AWS pesa ~700 MB:
+# los proveedores y carpetas de trabajo de OpenTofu van a /tmp (más grande, se borra al cerrar).
+rm -rf "$HOME/Neobanco/infra/bootstrap/.terraform" "$HOME/Neobanco/infra/envs/dev/.terraform"
+TOFU_TMP=/tmp/neobanco-tofu
+export TF_PLUGIN_CACHE_DIR="$TOFU_TMP/plugins"
+mkdir -p "$TF_PLUGIN_CACHE_DIR"
+echo "Espacio libre en tu carpeta: $(df -h "$HOME" | awk 'NR==2 {print $4}') · en /tmp: $(df -h /tmp | awk 'NR==2 {print $4}')"
+
 paso "2/6 Bucket del estado"
 BUCKET="neobanco-tfstate-$ACCOUNT"
 if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
   echo "Ya existe: $BUCKET"
 else
+  export TF_DATA_DIR="$TOFU_TMP/bootstrap"
   tofu -chdir=infra/bootstrap init -input=false >/dev/null
   tofu -chdir=infra/bootstrap apply -input=false -auto-approve -var "region=$AWS_REGION"
 fi
@@ -106,6 +115,7 @@ echo "Certificado emitido."
 
 paso "4/6 Rol de despliegue para GitHub (dev)"
 cd infra/envs/dev
+export TF_DATA_DIR="$TOFU_TMP/dev"
 tofu init -input=false -reconfigure -backend-config="bucket=$BUCKET" -backend-config="region=$AWS_REGION" >/dev/null
 tofu apply -input=false -auto-approve -target=module.stack.module.github \
   -var "region=$AWS_REGION" -var "image_tag=bootstrap" -var "certificate_arn=$CERT" -var "dns_zone_name=${ZONE_ID:+$DOMAIN}"

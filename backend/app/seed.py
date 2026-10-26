@@ -148,7 +148,8 @@ async def seed(reset: bool = False) -> None:
             # la historia se vea normal y la cuenta cierre exacta.
             opening = Decimal("248500") - sum(f[1] for f in flows)
             if opening < Decimal("120000"):
-                flows.append((now - timedelta(days=31), opening - Decimal("120000"), "Pago tarjeta de crédito", "card_payment"))
+                flows.append((now - timedelta(days=31), opening - Decimal("120000"),
+                              "Pago tarjeta de crédito", "card_payment"))
                 opening = Decimal("120000")
             flows.sort(key=lambda f: f[0])
             bal = opening

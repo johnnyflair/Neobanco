@@ -28,7 +28,7 @@ export type Account = {
   subtitle: string;
 };
 
-export type AccountDetail = Account & { iban: string | null };
+export type AccountDetail = Account & { iban: string | null; client_account: string | null; holder_name: string | null };
 
 export type Transaction = {
   id: string;

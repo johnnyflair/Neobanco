@@ -11,6 +11,7 @@ import { ApiError, api } from '../api/client';
 import type { Account, Me, Transaction } from '../api/types';
 import { money, shortDate } from '../format';
 import { secureStore } from '../secureStore';
+import { AccountSheet } from './AccountSheet';
 import { useSession } from '../session';
 import { accountsGlow, colors, radius, type } from '../theme';
 import { Icon, type IconName } from '../ui/Icon';
@@ -28,6 +29,7 @@ export function HomeScreen() {
   const [moves, setMoves] = useState<Transaction[]>([]);
   const [hidden, setHidden] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [sheet, setSheet] = useState<Account | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -109,8 +111,18 @@ export function HomeScreen() {
               <Icon name={hidden ? 'eyeOff' : 'eye'} size={19} color={colors.muted} />
             </Pressable>
           </View>
-          {(showAll ? accounts : main).map((a) => (
-            <View key={a.id} style={s.row}>
+          {(showAll ? accounts : main).map((a) => {
+            // Colones y dólares reciben dinero: al tocarlas se abren sus datos para compartir.
+            const receives = a.type === 'savings';
+            return (
+            <Pressable
+              key={a.id}
+              style={({ pressed }) => [s.row, pressed && receives && { opacity: 0.6 }]}
+              onPress={receives ? () => setSheet(a) : undefined}
+              disabled={!receives}
+              accessibilityRole={receives ? 'button' : undefined}
+              accessibilityHint={receives ? 'Muestra los datos para recibir dinero' : undefined}
+            >
               <View style={s.iconBox}>
                 {a.type === 'savings' ? (
                   <Text style={s.icon}>{a.currency === 'USD' ? '$' : '₡'}</Text>
@@ -120,8 +132,10 @@ export function HomeScreen() {
               </View>
               <Text style={[type.itemTitle, { flex: 1 }]}>{a.name}</Text>
               <Text style={type.amount}>{mask(money(a.balance, a.currency))}</Text>
-            </View>
-          ))}
+              {receives ? <Icon name="chev" size={16} color={colors.muted} /> : <View style={{ width: 16 }} />}
+            </Pressable>
+            );
+          })}
           {accounts.length > main.length && (
             <Pressable
               style={s.more}
@@ -166,6 +180,7 @@ export function HomeScreen() {
           </Text>
         </View>
       ))}
+      <AccountSheet account={sheet} sinpePhone={me?.sinpe_phone} onClose={() => setSheet(null)} />
     </ScrollView>
   );
 }

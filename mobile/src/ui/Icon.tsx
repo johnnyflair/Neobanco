@@ -5,7 +5,7 @@ import { colors } from '../theme';
 
 export type IconName =
   | 'home' | 'card' | 'grow' | 'chat' | 'phone' | 'bank' | 'pull' | 'qr' | 'back' | 'chev' | 'check'
-  | 'lock' | 'eye' | 'eyeOff' | 'share' | 'receipt' | 'file' | 'star' | 'send' | 'swap' | 'copy' | 'cash' | 'hands' | 'pig' | 'chevDown' | 'chevUp';
+  | 'lock' | 'eye' | 'eyeOff' | 'share' | 'receipt' | 'file' | 'star' | 'send' | 'swap' | 'copy' | 'cash' | 'hands' | 'pig' | 'chevDown' | 'chevUp' | 'x';
 
 const stroke = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
@@ -104,6 +104,8 @@ function shapes(name: IconName, c: string) {
           <Path {...p} d="M16 4v3.803a6.019 6.019 0 0 1 2.658 3.197h1.341a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-1.342c-.336 .95 -.907 1.8 -1.658 2.473v2.027a1.5 1.5 0 0 1 -3 0v-.583a6.04 6.04 0 0 1 -1 .083h-4a6.04 6.04 0 0 1 -1 -.083v.583a1.5 1.5 0 0 1 -3 0v-2.027a6 6 0 0 1 4 -10.473h2.5l4.5 -3z" />
         </>
       );
+    case 'x':
+      return <Path {...p} strokeWidth={2} d="M18 6L6 18M6 6l12 12" />;
     case 'chevDown':
       return <Path {...p} strokeWidth={2} d="M6 9l6 6 6-6" />;
     case 'chevUp':

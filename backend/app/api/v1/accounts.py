@@ -57,7 +57,11 @@ async def get_account(account_id: uuid.UUID, member: Member = Depends(current_me
     a = await p.core.get_account(member.id, account_id)
     if a is None:
         raise not_found("cuenta")
-    return AccountDetailOut(**account_out(a).model_dump(), iban=a.iban, goal_amount=a.goal_amount,
+    # IBAN de Costa Rica: CR + 2 de control + 0 + 3 del banco + 14 de la cuenta. La cuenta cliente
+    # (la que piden otros bancos para SINPE) son esos últimos 17 dígitos.
+    client = a.iban[5:] if a.iban and len(a.iban) == 22 else None
+    return AccountDetailOut(**account_out(a).model_dump(), iban=a.iban, client_account=client,
+                            holder_name=member.full_name, goal_amount=a.goal_amount,
                             savings_mode=a.savings_mode, rate=a.rate, term_months=a.term_months,
                             maturity_date=a.maturity_date, on_maturity=a.on_maturity,
                             monthly_contribution=a.monthly_contribution)

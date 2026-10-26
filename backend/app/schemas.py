@@ -147,6 +147,8 @@ class AccountOut(Out):
 
 class AccountDetailOut(AccountOut):
     iban: str | None = None
+    client_account: str | None = Field(default=None, description="Cuenta cliente SINPE (17 dígitos), sale del IBAN")
+    holder_name: str | None = None
     goal_amount: Decimal | None = None
     savings_mode: str | None = None
     rate: Decimal | None = None

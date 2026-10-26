@@ -153,3 +153,11 @@ async def test_sinpe_recent_recipients(client, ana, carlos):
     # Cada quien ve solo los suyos: Carlos sí le envió a Ana.
     carlos_recent = (await client.get("/v1/transfers/sinpe/recent", headers=carlos)).json()
     assert "88112030" in [r["phone"] for r in carlos_recent] and "70231188" not in [r["phone"] for r in carlos_recent]
+
+
+async def test_account_detail_has_client_account(client, ana):
+    crc = await account(client, ana, "Colones")
+    d = (await client.get(f"/v1/accounts/{crc['id']}", headers=ana)).json()
+    assert d["iban"].startswith("CR") and len(d["iban"]) == 22
+    assert d["client_account"] == d["iban"][5:] and len(d["client_account"]) == 17
+    assert d["holder_name"] == "Ana Rojas Mora"

@@ -1,13 +1,13 @@
 # Imagen de producción: multi-etapa, sin herramientas de compilación, usuario sin privilegios
 # y sistema de archivos de solo lectura en ECS (solo /tmp es escribible).
 
-FROM python:3.12-slim-bookworm AS build
+FROM python:3.15-slim-bookworm AS build
 ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /build
 COPY requirements.txt .
 RUN python -m venv /opt/venv && /opt/venv/bin/pip install --no-deps -r requirements.txt
 
-FROM python:3.12-slim-bookworm AS runtime
+FROM python:3.15-slim-bookworm AS runtime
 LABEL org.opencontainers.image.source="https://github.com/johnnyflair/neobanco" \
       org.opencontainers.image.description="Neobanco API"
 ENV PATH="/opt/venv/bin:$PATH" \

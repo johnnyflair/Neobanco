@@ -40,7 +40,7 @@ jobs:
       IMAGE_TAG: ${{ github.sha }}
       TF_DIR: infra/envs/${{ inputs.environment || 'dev' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:

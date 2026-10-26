@@ -60,6 +60,18 @@ resource "aws_wafv2_web_acl" "this" {
         managed_rule_group_statement {
           name        = rule.key
           vendor_name = "AWS"
+          # Se bloquean VPN anónimas y Tor, pero las IP de nubes (AWS, Azure, GCP) solo se cuentan:
+          # de ahí vienen los webhooks de proveedores (Didit, SINPE, SMS), el core de la cooperativa
+          # y la prueba de humo del despliegue. Los clientes reales entran desde redes móviles y hogares.
+          dynamic "rule_action_override" {
+            for_each = rule.key == "AWSManagedRulesAnonymousIpList" ? ["HostingProviderIPList"] : []
+            content {
+              name = rule_action_override.value
+              action_to_use {
+                count {}
+              }
+            }
+          }
         }
       }
       visibility_config {

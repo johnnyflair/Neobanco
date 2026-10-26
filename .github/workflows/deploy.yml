@@ -121,9 +121,14 @@ jobs:
       - name: Prueba de humo
         run: |
           URL=$(tofu -chdir=$TF_DIR output -raw api_url)
-          if [ -n "$URL" ]; then
-            curl -fsS --retry 10 --retry-delay 6 "$URL/health/ready"
-          else
-            # Sin DNS todavía: se prueba directo al balanceador (el certificado no calza con ese nombre).
-            curl -fsS --retry 5 --retry-delay 5 -k "https://$(tofu -chdir=$TF_DIR output -raw alb_dns_name)/health/ready"
-          fi
+          ALB=$(tofu -chdir=$TF_DIR output -raw alb_dns_name)
+          echo "Balanceador: $ALB  (CNAME del subdominio de la API si el DNS no está en Route 53)"
+          # Sin DNS todavía se prueba directo al balanceador (-k: el certificado no calza con ese nombre).
+          if [ -n "$URL" ]; then TARGET="$URL"; K=""; else TARGET="https://$ALB"; K="-k"; fi
+          for i in $(seq 1 10); do
+            CODE=$(curl -sS $K -o /tmp/body -w '%{http_code}' "$TARGET/health/ready" || echo 000)
+            [ "$CODE" = "200" ] && { cat /tmp/body; echo; exit 0; }
+            echo "Intento $i: HTTP $CODE"; sleep 6
+          done
+          echo "Respuesta:"; head -c 600 /tmp/body; echo
+          exit 1

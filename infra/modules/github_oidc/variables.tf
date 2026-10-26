@@ -3,7 +3,7 @@ variable "name" {
 }
 
 variable "github_repo" {
-  description = "Dueño/repositorio, por ejemplo johnnyflair/neobanco"
+  description = "Parte del claim sub después de 'repo:'. Formato inmutable: dueño@ID/repo@ID"
   type        = string
 }
 

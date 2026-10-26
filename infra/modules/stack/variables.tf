@@ -71,9 +71,12 @@ variable "alert_emails" {
   default = []
 }
 
+# Formato inmutable del claim "sub" de GitHub (repos creados o renombrados desde jul-2026):
+# dueño@ID/repo@ID. Si alguien renombra o borra y recrea el repo con el mismo nombre,
+# los IDs cambian y ese repo NO puede desplegar. IDs: gh api repos/johnnyflair/Neobanco
 variable "github_repo" {
   type    = string
-  default = "johnnyflair/Neobanco" # GitHub compara el nombre exacto, con mayúsculas
+  default = "johnnyflair@89474882/Neobanco@1434597426"
 }
 
 variable "create_github_oidc_provider" {

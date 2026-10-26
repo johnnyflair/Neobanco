@@ -1,0 +1,93 @@
+# Publica la App como vista previa (EAS Update) para abrirla en Expo Go con un QR, sin
+# compilar ni instalar nada. Corre en cada cambio de mobile/ en main o a mano.
+# Requiere el secreto de repositorio EXPO_TOKEN (expo.dev → Account settings → Access tokens).
+name: App · vista previa
+
+on:
+  push:
+    branches: [main]
+    paths: ["mobile/**", ".github/workflows/app-preview.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-preview
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publicar en Expo Go
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      # La API de dev; se puede cambiar con la variable de repositorio APP_API_URL.
+      EXPO_PUBLIC_API_URL: ${{ vars.APP_API_URL || 'https://api-dev.ariatechcr.co' }}
+      SDK_RUNTIME: exposdk:58.0.0
+    steps:
+      - name: Revisar EXPO_TOKEN
+        working-directory: .
+        env:
+          HAS_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
+        run: |
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "::error::Falta el secreto EXPO_TOKEN (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      - name: Vincular el proyecto de Expo
+        run: |
+          # Crea el proyecto en la cuenta del token la primera vez; después solo lo encuentra.
+          eas init --non-interactive --force
+          PROJECT_ID=$(node -p "require('./app.json').expo.extra.eas.projectId")
+          echo "PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
+          # Expo Go solo carga actualizaciones cuyo runtime es el SDK de Expo Go.
+          node -e "
+            const fs=require('fs'); const f='app.json'; const j=JSON.parse(fs.readFileSync(f));
+            j.expo.runtimeVersion=process.env.SDK_RUNTIME;
+            j.expo.updates={url:'https://u.expo.dev/'+process.env.PROJECT_ID};
+            fs.writeFileSync(f, JSON.stringify(j,null,2));"
+
+      - name: Publicar actualización
+        env:
+          # Por variable de entorno (no interpolado en el script) para que un mensaje de commit
+          # con comillas o comandos no pueda inyectar nada.
+          COMMIT_MSG: ${{ github.event.head_commit.message || 'Publicación manual' }}
+        run: |
+          eas update --channel preview --platform all --non-interactive \
+            --message "$(printf '%s' "$COMMIT_MSG" | head -1 | cut -c1-120)" --json > /tmp/update.json
+          cat /tmp/update.json
+
+      - name: QR para Expo Go
+        run: |
+          QR="https://qr.expo.dev/eas-update?projectId=$PROJECT_ID&runtimeVersion=$SDK_RUNTIME&channel=preview"
+          LINK=$(curl -fsS "$QR&format=url" || echo "")
+          {
+            echo "## Abrí la App en tu teléfono"
+            echo "1. Instalá **Expo Go** (App Store o Google Play)."
+            echo "2. Escaneá este QR con la cámara (iPhone) o desde Expo Go (Android):"
+            echo ""
+            echo "![QR]($QR)"
+            echo ""
+            [ -n "$LINK" ] && echo "Link directo: \`$LINK\`"
+            echo ""
+            echo "API: $EXPO_PUBLIC_API_URL · Asociada de prueba: 88112030 / 482915"
+          } >> "$GITHUB_STEP_SUMMARY"

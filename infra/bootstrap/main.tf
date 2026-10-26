@@ -69,6 +69,6 @@ resource "aws_s3_bucket_policy" "state" {
 }
 
 output "state_bucket" {
-  description = "Usalo en: terraform init -backend-config=\"bucket=<este valor>\" -backend-config=\"region=us-east-1\""
+  description = "Usalo en: terraform init -backend-config=\"bucket=<este valor>\" -backend-config=\"region=<región>\""
   value       = aws_s3_bucket.state.bucket
 }

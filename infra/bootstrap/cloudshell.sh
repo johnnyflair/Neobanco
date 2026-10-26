@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Arranque de AWS en un solo paso, para correr en AWS CloudShell (región N. Virginia, us-east-1)
-# con un usuario administrador. Se puede correr de nuevo sin problema: lo que ya existe se reusa.
+# Arranque de AWS en un solo paso, para correr en AWS CloudShell con un usuario administrador.
+# Usa la región en la que está abierto CloudShell (en la experiencia de "proyectos" de AWS,
+# cada proyecto vive en una sola región y las demás están bloqueadas). Se puede correr de nuevo sin problema: lo que ya existe se reusa.
 #
 #   curl -fsSL https://raw.githubusercontent.com/johnnyflair/Neobanco/main/infra/bootstrap/cloudshell.sh -o cloudshell.sh
 #   bash cloudshell.sh midominio.com mi-correo@ejemplo.com
@@ -20,7 +21,8 @@ DOMAIN="${DOMAIN%.}"
 EMAIL="${2:-}"
 TOFU_VERSION="1.10.6"
 REPO_URL="https://github.com/johnnyflair/Neobanco.git"
-export AWS_REGION=us-east-1 AWS_DEFAULT_REGION=us-east-1
+REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-east-1}}"
+export AWS_REGION="$REGION" AWS_DEFAULT_REGION="$REGION"
 
 paso() { printf '\n\033[1;32m▶ %s\033[0m\n' "$*"; }
 aviso() { printf '\033[1;33m%s\033[0m\n' "$*"; }
@@ -53,7 +55,7 @@ if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
   echo "Ya existe: $BUCKET"
 else
   tofu -chdir=infra/bootstrap init -input=false >/dev/null
-  tofu -chdir=infra/bootstrap apply -input=false -auto-approve
+  tofu -chdir=infra/bootstrap apply -input=false -auto-approve -var "region=$AWS_REGION"
 fi
 
 paso "3/6 Certificado *.$DOMAIN"
@@ -99,7 +101,7 @@ paso "4/6 Rol de despliegue para GitHub (dev)"
 cd infra/envs/dev
 tofu init -input=false -reconfigure -backend-config="bucket=$BUCKET" -backend-config="region=$AWS_REGION" >/dev/null
 tofu apply -input=false -auto-approve -target=module.stack.module.github \
-  -var "image_tag=bootstrap" -var "certificate_arn=$CERT" -var "dns_zone_name=${ZONE_ID:+$DOMAIN}"
+  -var "region=$AWS_REGION" -var "image_tag=bootstrap" -var "certificate_arn=$CERT" -var "dns_zone_name=${ZONE_ID:+$DOMAIN}"
 ROLE=$(tofu output -raw github_deploy_role_arn)
 cd "$HOME/Neobanco"
 
@@ -128,6 +130,7 @@ cat <<EOF
 Repositorio → Settings → Environments → New environment → nombre: dev
 Dentro de "dev" → Environment variables → Add variable (una por línea):
 
+  AWS_REGION            $AWS_REGION
   AWS_DEPLOY_ROLE_ARN   $ROLE
   TF_STATE_BUCKET       $BUCKET
   ACM_CERTIFICATE_ARN   $CERT

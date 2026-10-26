@@ -76,14 +76,14 @@ Conectar una cooperativa = implementar esas clases contra sus sistemas y elegirl
 
 ## Poner AWS en marcha por primera vez
 
-1. Entrá a la consola de AWS con un usuario administrador, región **N. Virginia (us-east-1)**, y abrí **CloudShell** (ícono `>_` arriba).
+1. Entrá a la consola de AWS con un usuario administrador, en la región donde va a vivir todo (la del proyecto, por ejemplo `us-east-2`), y abrí **CloudShell** (ícono `>_` arriba). El script usa esa región.
 2. Corré (con tu dominio y correo):
    ```bash
    curl -fsSL https://raw.githubusercontent.com/johnnyflair/Neobanco/main/infra/bootstrap/cloudshell.sh -o cloudshell.sh
    bash cloudshell.sh midominio.com tu-correo@ejemplo.com
    ```
    Crea el bucket del estado, el certificado `*.midominio.com` (si el dominio está en Route 53 lo valida solo), el rol de GitHub por OIDC y una alerta de presupuesto, y al final imprime las variables.
-3. En GitHub: **Settings → Environments → dev** y cargá las variables que imprimió el script (`AWS_DEPLOY_ROLE_ARN`, `TF_STATE_BUCKET`, `ACM_CERTIFICATE_ARN`, `DNS_ZONE_NAME`, `ALERT_EMAILS`).
+3. En GitHub: **Settings → Environments → dev** y cargá las variables que imprimió el script (`AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `TF_STATE_BUCKET`, `ACM_CERTIFICATE_ARN`, `DNS_ZONE_NAME`, `ALERT_EMAILS`).
 4. **Actions → Deploy → Run workflow → dev.** El primer despliegue crea red, base de datos, Redis y la API (~25 min) y carga los asociados de prueba. Queda en `https://api-dev.midominio.com/docs`.
 5. Para que cada merge a `main` despliegue solo a dev: variable de repositorio `DEPLOY_ENABLED=true`.
 

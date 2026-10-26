@@ -4,7 +4,7 @@
 #   ambiente de GitHub "prod" (Settings > Environments > Required reviewers).
 #
 # Variables por ambiente en GitHub (Settings > Environments > <env> > Variables):
-#   AWS_DEPLOY_ROLE_ARN, TF_STATE_BUCKET, ACM_CERTIFICATE_ARN, DNS_ZONE_NAME (si el dominio está en
+#   AWS_REGION, AWS_DEPLOY_ROLE_ARN, TF_STATE_BUCKET, ACM_CERTIFICATE_ARN, DNS_ZONE_NAME (si el dominio está en
 #   Route 53) y ALERT_EMAILS (JSON, ej. ["a@b.com"]). Los imprime infra/bootstrap/cloudshell.sh.
 name: Deploy
 
@@ -37,7 +37,7 @@ jobs:
     environment: ${{ inputs.environment || 'dev' }}
     env:
       ENV_NAME: ${{ inputs.environment || 'dev' }}
-      AWS_REGION: us-east-1
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
       IMAGE_TAG: ${{ github.sha }}
       TF_DIR: infra/envs/${{ inputs.environment || 'dev' }}
     steps:
@@ -64,6 +64,7 @@ jobs:
         run: |
           cat > $TF_DIR/ci.auto.tfvars.json <<EOF
           {"image_tag": "$IMAGE_TAG",
+           "region": "$AWS_REGION",
            "certificate_arn": "${{ vars.ACM_CERTIFICATE_ARN }}",
            "dns_zone_name": "${{ vars.DNS_ZONE_NAME }}",
            "alert_emails": ${{ vars.ALERT_EMAILS || '[]' }}}

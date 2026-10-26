@@ -23,6 +23,8 @@ export const colors = {
   optOn: '#F7FCFA',
   whatsapp: '#DCF8C6',
   heroSub: '#9FE1CB',
+  orangeSoft: '#FCEFE6', // fondo del acceso a préstamos (naranja de la paleta)
+  orangeInk: '#B85A1F',
 };
 
 export const radius = { sm: 10, md: 14, lg: 18, xl: 24 };

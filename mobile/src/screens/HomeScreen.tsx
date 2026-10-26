@@ -23,12 +23,6 @@ export function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { signOut } = useSession();
   const soon = (what: string) => Alert.alert(what, 'Esta sección se construye en la próxima etapa.');
-  const QUICK: { label: string; icon: IconName; go: () => void }[] = [
-    { label: 'SINPE Móvil', icon: 'phone', go: () => nav.navigate('SinpeNumber') },
-    { label: 'Transferir dinero', icon: 'swap', go: () => nav.navigate('TransferHub') },
-    { label: 'Pagar recibos', icon: 'receipt', go: () => soon('Pagar recibos') },
-    { label: 'Pedí un préstamo', icon: 'cash', go: () => soon('Préstamos') },
-  ];
   const [me, setMe] = useState<Me | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [moves, setMoves] = useState<Transaction[]>([]);
@@ -69,6 +63,18 @@ export function HomeScreen() {
   }
 
   const mask = (v: string) => (hidden ? '••••••' : v);
+  // Punto lima en SINPE Móvil: te entró un SINPE en las últimas 24 horas.
+  const newSinpe = moves.some(
+    (t) => t.category === 'sinpe' && Number(t.amount) > 0 && Date.now() - new Date(t.created_at).getTime() < 86_400_000,
+  );
+  // Accesos rápidos (opción C aprobada): texto en dos renglones; el préstamo destacado en naranja.
+  const QUICK: { label: string; icon: IconName; go: () => void; accent?: boolean; badge?: boolean }[] = [
+    { label: 'SINPE\nMóvil', icon: 'phone', go: () => nav.navigate('SinpeNumber'), badge: newSinpe },
+    { label: 'Transferir\ndinero', icon: 'swap', go: () => nav.navigate('TransferHub') },
+    { label: 'Pagar\nrecibos', icon: 'receipt', go: () => soon('Pagar recibos') },
+    { label: 'Pedí un\npréstamo', icon: 'cash', go: () => soon('Préstamos'), accent: true },
+  ];
+
   const main = accounts.filter((a) => MAIN_TYPES.has(a.type));
 
   if (loading) {
@@ -132,9 +138,16 @@ export function HomeScreen() {
 
       <View style={s.quick}>
         {QUICK.map((q) => (
-          <Pressable key={q.label} style={s.quickItem} onPress={q.go} accessibilityRole="button">
-            <View style={s.quickIcon}>
-              <Icon name={q.icon} color={colors.emeraldDark} />
+          <Pressable
+            key={q.label}
+            style={({ pressed }) => [s.quickItem, pressed && { opacity: 0.7 }]}
+            onPress={q.go}
+            accessibilityRole="button"
+            accessibilityLabel={q.label.replace('\n', ' ') + (q.badge ? ', tenés un SINPE nuevo' : '')}
+          >
+            <View style={[s.quickIcon, q.accent && { backgroundColor: colors.orangeSoft }]}>
+              <Icon name={q.icon} size={25} color={q.accent ? colors.orangeInk : colors.emeraldDark} />
+              {q.badge && <View style={s.badge} />}
             </View>
             <Text style={s.quickText}>{q.label}</Text>
           </Pressable>
@@ -194,9 +207,20 @@ const s = StyleSheet.create({
   icon: { fontSize: 20, fontWeight: '600', color: colors.primary },
   more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
   moreText: { fontSize: 14, fontWeight: '600', color: colors.primary },
-  quick: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 18, marginBottom: 6 },
-  quickItem: { width: '24%', alignItems: 'center', gap: 6 },
-  quickIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
-  quickText: { fontSize: 11, textAlign: 'center', color: colors.ink },
+  quick: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginBottom: 8 },
+  quickItem: { width: '24%', alignItems: 'center', gap: 7 },
+  quickIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
+  quickText: { fontSize: 12.5, lineHeight: 16, fontWeight: '600', textAlign: 'center', color: colors.ink },
+  badge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.lime,
+    borderWidth: 2.5,
+    borderColor: colors.white,
+  },
   section: { fontSize: 12, fontWeight: '600', color: colors.muted, marginTop: 16, marginBottom: 4 },
 });

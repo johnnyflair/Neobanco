@@ -5,7 +5,7 @@ import { colors } from '../theme';
 
 export type IconName =
   | 'home' | 'card' | 'grow' | 'chat' | 'phone' | 'bank' | 'pull' | 'qr' | 'back' | 'chev' | 'check'
-  | 'lock' | 'eye' | 'eyeOff' | 'share' | 'receipt' | 'file' | 'star' | 'send' | 'swap' | 'copy' | 'cash';
+  | 'lock' | 'eye' | 'eyeOff' | 'share' | 'receipt' | 'file' | 'star' | 'send' | 'swap' | 'copy' | 'cash' | 'hands' | 'pig' | 'chevDown' | 'chevUp';
 
 const stroke = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
@@ -86,6 +86,28 @@ function shapes(name: IconName, c: string) {
           <Circle {...p} cx={12} cy={12} r={2.5} />
         </>
       );
+    // Manos con corazón (capital social: ser parte de la cooperativa) y chanchito (ahorros),
+    // trazos de Tabler Icons (MIT), igual que el mockup aprobado.
+    case 'hands':
+      return (
+        <>
+          <Path {...p} d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" />
+          <Path {...p} d="M12 6l-3.293 3.293a1 1 0 0 0 0 1.414l.543 .543c.69 .69 1.81 .69 2.5 0l1 -1a3.182 3.182 0 0 1 4.5 0l2.25 2.25" />
+          <Path {...p} d="M12.5 15.5l2 2M15 13l2 2" />
+        </>
+      );
+    case 'pig':
+      return (
+        <>
+          <Path {...p} d="M15 11v.01" />
+          <Path {...p} d="M5.173 8.378a3 3 0 1 1 4.656 -1.377" />
+          <Path {...p} d="M16 4v3.803a6.019 6.019 0 0 1 2.658 3.197h1.341a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-1.342c-.336 .95 -.907 1.8 -1.658 2.473v2.027a1.5 1.5 0 0 1 -3 0v-.583a6.04 6.04 0 0 1 -1 .083h-4a6.04 6.04 0 0 1 -1 -.083v.583a1.5 1.5 0 0 1 -3 0v-2.027a6 6 0 0 1 4 -10.473h2.5l4.5 -3z" />
+        </>
+      );
+    case 'chevDown':
+      return <Path {...p} strokeWidth={2} d="M6 9l6 6 6-6" />;
+    case 'chevUp':
+      return <Path {...p} strokeWidth={2} d="M6 15l6-6 6 6" />;
     case 'copy':
       return (
         <>

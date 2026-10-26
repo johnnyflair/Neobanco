@@ -143,11 +143,12 @@ async def seed(reset: bool = False) -> None:
             for to, amt, when in sent:
                 flows.append((when, -amt, f"SINPE a {KNOWN_PHONES[to][0]}", "sinpe"))
             flows.append((now - timedelta(days=5), Decimal("-285000"), "Pago de alquiler", "iban"))
-            # Saldo inicial que hace que la cuenta termine en ₡248,500.00; si quedara muy bajo,
-            # entra un traspaso de ahorro para que la historia se vea normal.
+            # Saldo inicial que hace que la cuenta termine en ₡248,500.00. Si los salarios dejan el
+            # saldo inicial muy bajo, la diferencia sale como pago de la tarjeta de crédito, para que
+            # la historia se vea normal y la cuenta cierre exacta.
             opening = Decimal("248500") - sum(f[1] for f in flows)
-            if opening < Decimal("60000"):
-                flows.append((now - timedelta(days=31), Decimal("120000") - opening, "Traspaso desde mi BAC", "pull"))
+            if opening < Decimal("120000"):
+                flows.append((now - timedelta(days=31), opening - Decimal("120000"), "Pago tarjeta de crédito", "card_payment"))
                 opening = Decimal("120000")
             flows.sort(key=lambda f: f[0])
             bal = opening

@@ -1,5 +1,6 @@
-// Pantalla de inicio aprobada: "Mis cuentas" con borde degradado, saldos reales por cuenta,
-// ojito para ocultar saldos, botones rápidos y movimientos de la cuenta en colones.
+// Pantalla de inicio aprobada (opción A): encabezado amplio con perfil y recompensas, "Mis cuentas"
+// con colones, dólares y capital social a la vista y "Ver todas" que despliega el resto, ojo para
+// ocultar saldos, botones rápidos y movimientos de la cuenta en colones.
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
@@ -15,7 +16,7 @@ import { accountsGlow, colors, radius, type } from '../theme';
 import { Icon, type IconName } from '../ui/Icon';
 
 const HIDE_KEY = 'neo.hideBalances';
-const ICON: Record<string, string> = { savings: '', capital: '◈', envelope: '◎', term: '◷' };
+const MAIN_TYPES = new Set(['savings', 'capital']); // colones, dólares y capital social
 
 export function HomeScreen() {
   const nav = useNavigation();
@@ -32,6 +33,7 @@ export function HomeScreen() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [moves, setMoves] = useState<Transaction[]>([]);
   const [hidden, setHidden] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -67,6 +69,7 @@ export function HomeScreen() {
   }
 
   const mask = (v: string) => (hidden ? '••••••' : v);
+  const main = accounts.filter((a) => MAIN_TYPES.has(a.type));
 
   if (loading) {
     return <ActivityIndicator style={{ flex: 1 }} color={colors.primary} />;
@@ -80,9 +83,12 @@ export function HomeScreen() {
           <Text style={s.name}>{me?.full_name.split(' ').slice(0, 2).join(' ')}</Text>
         </View>
         <View style={s.headerRight}>
-          <View style={s.pill}><Text style={s.pillText}>★ {me?.points.toLocaleString('en-US')}</Text></View>
+          <View style={s.pill} accessibilityLabel={`${me?.points ?? 0} puntos de recompensas`}>
+            <Icon name="star" size={15} color={colors.primaryInk} />
+            <Text style={s.pillText}>{me?.points.toLocaleString('en-US')}</Text>
+          </View>
           <Pressable style={s.avatar} onPress={signOut} accessibilityLabel="Mi perfil">
-            <Text style={s.pillText}>{me?.full_name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</Text>
+            <Text style={s.avatarText}>{me?.full_name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</Text>
           </Pressable>
         </View>
       </View>
@@ -94,16 +100,33 @@ export function HomeScreen() {
           <View style={s.cardHead}>
             <Text style={s.cardTitle}>Mis cuentas</Text>
             <Pressable onPress={toggleHidden} style={s.eye} accessibilityLabel={hidden ? 'Mostrar saldos' : 'Ocultar saldos'}>
-              <Text style={{ color: colors.muted }}>{hidden ? '◡' : '◉'}</Text>
+              <Icon name={hidden ? 'eyeOff' : 'eye'} size={19} color={colors.muted} />
             </Pressable>
           </View>
-          {accounts.map((a) => (
+          {(showAll ? accounts : main).map((a) => (
             <View key={a.id} style={s.row}>
-              <Text style={s.icon}>{a.type === 'savings' ? (a.currency === 'USD' ? '$' : '₡') : ICON[a.type]}</Text>
+              <View style={s.iconBox}>
+                {a.type === 'savings' ? (
+                  <Text style={s.icon}>{a.currency === 'USD' ? '$' : '₡'}</Text>
+                ) : (
+                  <Icon name={a.type === 'capital' ? 'hands' : 'pig'} size={21} color={colors.primary} />
+                )}
+              </View>
               <Text style={[type.itemTitle, { flex: 1 }]}>{a.name}</Text>
               <Text style={type.amount}>{mask(money(a.balance, a.currency))}</Text>
             </View>
           ))}
+          {accounts.length > main.length && (
+            <Pressable
+              style={s.more}
+              onPress={() => setShowAll((v) => !v)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showAll }}
+            >
+              <Text style={s.moreText}>{showAll ? 'Ver menos' : `Ver todas (${accounts.length})`}</Text>
+              <Icon name={showAll ? 'chevUp' : 'chevDown'} size={16} color={colors.primary} />
+            </Pressable>
+          )}
         </View>
       </LinearGradient>
 
@@ -137,12 +160,21 @@ export function HomeScreen() {
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.white },
   content: { padding: 18, paddingBottom: 40 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, marginBottom: 26 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { ...type.title, fontSize: 19 },
-  pill: { backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
-  pillText: { color: colors.primaryInk, fontWeight: '700', fontSize: 12 },
-  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  name: { ...type.title, fontSize: 21 },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.primarySoft,
+    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+  },
+  pillText: { color: colors.primaryInk, fontWeight: '700', fontSize: 14 },
+  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: colors.white, fontWeight: '700', fontSize: 15 },
   error: { color: colors.danger, marginBottom: 8 },
   glow: {
     borderRadius: radius.lg,
@@ -158,7 +190,10 @@ const s = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
   eye: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
-  icon: { width: 28, textAlign: 'center', fontSize: 20, fontWeight: '600', color: colors.primary },
+  iconBox: { width: 28, alignItems: 'center' },
+  icon: { fontSize: 20, fontWeight: '600', color: colors.primary },
+  more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
+  moreText: { fontSize: 14, fontWeight: '600', color: colors.primary },
   quick: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 18, marginBottom: 6 },
   quickItem: { width: '24%', alignItems: 'center', gap: 6 },
   quickIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },

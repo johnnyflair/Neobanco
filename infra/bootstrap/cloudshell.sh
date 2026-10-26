@@ -15,9 +15,14 @@
 #   6. Imprime las variables para pegar en GitHub. El resto (red, base de datos, API) lo crea
 #      el primer despliegue desde GitHub.
 set -euo pipefail
+trap 'printf "\n✖ El script se detuvo en la línea %s. Copiá lo de arriba y mandámelo.\n" "$LINENO" >&2' ERR
 
 DOMAIN="${1:?Uso: bash cloudshell.sh midominio.com correo@ejemplo.com}"
 DOMAIN="${DOMAIN%.}"
+if [[ "$DOMAIN" == "tudominio.com" || "$DOMAIN" == "midominio.com" || "$DOMAIN" != *.* ]]; then
+  echo "Poné tu dominio real, por ejemplo: bash cloudshell.sh neobanco.cr vos@correo.com" >&2
+  exit 1
+fi
 EMAIL="${2:-}"
 TOFU_VERSION="1.10.6"
 REPO_URL="https://github.com/johnnyflair/Neobanco.git"
@@ -33,7 +38,9 @@ echo "Cuenta $ACCOUNT · región $AWS_REGION · dominio $DOMAIN"
 
 paso "1/6 OpenTofu $TOFU_VERSION"
 export PATH="$HOME/.local/bin:$PATH"
-if ! tofu version 2>/dev/null | grep -q "v$TOFU_VERSION"; then
+# (Se guarda la salida antes de filtrarla: con pipefail, "| head" o "| grep -q" cortan el script.)
+CURRENT_TOFU=$(tofu version 2>/dev/null || true)
+if [[ "$CURRENT_TOFU" != *"v$TOFU_VERSION"* ]]; then
   ARCH=$(uname -m); [ "$ARCH" = "x86_64" ] && ARCH=amd64; [ "$ARCH" = "aarch64" ] && ARCH=arm64
   TMP=$(mktemp -d); cd "$TMP"
   BASE="https://github.com/opentofu/opentofu/releases/download/v$TOFU_VERSION"
@@ -43,7 +50,7 @@ if ! tofu version 2>/dev/null | grep -q "v$TOFU_VERSION"; then
   mkdir -p "$HOME/.local/bin" && unzip -oq "tofu_${TOFU_VERSION}_linux_${ARCH}.zip" tofu -d "$HOME/.local/bin"
   cd - >/dev/null
 fi
-tofu version | head -1
+TOFU_LINE=$(tofu version); echo "${TOFU_LINE%%$'\n'*}"
 
 paso "Repositorio"
 if [ -d "$HOME/Neobanco/.git" ]; then git -C "$HOME/Neobanco" pull -q --ff-only; else git clone -q --depth 1 "$REPO_URL" "$HOME/Neobanco"; fi

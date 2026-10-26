@@ -180,6 +180,7 @@ export function HomeScreen() {
           </Text>
         </View>
       ))}
+      <Text style={s.version}>Versión {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'local').slice(0, 7)}</Text>
       <AccountSheet account={sheet} sinpePhone={me?.sinpe_phone} onClose={() => setSheet(null)} />
     </ScrollView>
   );
@@ -237,5 +238,6 @@ const s = StyleSheet.create({
     borderWidth: 2.5,
     borderColor: colors.white,
   },
+  version: { fontSize: 11, color: colors.muted, textAlign: 'center', marginTop: 18 },
   section: { fontSize: 12, fontWeight: '600', color: colors.muted, marginTop: 16, marginBottom: 4 },
 });

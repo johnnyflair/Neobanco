@@ -3,7 +3,8 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import { createNativeStackNavigator, type NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CardInstallmentsScreen, CardLimitsScreen, CardLinkedScreen, CardPayScreen } from './screens/cards/CardFlows';
@@ -16,7 +17,7 @@ import { ReceiveScreen } from './screens/transfer/ReceiveScreen';
 import { SinpeAmountScreen, SinpeNumberScreen } from './screens/transfer/SinpeScreens';
 import { TransferDoneScreen } from './screens/transfer/TransferDoneScreen';
 import { TransferHubScreen } from './screens/transfer/TransferHubScreen';
-import { colors } from './theme';
+import { accountsGlow, colors } from './theme';
 import { Icon, type IconName } from './ui/Icon';
 
 export type TabParams = { Home: undefined; Cards: undefined; Grow: undefined; Help: undefined };
@@ -59,7 +60,24 @@ function Tabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { borderTopColor: colors.line, height: 58 + insets.bottom, paddingTop: 6 },
+        // Mismo destello que la tarjeta "Mis cuentas": línea con el degradado de marca al 50 %
+        // y halo verde leve hacia arriba.
+        tabBarStyle: {
+          borderTopWidth: 0,
+          height: 58 + insets.bottom,
+          paddingTop: 6,
+          backgroundColor: colors.white,
+          shadowColor: colors.primary,
+          shadowOpacity: 0.22,
+          shadowRadius: 11,
+          shadowOffset: { width: 0, height: -6 },
+          elevation: 12,
+        },
+        tabBarBackground: () => (
+          <View style={{ flex: 1, backgroundColor: colors.white }}>
+            <LinearGradient colors={accountsGlow} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: 1.5 }} />
+          </View>
+        ),
         tabBarLabel: ({ color }) => (
           <Text style={{ color, fontSize: 11 }}>
             {{ Home: 'Inicio', Cards: 'Tarjeta', Grow: 'Invertir', Help: 'Ayuda' }[route.name]}

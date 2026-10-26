@@ -24,7 +24,8 @@ from app.core.config import get_settings
 from app.db.models import Base
 
 target_metadata = Base.metadata
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+# configparser interpreta "%": la contraseña de RDS va codificada en la URL (%23, %24…) y hay que escaparla.
+config.set_main_option("sqlalchemy.url", get_settings().database_url.replace("%", "%%"))
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

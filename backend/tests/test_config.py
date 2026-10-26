@@ -41,3 +41,15 @@ def test_es256_tokens_roundtrip(monkeypatch):
     monkeypatch.setattr(config, "get_settings", lambda: s)
     mid = uuid.uuid4()
     assert security.decode_token(security.create_access_token(mid))["sub"] == str(mid)
+
+
+def test_db_url_with_special_password_survives_alembic_config():
+    """RDS genera contraseñas con símbolos; la URL codificada lleva "%" y Alembic no debe romperse."""
+    from alembic.config import Config
+
+    pwd = "a#b$c%d!e(f/g"
+    s = Settings(env="dev", db_host="db.internal", db_user="neo_admin", db_password=pwd, expose_debug_otp=False)
+    assert "%23" in s.database_url and s.database_url.endswith("?ssl=require")
+    cfg = Config()
+    cfg.set_main_option("sqlalchemy.url", s.database_url.replace("%", "%%"))
+    assert cfg.get_main_option("sqlalchemy.url") == s.database_url

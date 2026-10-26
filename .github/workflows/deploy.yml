@@ -102,7 +102,14 @@ jobs:
           aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK"
           CODE=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK" --query 'tasks[0].containers[0].exitCode' --output text)
           echo "Migración terminó con código $CODE"
-          test "$CODE" = "0"
+          if [ "$CODE" != "0" ]; then
+            # Muestra el log del contenedor para diagnosticar sin entrar a AWS.
+            GROUP=$(aws ecs describe-task-definition --task-definition "$FAMILY" \
+              --query 'taskDefinition.containerDefinitions[0].logConfiguration.options."awslogs-group"' --output text)
+            aws logs get-log-events --log-group-name "$GROUP" --log-stream-name "migrate/migrate/${TASK##*/}" \
+              --query 'events[].message' --output text | tail -60
+            exit 1
+          fi
 
       - name: Desplegar
         run: |

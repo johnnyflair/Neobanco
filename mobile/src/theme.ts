@@ -38,3 +38,5 @@ export const type = {
 
 // Borde con destello de la tarjeta "Mis cuentas" (al 50 % de intensidad, como se aprobó).
 export const accountsGlow = ['rgba(0,230,118,0.5)', 'rgba(23,128,108,0.5)', 'rgba(13,27,69,0.5)', 'rgba(232,116,46,0.5)'] as const;
+// Destello de la barra del menú: el mismo degradado a la mitad de intensidad (25 %).
+export const tabBarGlow = ['rgba(0,230,118,0.25)', 'rgba(23,128,108,0.25)', 'rgba(13,27,69,0.25)', 'rgba(232,116,46,0.25)'] as const;

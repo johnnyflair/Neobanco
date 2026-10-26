@@ -17,7 +17,7 @@ import { ReceiveScreen } from './screens/transfer/ReceiveScreen';
 import { SinpeAmountScreen, SinpeNumberScreen } from './screens/transfer/SinpeScreens';
 import { TransferDoneScreen } from './screens/transfer/TransferDoneScreen';
 import { TransferHubScreen } from './screens/transfer/TransferHubScreen';
-import { accountsGlow, colors } from './theme';
+import { colors, tabBarGlow } from './theme';
 import { Icon, type IconName } from './ui/Icon';
 
 export type TabParams = { Home: undefined; Cards: undefined; Grow: undefined; Help: undefined };
@@ -60,22 +60,22 @@ function Tabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
-        // Mismo destello que la tarjeta "Mis cuentas": línea con el degradado de marca al 50 %
-        // y halo verde leve hacia arriba.
+        // Destello de la tarjeta "Mis cuentas" a la mitad: línea con el degradado de marca al 25 %
+        // y halo verde muy leve hacia arriba.
         tabBarStyle: {
           borderTopWidth: 0,
           height: 58 + insets.bottom,
           paddingTop: 6,
           backgroundColor: colors.white,
           shadowColor: colors.primary,
-          shadowOpacity: 0.22,
+          shadowOpacity: 0.11,
           shadowRadius: 11,
           shadowOffset: { width: 0, height: -6 },
-          elevation: 12,
+          elevation: 6,
         },
         tabBarBackground: () => (
           <View style={{ flex: 1, backgroundColor: colors.white }}>
-            <LinearGradient colors={accountsGlow} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: 1.5 }} />
+            <LinearGradient colors={tabBarGlow} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: 1.5 }} />
           </View>
         ),
         tabBarLabel: ({ color }) => (

@@ -29,3 +29,8 @@ output "app_security_group_id" {
 output "github_deploy_role_arn" {
   value = module.github.role_arn
 }
+
+output "api_url" {
+  description = "URL pública de la API (vacía si el DNS se apunta a mano)."
+  value       = var.dns_zone_name == "" ? "" : "https://${var.api_subdomain}.${var.dns_zone_name}"
+}

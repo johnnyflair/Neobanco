@@ -20,3 +20,9 @@ variable "single_nat" {
 variable "kms_key_arn" {
   type = string
 }
+
+variable "interface_endpoints" {
+  description = "Endpoints privados para ECR, Secrets Manager, logs y KMS."
+  type        = bool
+  default     = true
+}

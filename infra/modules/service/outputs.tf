@@ -18,3 +18,7 @@ output "service_name" {
 output "migrate_task_family" {
   value = aws_ecs_task_definition.migrate.family
 }
+
+output "alb_zone_id" {
+  value = aws_lb.this.zone_id
+}

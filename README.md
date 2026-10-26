@@ -76,11 +76,18 @@ Conectar una cooperativa = implementar esas clases contra sus sistemas y elegirl
 
 ## Poner AWS en marcha por primera vez
 
-1. `tofu -chdir=infra/bootstrap init && tofu -chdir=infra/bootstrap apply` crea el bucket del estado (una vez por cuenta).
-2. Pedir en ACM el certificado de `api-dev.<dominio>` (y luego staging y prod).
-3. Aplicar dev a mano la primera vez: `tofu -chdir=infra/envs/dev init -backend-config="bucket=<bucket>" -backend-config="region=us-east-1"` y `tofu -chdir=infra/envs/dev apply -var image_tag=bootstrap -var certificate_arn=<arn>`.
-4. En GitHub, crear los ambientes `dev`, `staging` y `prod` (con revisores en prod) y cargar las variables `AWS_DEPLOY_ROLE_ARN` (salida `github_deploy_role_arn`), `TF_STATE_BUCKET`, `ACM_CERTIFICATE_ARN` y `ALERT_EMAILS`.
-5. Apuntar el DNS de la API al `alb_dns_name`.
+1. Entrá a la consola de AWS con un usuario administrador, región **N. Virginia (us-east-1)**, y abrí **CloudShell** (ícono `>_` arriba).
+2. Corré (con tu dominio y correo):
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/johnnyflair/Neobanco/main/infra/bootstrap/cloudshell.sh -o cloudshell.sh
+   bash cloudshell.sh midominio.com tu-correo@ejemplo.com
+   ```
+   Crea el bucket del estado, el certificado `*.midominio.com` (si el dominio está en Route 53 lo valida solo), el rol de GitHub por OIDC y una alerta de presupuesto, y al final imprime las variables.
+3. En GitHub: **Settings → Environments → dev** y cargá las variables que imprimió el script (`AWS_DEPLOY_ROLE_ARN`, `TF_STATE_BUCKET`, `ACM_CERTIFICATE_ARN`, `DNS_ZONE_NAME`, `ALERT_EMAILS`).
+4. **Actions → Deploy → Run workflow → dev.** El primer despliegue crea red, base de datos, Redis y la API (~25 min) y carga los asociados de prueba. Queda en `https://api-dev.midominio.com/docs`.
+5. Para que cada merge a `main` despliegue solo a dev: variable de repositorio `DEPLOY_ENABLED=true`.
+
+Costo aproximado de dev: USD 100–130 al mes (NAT, balanceador, RDS y Redis pequeños, Fargate). Staging y prod se crean igual cuando haga falta (mismo script de variables, ambientes `staging` y `prod`, con revisores en prod).
 
 ## Pendientes conocidos
 

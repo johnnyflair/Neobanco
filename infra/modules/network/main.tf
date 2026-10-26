@@ -117,8 +117,10 @@ resource "aws_security_group" "endpoints" {
   }
 }
 
+# En staging y prod el tráfico a servicios de AWS no sale por internet. En dev se apagan
+# (cuestan ~USD 110/mes) y ese tráfico pasa cifrado por el NAT.
 resource "aws_vpc_endpoint" "interface" {
-  for_each            = toset(["ecr.api", "ecr.dkr", "secretsmanager", "logs", "kms"])
+  for_each            = var.interface_endpoints ? toset(["ecr.api", "ecr.dkr", "secretsmanager", "logs", "kms"]) : toset([])
   vpc_id              = aws_vpc.this.id
   service_name        = "com.amazonaws.${var.region}.${each.key}"
   vpc_endpoint_type   = "Interface"

@@ -73,10 +73,32 @@ variable "alert_emails" {
 
 variable "github_repo" {
   type    = string
-  default = "johnnyflair/neobanco"
+  default = "johnnyflair/Neobanco" # GitHub compara el nombre exacto, con mayúsculas
 }
 
 variable "create_github_oidc_provider" {
   type    = bool
   default = false
+}
+
+variable "dns_zone_name" {
+  description = "Zona pública de Route 53 (ej. midominio.com). Vacío = el DNS se apunta a mano."
+  type        = string
+  default     = ""
+}
+
+variable "api_subdomain" {
+  description = "Subdominio de la API en esta zona (api-dev, api-staging, api)."
+  type        = string
+  default     = "api"
+}
+
+variable "seed_demo_data" {
+  type    = bool
+  default = false
+}
+
+variable "interface_endpoints" {
+  type    = bool
+  default = true
 }

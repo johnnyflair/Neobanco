@@ -8,12 +8,13 @@ module "security" {
 }
 
 module "network" {
-  source      = "../network"
-  name        = var.name
-  region      = var.region
-  cidr        = var.vpc_cidr
-  single_nat  = var.single_nat
-  kms_key_arn = module.security.kms_key_arn
+  source              = "../network"
+  name                = var.name
+  region              = var.region
+  cidr                = var.vpc_cidr
+  single_nat          = var.single_nat
+  interface_endpoints = var.interface_endpoints
+  kms_key_arn         = module.security.kms_key_arn
 }
 
 resource "aws_security_group" "app" {
@@ -68,6 +69,7 @@ module "data" {
 
 module "api" {
   source                = "../service"
+  seed_demo_data        = var.seed_demo_data
   name                  = var.name
   env                   = var.env
   vpc_id                = module.network.vpc_id
@@ -95,4 +97,23 @@ module "github" {
   github_repo        = var.github_repo
   github_environment = var.env
   create_provider    = var.create_github_oidc_provider
+}
+
+# Registro DNS de la API (alias al balanceador) cuando el dominio vive en Route 53.
+data "aws_route53_zone" "this" {
+  count        = var.dns_zone_name == "" ? 0 : 1
+  name         = var.dns_zone_name
+  private_zone = false
+}
+
+resource "aws_route53_record" "api" {
+  count   = var.dns_zone_name == "" ? 0 : 1
+  zone_id = data.aws_route53_zone.this[0].zone_id
+  name    = "${var.api_subdomain}.${var.dns_zone_name}"
+  type    = "A"
+  alias {
+    name                   = module.api.alb_dns_name
+    zone_id                = module.api.alb_zone_id
+    evaluate_target_health = true
+  }
 }

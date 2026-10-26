@@ -81,3 +81,9 @@ variable "alert_emails" {
   type    = list(string)
   default = []
 }
+
+variable "seed_demo_data" {
+  description = "Cargar asociados de prueba después de migrar (solo dev)."
+  type        = bool
+  default     = false
+}

@@ -52,6 +52,10 @@ module "stack" {
   min_tasks                   = 1
   max_tasks                   = 3
   alert_emails                = var.alert_emails
+  dns_zone_name               = var.dns_zone_name
+  api_subdomain               = "api-dev"
+  seed_demo_data              = true
+  interface_endpoints         = false
   create_github_oidc_provider = true
 }
 
@@ -68,6 +72,12 @@ variable "certificate_arn" {
 variable "image_tag" {
   description = "SHA del commit a desplegar (lo pasa el pipeline)."
   type        = string
+}
+
+variable "dns_zone_name" {
+  description = "Zona de Route 53 del dominio; vacío si el DNS se apunta a mano."
+  type        = string
+  default     = ""
 }
 
 variable "alert_emails" {
@@ -105,4 +115,8 @@ output "app_security_group_id" {
 
 output "github_deploy_role_arn" {
   value = module.stack.github_deploy_role_arn
+}
+
+output "api_url" {
+  value = module.stack.api_url
 }

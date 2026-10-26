@@ -4,7 +4,8 @@
 #   ambiente de GitHub "prod" (Settings > Environments > Required reviewers).
 #
 # Variables por ambiente en GitHub (Settings > Environments > <env> > Variables):
-#   AWS_DEPLOY_ROLE_ARN, TF_STATE_BUCKET, ACM_CERTIFICATE_ARN, ALERT_EMAILS (JSON, ej. ["a@b.com"])
+#   AWS_DEPLOY_ROLE_ARN, TF_STATE_BUCKET, ACM_CERTIFICATE_ARN, DNS_ZONE_NAME (si el dominio está en
+#   Route 53) y ALERT_EMAILS (JSON, ej. ["a@b.com"]). Los imprime infra/bootstrap/cloudshell.sh.
 name: Deploy
 
 on:
@@ -64,6 +65,7 @@ jobs:
           cat > $TF_DIR/ci.auto.tfvars.json <<EOF
           {"image_tag": "$IMAGE_TAG",
            "certificate_arn": "${{ vars.ACM_CERTIFICATE_ARN }}",
+           "dns_zone_name": "${{ vars.DNS_ZONE_NAME }}",
            "alert_emails": ${{ vars.ALERT_EMAILS || '[]' }}}
           EOF
 
@@ -79,13 +81,16 @@ jobs:
           docker buildx build --platform linux/arm64 -t "$REPO:$IMAGE_TAG" --push backend
           echo "REPO=$REPO" >> $GITHUB_ENV
 
-      - name: Plan
-        run: tofu -chdir=$TF_DIR plan -input=false -out=tfplan
+      # Toda la infraestructura y la tarea de migración, SIN tocar todavía el servicio:
+      # así la base queda migrada antes de que corra la versión nueva (y en el primer
+      # despliegue se crea todo desde cero en este paso).
+      - name: Infraestructura y tarea de migración
+        run: >
+          tofu -chdir=$TF_DIR apply -input=false -auto-approve
+          -exclude=module.stack.module.api.aws_ecs_service.api
 
       - name: Migraciones de base de datos
         run: |
-          tofu -chdir=$TF_DIR apply -input=false -auto-approve \
-            -target=module.stack.module.api.aws_ecs_task_definition.migrate
           CLUSTER=$(tofu -chdir=$TF_DIR output -raw cluster_name)
           FAMILY=$(tofu -chdir=$TF_DIR output -raw migrate_task_family)
           SUBNETS=$(tofu -chdir=$TF_DIR output -json app_subnet_ids | jq -r 'join(",")')
@@ -107,5 +112,10 @@ jobs:
 
       - name: Prueba de humo
         run: |
-          HOST=$(tofu -chdir=$TF_DIR output -raw alb_dns_name)
-          curl -fsS --retry 5 --retry-delay 5 -k "https://$HOST/health/ready"
+          URL=$(tofu -chdir=$TF_DIR output -raw api_url)
+          if [ -n "$URL" ]; then
+            curl -fsS --retry 10 --retry-delay 6 "$URL/health/ready"
+          else
+            # Sin DNS todavía: se prueba directo al balanceador (el certificado no calza con ese nombre).
+            curl -fsS --retry 5 --retry-delay 5 -k "https://$(tofu -chdir=$TF_DIR output -raw alb_dns_name)/health/ready"
+          fi

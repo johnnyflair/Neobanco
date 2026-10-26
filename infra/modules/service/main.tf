@@ -390,12 +390,13 @@ resource "aws_ecs_task_definition" "migrate" {
     essential              = true
     readonlyRootFilesystem = true
     user                   = "10001:10001"
-    command                = ["alembic", "upgrade", "head"]
-    environment            = local.environment
-    secrets                = local.secrets
-    linuxParameters        = { capabilities = { drop = ["ALL"] } }
-    mountPoints            = [{ sourceVolume = "tmp", containerPath = "/tmp" }]
-    logConfiguration       = merge(local.log_config, { options = merge(local.log_config.options, { awslogs-stream-prefix = "migrate" }) })
+    # En dev, además, se cargan los datos de prueba si la base está vacía (nunca en staging/prod).
+    command          = var.seed_demo_data ? ["sh", "-c", "alembic upgrade head && python -m app.seed"] : ["alembic", "upgrade", "head"]
+    environment      = local.environment
+    secrets          = local.secrets
+    linuxParameters  = { capabilities = { drop = ["ALL"] } }
+    mountPoints      = [{ sourceVolume = "tmp", containerPath = "/tmp" }]
+    logConfiguration = merge(local.log_config, { options = merge(local.log_config.options, { awslogs-stream-prefix = "migrate" }) })
   }])
   volume {
     name = "tmp"

@@ -172,7 +172,8 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
       <ImageBackground
         source={require('../../../assets/card-debit.jpg')}
         style={[st.card, locked && st.locked]}
-        imageStyle={{ borderRadius: radius.lg }}
+        imageStyle={{ borderRadius: radius.lg, width: '100%', height: '100%' }}
+        resizeMode="cover"
         accessibilityLabel={`Tarjeta de débito terminada en ${card.last4}${locked ? ', bloqueada' : ''}`}
       >
         <View style={st.cardTop}>
@@ -236,7 +237,8 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
       <ImageBackground
         source={require('../../../assets/card-credit.jpg')}
         style={[st.card, locked && st.locked]}
-        imageStyle={{ borderRadius: radius.lg }}
+        imageStyle={{ borderRadius: radius.lg, width: '100%', height: '100%' }}
+        resizeMode="cover"
         accessibilityLabel={`Tarjeta de crédito terminada en ${card.last4}${locked ? ', congelada' : ''}`}
       >
         <View style={st.cardTop}>

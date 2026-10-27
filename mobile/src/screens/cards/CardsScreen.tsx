@@ -3,7 +3,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
-import { Alert, ImageBackground, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Image, ImageBackground, Pressable, StyleSheet, View } from 'react-native';
 
 import { api } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
@@ -12,7 +12,7 @@ import { dayMonth, groupPan, money } from '../../format';
 import { colors, radius } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { Icon } from '../../ui/Icon';
-import { ActionButtons, Btn, ErrorText, Loading, Row, Screen, Seg, Small, Tag, Toggle } from '../../ui/kit';
+import { ActionButtons, Btn, ErrorText, Loading, Row, Screen, Small, Tag, Toggle } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
 import { Text } from '../../ui/typography';
 
@@ -29,20 +29,43 @@ export function CardsScreen() {
 
   return (
     <Screen title="Tus tarjetas" back={false}>
-      {credit && (
-        <Seg
-          options={[
-            { value: 'debit', label: 'Débito' },
-            { value: 'credit', label: 'Crédito' },
-          ]}
-          value={tab}
-          onChange={setTab}
-        />
-      )}
+      {credit && <CardPicker value={tab} onChange={setTab} />}
       <ErrorText>{error}</ErrorText>
       {tab === 'debit' && debit && <DebitCard card={debit} onChange={replace} />}
       {tab === 'credit' && credit && <CreditCard card={credit} onChange={replace} />}
     </Screen>
+  );
+}
+
+/** Selector de tarjeta (opción C aprobada): mini tarjeta con su color y el nombre; la elegida con borde verde. */
+function CardPicker({ value, onChange }: { value: 'debit' | 'credit'; onChange: (v: 'debit' | 'credit') => void }) {
+  const opts = [
+    { v: 'debit' as const, label: 'Débito' },
+    { v: 'credit' as const, label: 'Crédito' },
+  ];
+  return (
+    <View style={st.picker} accessibilityRole="tablist">
+      {opts.map((o) => {
+        const on = o.v === value;
+        return (
+          <Pressable
+            key={o.v}
+            onPress={() => onChange(o.v)}
+            style={[st.pick, on && st.pickOn]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={`Tarjeta de ${o.label.toLowerCase()}`}
+          >
+            {o.v === 'debit' ? (
+              <Image source={require('../../../assets/card-debit.jpg')} style={st.swatch} />
+            ) : (
+              <View style={[st.swatch, { backgroundColor: '#1A1E27' }]} />
+            )}
+            <Text style={[st.pickText, on && { color: colors.navy }]}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -328,6 +351,22 @@ const st = StyleSheet.create({
   kpiBox: { flex: 1, backgroundColor: colors.card, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12 },
   kpiVal: { fontSize: 15, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'] },
   amt: { fontSize: 14, fontWeight: '600', color: colors.amount },
+  picker: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  pick: {
+    flex: 1,
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.fieldBorder,
+    backgroundColor: colors.white,
+  },
+  pickOn: { borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.optOn },
+  swatch: { width: 36, height: 24, borderRadius: 5 },
+  pickText: { fontSize: 15, fontWeight: '700', color: '#344054' },
   sheetTitle: { fontSize: 19, fontWeight: '700', color: colors.ink },
   stolen: {
     flexDirection: 'row',

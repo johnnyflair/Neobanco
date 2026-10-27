@@ -235,14 +235,15 @@ export function Chips<T extends string | number>({
   options,
   value,
   onChange,
+  scroll,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (v: T) => void;
+  /** Una sola fila que se desliza de lado (filtros), de borde a borde. */
+  scroll?: boolean;
 }) {
-  return (
-    <View style={s.chips}>
-      {options.map((o) => {
+  const items = options.map((o) => {
         const on = o.value === value;
         return (
           <Pressable
@@ -255,8 +256,19 @@ export function Chips<T extends string | number>({
             <Text style={[s.chipText, on && { color: colors.primaryInk }]}>{o.label}</Text>
           </Pressable>
         );
-      })}
-    </View>
+  });
+  return scroll ? (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={s.chipsScroll}
+      contentContainerStyle={s.chipsScrollIn}
+      accessibilityRole="radiogroup"
+    >
+      {items}
+    </ScrollView>
+  ) : (
+    <View style={s.chips}>{items}</View>
   );
 }
 
@@ -596,6 +608,8 @@ export const s = StyleSheet.create({
   optTitle: { fontSize: 14, fontWeight: '700', color: colors.ink, flexShrink: 1 },
   amt: { fontSize: 14, fontWeight: '600', color: colors.amount, fontVariant: ['tabular-nums'] },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
+  chipsScroll: { marginHorizontal: -18, marginTop: 6, flexGrow: 0 },
+  chipsScrollIn: { flexDirection: 'row', gap: 8, paddingHorizontal: 18 },
   chip: {
     borderWidth: 1.5,
     borderColor: colors.fieldBorder,

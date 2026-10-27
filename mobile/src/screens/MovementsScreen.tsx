@@ -83,7 +83,7 @@ export function MovementsScreen() {
   if (!accounts && !error) return <Loading />;
   return (
     <Screen title="Movimientos">
-      <Chips options={options} value={filter} onChange={setFilter} />
+      <Chips scroll options={options} value={filter} onChange={setFilter} />
       <MoveList items={items} showAccount={filter === 'all' || filter === 'envelope' || filter === 'term'} onPress={setMove} />
       <MoveSheet t={move} accountName="" onClose={() => setMove(null)} />
       {!items.length && !busy && !error && <Small style={{ marginTop: 16 }}>Sin movimientos en esta cuenta todavía.</Small>}

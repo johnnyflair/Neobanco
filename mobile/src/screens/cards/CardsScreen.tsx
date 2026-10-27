@@ -2,7 +2,7 @@
 // Bloquear es inmediato y sin clave (emergencia); desbloquear y ver datos piden la clave.
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
-import { Alert, Image, ImageBackground, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Image, ImageBackground, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { api } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
@@ -136,6 +136,14 @@ function useLockToggle(card: Card, onChange: (c: Card) => void, setError: (e: st
   };
 }
 
+/** Tamaño exacto de la tarjeta (ancho de pantalla menos márgenes, proporción de tarjeta real).
+ *  En pixeles fijos para que el arte llene la tarjeta igual en iPhone, Android y web. */
+function useCardSize() {
+  const { width } = useWindowDimensions();
+  const w = Math.min(width, 520) - 36;
+  return { width: w, height: Math.round(w / 1.586) };
+}
+
 /** Ver datos completos con la clave; se ocultan solos después de 30 segundos. */
 function useReveal(card: Card, setError: (e: string | null) => void) {
   const ask = usePin();
@@ -171,8 +179,8 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
     <View>
       <ImageBackground
         source={require('../../../assets/card-debit.jpg')}
-        style={[st.card, locked && st.locked]}
-        imageStyle={{ borderRadius: radius.lg, width: '100%', height: '100%' }}
+        style={[st.card, useCardSize(), locked && st.locked]}
+        imageStyle={[useCardSize(), { borderRadius: radius.lg }]}
         resizeMode="cover"
         accessibilityLabel={`Tarjeta de débito terminada en ${card.last4}${locked ? ', bloqueada' : ''}`}
       >
@@ -236,8 +244,8 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
       {/* Mismo arte que la de débito, en grafito, plata y naranja (opción B aprobada). */}
       <ImageBackground
         source={require('../../../assets/card-credit.jpg')}
-        style={[st.card, locked && st.locked]}
-        imageStyle={{ borderRadius: radius.lg, width: '100%', height: '100%' }}
+        style={[st.card, useCardSize(), locked && st.locked]}
+        imageStyle={[useCardSize(), { borderRadius: radius.lg }]}
         resizeMode="cover"
         accessibilityLabel={`Tarjeta de crédito terminada en ${card.last4}${locked ? ', congelada' : ''}`}
       >

@@ -2,7 +2,7 @@
 // Antes de pedir el monto se confirma el nombre del dueño del número con la API.
 import { useNavigation } from '@react-navigation/native';
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { api, newIdempotencyKey } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
@@ -11,6 +11,7 @@ import { formatPhone, money, parseAmount } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors } from '../../theme';
 import { AmountInput, Btn, ErrorText, Field, Screen, Sect, Small } from '../../ui/kit';
+import { Text } from '../../ui/typography';
 
 const AV_COLORS = [
   ['#FAECE7', '#712B13'],

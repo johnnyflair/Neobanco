@@ -1,3 +1,10 @@
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  useFonts,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { StatusBar } from 'expo-status-bar';
@@ -19,6 +26,13 @@ const theme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: c
 
 export default function App() {
   const [stage, setStage] = useState<Stage>('booting');
+  // Plus Jakarta Sans viene dentro de la App (no se descarga de internet al abrir).
+  const [fontsReady] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+  });
 
   useEffect(() => {
     setSessionLostHandler(() => setStage('signedOut'));
@@ -51,7 +65,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      {stage === 'booting' ? (
+      {stage === 'booting' || !fontsReady ? (
         <Loading />
       ) : stage === 'signedIn' ? (
         <SessionContext.Provider value={session}>

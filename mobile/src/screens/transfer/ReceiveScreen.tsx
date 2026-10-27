@@ -2,13 +2,14 @@
 // compartir por WhatsApp, por el menú del sistema o copiar.
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
-import { Linking, Share, StyleSheet, Text, View } from 'react-native';
+import { Linking, Share, StyleSheet, View } from 'react-native';
 
 import { api } from '../../api/client';
 import { useLoad } from '../../api/hooks';
 import { formatIban, formatPhone } from '../../format';
 import { colors, radius } from '../../theme';
 import { Btn, ErrorText, FieldStatic, Loading, Screen, Sect } from '../../ui/kit';
+import { Text } from '../../ui/typography';
 
 async function loadReceive() {
   const [me, accounts] = await Promise.all([api.me(), api.accounts()]);

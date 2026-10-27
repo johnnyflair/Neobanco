@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { ApiError, api } from '../api/client';
 import { colors, radius, type } from '../theme';
+import { Text, TextInput } from '../ui/typography';
 
 export function LoginScreen({ onSignedIn }: { onSignedIn: () => void }) {
   const [identifier, setIdentifier] = useState('');

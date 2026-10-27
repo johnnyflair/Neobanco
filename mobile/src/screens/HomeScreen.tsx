@@ -4,7 +4,7 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError, api } from '../api/client';
@@ -15,6 +15,7 @@ import { AccountSheet } from './AccountSheet';
 import { useSession } from '../session';
 import { accountsGlow, colors, radius, type } from '../theme';
 import { Icon, type IconName } from '../ui/Icon';
+import { Text } from '../ui/typography';
 
 const HIDE_KEY = 'neo.hideBalances';
 const MAIN_TYPES = new Set(['savings', 'capital']); // colones, dólares y capital social

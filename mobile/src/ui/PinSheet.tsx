@@ -1,10 +1,11 @@
 // Hoja para confirmar con la clave de 6 dígitos (paso adicional antes de ver datos de la tarjeta,
 // desbloquearla o subir un límite). La clave nunca se guarda: se manda una vez a la API y se olvida.
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { colors, radius } from '../theme';
 import { Btn, s as kit } from './kit';
+import { Text, TextInput } from './typography';
 
 type Ask = (opts: { title: string; sub?: string }) => Promise<string | null>;
 

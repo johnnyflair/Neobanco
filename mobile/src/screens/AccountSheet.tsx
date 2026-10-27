@@ -1,27 +1,20 @@
 // Hoja que sube desde abajo con los datos de una cuenta para recibir dinero (opción A aprobada):
 // titular, IBAN, cuenta cliente y SINPE Móvil (solo colones), sin saldo. Se copian con un toque
 // o se comparten por WhatsApp, por el menú del teléfono o como QR.
-import * as Clipboard from "expo-clipboard";
-import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Linking,
-  Pressable,
-  Share,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import QRCode from "react-native-qrcode-svg";
+import * as Clipboard from 'expo-clipboard';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Linking, Pressable, Share, StyleSheet, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 
-import { api } from "../api/client";
-import { errorMessage } from "../api/hooks";
-import type { Account, AccountDetail } from "../api/types";
-import { formatIban, formatPhone } from "../format";
-import { colors } from "../theme";
-import { BottomSheet } from "../ui/BottomSheet";
-import { Icon } from "../ui/Icon";
-import { Btn, ErrorText, Small } from "../ui/kit";
+import { api } from '../api/client';
+import { errorMessage } from '../api/hooks';
+import type { Account, AccountDetail } from '../api/types';
+import { formatIban, formatPhone } from '../format';
+import { colors } from '../theme';
+import { BottomSheet } from '../ui/BottomSheet';
+import { Text } from '../ui/typography';
+import { Icon } from '../ui/Icon';
+import { Btn, ErrorText, Small } from '../ui/kit';
 
 type Props = {
   account: Account | null;
@@ -43,23 +36,21 @@ export function AccountSheet({ account, sinpePhone, onClose }: Props) {
     api.account(account.id).then(setDetail, (e) => setError(errorMessage(e)));
   }, [account]);
 
-  const isCrc = account?.currency === "CRC";
-  const title = isCrc ? "Cuenta colones" : "Cuenta dólares";
+  const isCrc = account?.currency === 'CRC';
+  const title = isCrc ? 'Cuenta colones' : 'Cuenta dólares';
   const phone = isCrc && sinpePhone ? formatPhone(sinpePhone) : null;
   const iban = detail?.iban ? formatIban(detail.iban) : null;
 
   const text = detail
     ? [
-        "Mis datos para transferirme:",
-        detail.holder_name ?? "",
+        'Mis datos para transferirme:',
+        detail.holder_name ?? '',
         `${title} (${account?.currency})`,
         ...(iban ? [`IBAN: ${iban}`] : []),
-        ...(detail.client_account
-          ? [`Cuenta cliente: ${detail.client_account}`]
-          : []),
+        ...(detail.client_account ? [`Cuenta cliente: ${detail.client_account}`] : []),
         ...(phone ? [`SINPE Móvil: ${phone}`] : []),
-      ].join("\n")
-    : "";
+      ].join('\n')
+    : '';
 
   async function copy(label: string, value: string) {
     await Clipboard.setStringAsync(value);
@@ -69,22 +60,18 @@ export function AccountSheet({ account, sinpePhone, onClose }: Props) {
 
   const rows: { label: string; value: string; raw?: string }[] = detail
     ? [
-        { label: "Titular", value: detail.holder_name ?? "" },
-        ...(iban
-          ? [{ label: "IBAN", value: iban, raw: detail.iban ?? "" }]
-          : []),
+        { label: 'Titular', value: detail.holder_name ?? '' },
+        ...(iban ? [{ label: 'IBAN', value: iban, raw: detail.iban ?? '' }] : []),
         ...(detail.client_account
           ? [
               {
-                label: "Cuenta cliente",
+                label: 'Cuenta cliente',
                 value: detail.client_account,
                 raw: detail.client_account,
               },
             ]
           : []),
-        ...(phone
-          ? [{ label: "SINPE Móvil", value: phone, raw: sinpePhone }]
-          : []),
+        ...(phone ? [{ label: 'SINPE Móvil', value: phone, raw: sinpePhone }] : []),
       ]
     : [];
 
@@ -95,32 +82,17 @@ export function AccountSheet({ account, sinpePhone, onClose }: Props) {
           <Text style={st.title}>{title}</Text>
           <Small>Ahorro a la vista · {account?.currency}</Small>
         </View>
-        <Pressable
-          onPress={onClose}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Cerrar"
-        >
+        <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar">
           <Icon name="x" size={22} color={colors.muted} />
         </Pressable>
       </View>
 
-      {!detail && !error && (
-        <ActivityIndicator
-          color={colors.primary}
-          style={{ marginVertical: 40 }}
-        />
-      )}
+      {!detail && !error && <ActivityIndicator color={colors.primary} style={{ marginVertical: 40 }} />}
       <ErrorText>{error}</ErrorText>
 
       {detail && showQr && (
         <View style={st.qrBox}>
-          <QRCode
-            value={text}
-            size={190}
-            color={colors.navy}
-            backgroundColor={colors.white}
-          />
+          <QRCode value={text} size={190} color={colors.navy} backgroundColor={colors.white} />
           <Small center style={{ marginTop: 10 }}>
             Al escanearlo se ven estos mismos datos, listos para copiar.
           </Small>
@@ -145,11 +117,7 @@ export function AccountSheet({ account, sinpePhone, onClose }: Props) {
                 accessibilityRole="button"
                 accessibilityLabel={`Copiar ${r.label}`}
               >
-                <Icon
-                  name={copied === r.label ? "check" : "copy"}
-                  size={19}
-                  color={colors.primary}
-                />
+                <Icon name={copied === r.label ? 'check' : 'copy'} size={19} color={colors.primary} />
               </Pressable>
             )}
           </View>
@@ -160,11 +128,9 @@ export function AccountSheet({ account, sinpePhone, onClose }: Props) {
           <Btn
             label="Compartir por WhatsApp"
             icon="chat"
-            onPress={() =>
-              Linking.openURL(`https://wa.me/?text=${encodeURIComponent(text)}`)
-            }
+            onPress={() => Linking.openURL(`https://wa.me/?text=${encodeURIComponent(text)}`)}
           />
-          <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
             <Btn
               label="Otros"
               icon="share"
@@ -173,8 +139,8 @@ export function AccountSheet({ account, sinpePhone, onClose }: Props) {
               style={{ flex: 1 }}
             />
             <Btn
-              label={showQr ? "Ver datos" : "Ver QR"}
-              icon={showQr ? "file" : "qr"}
+              label={showQr ? 'Ver datos' : 'Ver QR'}
+              icon={showQr ? 'file' : 'qr'}
               variant="o"
               onPress={() => setShowQr((v) => !v)}
               style={{ flex: 1 }}
@@ -187,11 +153,11 @@ export function AccountSheet({ account, sinpePhone, onClose }: Props) {
 }
 
 const st = StyleSheet.create({
-  head: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
-  title: { fontSize: 19, fontWeight: "700", color: colors.ink },
+  head: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  title: { fontSize: 19, fontWeight: '700', color: colors.ink },
   row: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 11,
     borderTopWidth: 1,
     borderTopColor: colors.line,
@@ -199,20 +165,20 @@ const st = StyleSheet.create({
   k: { fontSize: 12, color: colors.muted },
   v: {
     fontSize: 15.5,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.ink,
     marginTop: 2,
-    fontVariant: ["tabular-nums"],
+    fontVariant: ['tabular-nums'],
   },
   copy: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   qrBox: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: colors.line,

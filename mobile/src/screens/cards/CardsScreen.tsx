@@ -3,7 +3,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
-import { Alert, ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { Alert, ImageBackground, StyleSheet, View } from 'react-native';
 
 import { api } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
@@ -12,6 +12,7 @@ import { dayMonth, groupPan, money } from '../../format';
 import { colors, radius } from '../../theme';
 import { Btn, ErrorText, Loading, Row, Screen, Seg, Small, Tag, Toggle } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
+import { Text } from '../../ui/typography';
 
 export const LINKED_LABEL = { crc: 'Colones', usd: 'Dólares', auto: 'Automática' } as const;
 const REVEAL_SECONDS = 30;

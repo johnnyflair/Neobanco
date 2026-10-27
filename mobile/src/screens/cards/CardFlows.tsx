@@ -2,7 +2,7 @@
 import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
 import { useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { api, newIdempotencyKey } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
@@ -12,6 +12,7 @@ import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
 import { Btn, Chips, ErrorText, Field, Loading, Opt, Row, Screen, Sect, Small, Tag } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
+import { Text } from '../../ui/typography';
 
 async function cardAndAccounts(cardId: string) {
   const [card, accounts] = await Promise.all([api.card(cardId), api.accounts()]);

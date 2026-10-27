@@ -2,25 +2,12 @@
 // opciones seleccionables, campos, interruptores y pantalla de éxito.
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState, type ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-  type TextInputProps,
-  type ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View, type TextInputProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius } from '../theme';
 import { Icon, type IconName } from './Icon';
+import { Text, TextInput } from './typography';
 
 export function Screen({
   title,

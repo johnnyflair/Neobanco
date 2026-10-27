@@ -6,11 +6,12 @@ import { Share, StyleSheet, View } from 'react-native';
 
 import { api } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
-import type { RedeemDestination } from '../../api/types';
+import type { RedeemDestination, Rewards } from '../../api/types';
 import { money, shortDate } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
-import { Btn, Done, ErrorText, Hero, Loading, Opt, Row, Screen, Sect, Small, Tag } from '../../ui/kit';
+import { Btn, Done, ErrorText, Loading, Opt, Row, Screen, Sect, Small, Tag } from '../../ui/kit';
+import { Icon } from '../../ui/Icon';
 import { Text } from '../../ui/typography';
 
 export const MIN_REDEEM = 500;
@@ -42,6 +43,17 @@ const EARN = [
   { t: 'Creá sobres y cumplí tus metas', s: '50 puntos por sobre' },
 ];
 
+const LEVEL_COLOR: Record<string, string> = { Bronce: '#C07A3E', Plata: '#A8B0BA', Oro: '#D4A72C' };
+
+function perksText(lv: Rewards['levels'][number]) {
+  const mult = Math.round((Number(lv.points_multiplier) - 1) * 100);
+  const bonus = Number(lv.rate_bonus);
+  const from = lv.from_points ? `Desde ${n0(lv.from_points)} puntos · ` : '';
+  return mult
+    ? `${from}${mult}% más puntos · +${bonus}% de interés en sobres y plazos`
+    : 'Puntos en cada compra, SINPE y recibo · canje desde 500';
+}
+
 async function loadRewards() {
   const [r, rule] = await Promise.all([api.rewards(), api.autoRule()]);
   return { ...r, rule: rule.destination };
@@ -54,26 +66,49 @@ export function RewardsScreen() {
   if (!data) return error ? <Screen title="Mis recompensas"><ErrorText>{error}</ErrorText></Screen> : <Loading />;
   const missing = data.next_level_at ? data.next_level_at - data.points_lifetime : 0;
   const nextName = data.level === 'Bronce' ? 'Plata' : 'Oro';
-  const pct = data.next_level_at ? Math.min(100, Math.round((data.points_lifetime / data.next_level_at) * 100)) : 100;
+  // Camino Bronce → Plata → Oro: cada tramo ocupa la mitad del recorrido.
+  const [plata, oro] = [data.levels[1]?.from_points ?? 2000, data.levels[2]?.from_points ?? 5000];
+  const life = data.points_lifetime;
+  const pathPct = life < plata ? (life / plata) * 50 : 50 + Math.min(1, (life - plata) / (oro - plata)) * 50;
 
   return (
     <Screen title="Mis recompensas">
-      <Hero
-        title="Mis puntos"
-        sub={`Disponibles para canjear · nivel ${data.level}`}
-        big={n0(data.points)}
-        up={`Equivalen a ${money(data.value_crc)} · 1 punto = ₡1.00`}
-      />
-      {data.next_level_at ? (
-        <View style={st.level}>
-          <View style={st.bar}>
-            <View style={[st.barFill, { width: `${pct}%` }]} />
-          </View>
-          <Small>{`Te faltan ${n0(Math.max(0, missing))} puntos para nivel ${nextName}`}</Small>
+      <View style={st.hero}>
+        <Text style={st.heroK}>Tus puntos</Text>
+        <Text style={st.heroBig}>{n0(data.points)}</Text>
+        <Text style={st.heroUp}>{`Valen ${money(data.value_crc)}`}</Text>
+        <View style={st.path} accessibilityLabel={`Nivel ${data.level}`}>
+          <View style={st.track} />
+          <View style={[st.trackFill, { width: `${pathPct * 0.84}%` }]} />
+          {data.levels.map((lv) => {
+            const current = lv.name === data.level;
+            return (
+              <View key={lv.name} style={st.medalBox}>
+                <View
+                  style={[
+                    st.medal,
+                    { backgroundColor: lv.reached ? LEVEL_COLOR[lv.name] : '#2A3A66' },
+                    current && st.medalOn,
+                  ]}
+                >
+                  <Icon name={lv.name === 'Oro' ? 'crown' : 'medal'} size={20} color={lv.reached ? colors.white : LEVEL_COLOR[lv.name]} />
+                </View>
+                <Text style={[st.medalT, { color: lv.reached ? colors.white : LEVEL_COLOR[lv.name] }]}>{lv.name}</Text>
+              </View>
+            );
+          })}
         </View>
-      ) : (
-        <Small>Estás en el nivel más alto.</Small>
-      )}
+        <Text style={st.heroNext}>
+          {data.next_level_at ? (
+            <>
+              Te faltan <Text style={{ color: colors.lime, fontWeight: '700' }}>{`${n0(Math.max(0, missing))} puntos`}</Text>
+              {` para ${nextName}`}
+            </>
+          ) : (
+            'Llegaste al nivel más alto'
+          )}
+        </Text>
+      </View>
       <Btn
         label="Canjear puntos"
         onPress={() => (data.points < MIN_REDEEM ? setTooFew(true) : nav.navigate('Redeem'))}
@@ -86,6 +121,18 @@ export function RewardsScreen() {
         sub={data.rule ? `Activado · fin de mes, ${destLabel(data.rule)}` : 'Desactivado · movemos tus puntos cada fin de mes'}
         onPress={() => nav.navigate('AutoRule')}
       />
+
+      <Sect>Lo que ganás en cada nivel</Sect>
+      {data.levels.map((lv, i) => (
+        <View key={lv.name} style={[st.lvRow, i === 0 && { borderTopWidth: 0 }]}>
+          <View style={[st.dot, { backgroundColor: LEVEL_COLOR[lv.name] }]} />
+          <View style={{ flex: 1 }}>
+            <Text style={st.histT}>{lv.name === data.level ? `${lv.name} · tu nivel` : lv.name}</Text>
+            <Small>{perksText(lv)}</Small>
+          </View>
+          <Icon name={lv.reached ? 'check' : 'lock'} size={18} color={lv.reached ? colors.primary : colors.muted} />
+        </View>
+      ))}
 
       <Sect>Cómo ganar puntos</Sect>
       {EARN.map((e, i) => (
@@ -233,6 +280,20 @@ export function AutoRuleScreen() {
 }
 
 const st = StyleSheet.create({
+  hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: 18, marginBottom: 12 },
+  heroK: { fontSize: 13, color: colors.heroSub, fontWeight: '600' },
+  heroBig: { fontSize: 34, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
+  heroUp: { fontSize: 13, color: colors.lime },
+  path: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginHorizontal: 4 },
+  track: { position: 'absolute', top: 20, left: '8%', right: '8%', height: 5, borderRadius: 3, backgroundColor: '#2A3A66' },
+  trackFill: { position: 'absolute', top: 20, left: '8%', height: 5, borderRadius: 3, backgroundColor: colors.lime },
+  medalBox: { alignItems: 'center', width: 64 },
+  medal: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  medalOn: { borderWidth: 3, borderColor: colors.lime },
+  medalT: { fontSize: 12, fontWeight: '700', marginTop: 5 },
+  heroNext: { fontSize: 13.5, color: colors.white, textAlign: 'center', marginTop: 14 },
+  lvRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: 1, borderColor: colors.line },
+  dot: { width: 12, height: 12, borderRadius: 6 },
   level: { marginTop: 4, marginBottom: 4 },
   bar: { height: 8, borderRadius: 4, backgroundColor: colors.line, overflow: 'hidden', marginBottom: 6 },
   barFill: { height: 8, borderRadius: 4, backgroundColor: colors.lime },

@@ -158,6 +158,7 @@ export type Rewards = {
   points_lifetime: number;
   next_level_at: number | null;
   history: { points: number; reason: string; at: string }[];
+  levels: { name: 'Bronce' | 'Plata' | 'Oro'; from_points: number; points_multiplier: string; rate_bonus: string; reached: boolean }[];
 };
 export type RedeemResult = { points_used: number; value: string; multiplier: string; destination: RedeemDestination };
 export type FraudReason = 'unknown_charge' | 'lost_card' | 'stolen_phone' | 'suspicious_contact';

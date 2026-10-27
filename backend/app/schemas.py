@@ -420,6 +420,14 @@ class LoanApplicationOut(Out):
 
 # ---------- Recompensas ----------
 
+class LevelOut(BaseModel):
+    name: Literal["Bronce", "Plata", "Oro"]
+    from_points: int
+    points_multiplier: Decimal
+    rate_bonus: Decimal
+    reached: bool
+
+
 class RewardsOut(BaseModel):
     points: int
     value_crc: Decimal
@@ -427,6 +435,7 @@ class RewardsOut(BaseModel):
     points_lifetime: int = Field(description="Puntos acumulados en total: definen el nivel")
     next_level_at: int | None
     history: list[dict]
+    levels: list[LevelOut] = []
 
 
 class RedeemIn(BaseModel):

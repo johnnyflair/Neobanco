@@ -55,9 +55,23 @@ REDEEM_MULTIPLIER = {"account": Decimal("1"), "loan": Decimal("1.10"), "envelope
 LEVELS = [("Oro", 5000), ("Plata", 2000), ("Bronce", 0)]
 
 
+# Beneficios por nivel: multiplicador de puntos y tasa extra (puntos porcentuales) en sobres y plazos.
+LEVEL_PERKS: dict[str, tuple[Decimal, Decimal]] = {
+    "Bronce": (Decimal("1.00"), Decimal("0.00")),
+    "Plata": (Decimal("1.25"), Decimal("0.25")),
+    "Oro": (Decimal("1.50"), Decimal("0.50")),
+}
+
+
+def member_perks(member: Member) -> tuple[Decimal, Decimal]:
+    return LEVEL_PERKS[level_for(member.points_lifetime)[0]]
+
+
 async def earn(session: AsyncSession, member: Member, points: int, reason: str) -> int:
     if points <= 0:
         return 0
+    # El nivel con el que se llega a la operación define cuánto valen los puntos.
+    points = int((Decimal(points) * member_perks(member)[0]).to_integral_value())
     member.points += points
     member.points_lifetime += points
     session.add(RewardEntry(member_id=member.id, points=points, reason=reason))

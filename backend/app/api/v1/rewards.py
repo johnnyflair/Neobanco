@@ -12,8 +12,8 @@ from app.core.errors import ApiError, not_found
 from app.db.models import AccountType, Currency, Member, RewardEntry
 from app.db.session import get_session
 from app.providers import Providers, get_providers
-from app.schemas import AutoRuleIO, RedeemIn, RedeemOut, RewardsOut
-from app.services import REDEEM_MULTIPLIER, level_for, new_reference
+from app.schemas import AutoRuleIO, LevelOut, RedeemIn, RedeemOut, RewardsOut
+from app.services import LEVEL_PERKS, LEVELS, REDEEM_MULTIPLIER, level_for, new_reference
 
 router = APIRouter(prefix="/rewards", tags=["Recompensas"])
 MIN_REDEEM = 500
@@ -28,6 +28,9 @@ async def rewards(member: Member = Depends(current_member), session: AsyncSessio
     level, nxt = level_for(member.points_lifetime)
     return RewardsOut(points=member.points, value_crc=Decimal(member.points), level=level, next_level_at=nxt,
                       points_lifetime=member.points_lifetime,
+                      levels=[LevelOut(name=n, from_points=f, points_multiplier=LEVEL_PERKS[n][0],
+                                       rate_bonus=LEVEL_PERKS[n][1], reached=member.points_lifetime >= f)
+                              for n, f in reversed(LEVELS)],
                       history=[{"points": r.points, "reason": r.reason, "at": r.created_at.isoformat()} for r in rows])
 
 

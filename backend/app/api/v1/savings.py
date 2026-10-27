@@ -17,7 +17,7 @@ from app.db.session import get_session
 from app.providers import Providers, get_providers
 from app.providers.base import InsufficientFunds
 from app.schemas import AccountOut, EnvelopeIn, MoveIn, RateOut, TermDepositIn
-from app.services import ENVELOPE_RATE, POINTS_RULES, TERM_RATES, earn, new_reference
+from app.services import ENVELOPE_RATE, POINTS_RULES, TERM_RATES, earn, member_perks, new_reference
 
 router = APIRouter(prefix="/savings", tags=["Ahorro e inversión"])
 
@@ -39,7 +39,7 @@ async def create_envelope(body: EnvelopeIn, request: Request, member: Member = D
     mode = f"{MODES[body.mode]} · ₡{per_fortnight:,.2f} por quincena" if body.mode == "fixed" else MODES[body.mode]
     a = await p.core.open_account(Account(member_id=member.id, type=AccountType.envelope, currency=Currency.CRC,
                                           name=body.name, balance=Decimal("0"), goal_amount=body.goal_amount,
-                                          savings_mode=mode, rate=ENVELOPE_RATE))
+                                          savings_mode=mode, rate=ENVELOPE_RATE + member_perks(member)[1]))
     await earn(session, member, POINTS_RULES["envelope"], f"Sobre {body.name}")
     audit(session, request, "envelope_create", member_id=member.id)
     await session.commit()
@@ -100,7 +100,7 @@ async def term_deposit(body: TermDepositIn, request: Request, key: str = Depends
     src = await p.core.get_account(member.id, body.from_account_id)
     if src is None or src.currency != Currency.CRC:
         raise not_found("cuenta en colones")
-    rate = TERM_RATES[body.term_months]
+    rate = TERM_RATES[body.term_months] + member_perks(member)[1]  # extra por nivel
     today = datetime.now(UTC).date()
     month = today.month - 1 + body.term_months
     maturity = today.replace(year=today.year + month // 12, month=month % 12 + 1, day=min(today.day, 28))

@@ -32,3 +32,16 @@ async def test_fraud_report_locks_all_cards(client, carlos, ana):
     # Otro asociado no puede ver el caso.
     assert (await client.get(f"/v1/support/cases/{case['number']}", headers=ana)).status_code == 404
     assert (await client.get("/v1/support/cases", headers=carlos)).json()[0]["number"] == case["number"]
+
+
+async def test_levels_and_perks(client, ana):
+    from decimal import Decimal
+
+    from app.db.models import Member
+    from app.services import member_perks
+
+    r = (await client.get("/v1/rewards", headers=ana)).json()
+    assert [lv["name"] for lv in r["levels"]] == ["Bronce", "Plata", "Oro"]
+    assert r["levels"][0]["reached"] is True and r["levels"][1]["reached"] is False
+    assert member_perks(Member(points_lifetime=2500)) == (Decimal("1.25"), Decimal("0.25"))
+    assert member_perks(Member(points_lifetime=9000)) == (Decimal("1.50"), Decimal("0.50"))

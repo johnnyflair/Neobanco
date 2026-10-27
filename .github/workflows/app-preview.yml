@@ -61,6 +61,10 @@ jobs:
           eas init --non-interactive --force
           PROJECT_ID=$(node -p "require('./app.json').expo.extra.eas.projectId")
           echo "PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
+          # Deja a la vista (anotación del run) en qué cuenta y proyecto se publica.
+          WHO=$(eas whoami 2>/dev/null | head -1)
+          INFO=$(eas project:info --non-interactive 2>/dev/null | tr '\n' ' ')
+          echo "::notice title=Expo::token de $WHO · $INFO"
           # Expo Go solo carga actualizaciones cuyo runtime es el SDK de Expo Go.
           node -e "
             const fs=require('fs'); const f='app.json'; const j=JSON.parse(fs.readFileSync(f));
@@ -85,6 +89,7 @@ jobs:
           LINK=$(curl -fsS "$QR&format=url" || echo "")
           echo "QR: $QR"
           echo "Link: $LINK"
+          echo "::notice title=Link Expo Go::$LINK"
           printf '%s\n' \
             "## Abrí la App en tu teléfono" \
             "1. Instalá **Expo Go** (App Store o Google Play)." \

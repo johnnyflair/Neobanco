@@ -1,7 +1,6 @@
 // Tarjetas: débito y crédito en pestañas, como en el prototipo aprobado.
 // Bloquear es inmediato y sin clave (emergencia); desbloquear y ver datos piden la clave.
 import { useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import { Alert, Image, ImageBackground, Pressable, StyleSheet, View } from 'react-native';
 
@@ -59,7 +58,7 @@ function CardPicker({ value, onChange }: { value: 'debit' | 'credit'; onChange: 
             {o.v === 'debit' ? (
               <Image source={require('../../../assets/card-debit.jpg')} style={st.swatch} />
             ) : (
-              <View style={[st.swatch, { backgroundColor: '#1A1E27' }]} />
+              <Image source={require('../../../assets/card-credit.jpg')} style={st.swatch} />
             )}
             <Text style={[st.pickText, on && { color: colors.navy }]}>{o.label}</Text>
           </Pressable>
@@ -233,18 +232,13 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
 
   return (
     <View>
-      <LinearGradient
-        colors={['#15181F', '#262B36', '#1A1E27']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      {/* Mismo arte que la de débito, en grafito, plata y naranja (opción B aprobada). */}
+      <ImageBackground
+        source={require('../../../assets/card-credit.jpg')}
         style={[st.card, locked && st.locked]}
+        imageStyle={{ borderRadius: radius.lg }}
+        accessibilityLabel={`Tarjeta de crédito terminada en ${card.last4}${locked ? ', congelada' : ''}`}
       >
-        <LinearGradient
-          colors={['rgba(29,107,92,0.9)', 'rgba(29,107,92,0)']}
-          start={{ x: 1, y: 0 }}
-          end={{ x: 0.35, y: 0.6 }}
-          style={StyleSheet.absoluteFill}
-        />
         <View style={st.cardTop}>
           <Text style={st.cardLabel}>Crédito · {card.product_name}</Text>
           {locked && <Text style={st.cardLabel}>Congelada</Text>}
@@ -258,7 +252,7 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
             {secrets ? `   CVV ${secrets.cvv}` : ''}
           </Text>
         </View>
-      </LinearGradient>
+      </ImageBackground>
 
       <ActionButtons
         items={[

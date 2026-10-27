@@ -36,7 +36,7 @@ from app.db.models import (
     TransferKind,
 )
 from app.db.session import get_engine, sessionmaker
-from app.providers.mock import KNOWN_PHONES
+from app.providers.mock import KNOWN_PHONES, MockBills
 from app.services import new_reference
 
 CATALOG = {
@@ -222,11 +222,14 @@ async def seed(reset: bool = False) -> None:
                 LinkedExternalAccount(member_id=m.id, bank_name="Banco Nacional", iban=f"CR1501510000000000{72 + i}",
                                       label="Cuenta corriente", authorized=True),
             ])
-            for pid, ref, nick, auto, pending, due in (("cnfl", "1234567", "CNFL · luz", False, 24300, 1),
-                                                   ("kolbi", "88112030", "Internet hogar", False, 21900, 10),
-                                                   ("aya", "7781203", "AyA · agua", True, 9800, 8)):
+            for pid, ref, nick, auto, due in (("cnfl", "1234567", "CNFL · luz", False, 1),
+                                              ("kolbi", "88112030", "Internet hogar", False, 10),
+                                              ("aya", "7781203", "AyA · agua", True, 8)):
+                # El pendiente es el mismo monto que cobra el recaudador simulado, como pasaría con uno real.
+                quote = await MockBills().lookup(pid, ref, m.full_name)
                 s.add(SavedBill(member_id=m.id, provider_id=pid, reference=ref, nickname=nick, autopay=auto,
-                                autopay_cap=Decimal("40000") if auto else None, pending_amount=Decimal(pending),
+                                autopay_cap=Decimal("40000") if auto else None,
+                                pending_amount=quote.amount if quote else None,
                                 due_date=(now + timedelta(days=due)).date()))
             s.add_all([RewardEntry(member_id=m.id, points=500, reason="Bienvenida",
                                    created_at=now - timedelta(days=200)),

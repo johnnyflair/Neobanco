@@ -99,6 +99,31 @@ async def test_bill_lookup_pay_and_save(client, ana):
     assert any(s["provider_id"] == "jasec" for s in saved)
 
 
+async def test_saved_bill_with_stale_amount_is_updated_not_charged(client, ana):
+    crc = await account(client, ana, "Colones")
+    bill = next(b for b in (await client.get("/v1/bills/saved", headers=ana)).json() if b["pending_amount"])
+    before = (await account(client, ana, "Colones"))["balance"]
+    body = {"provider_id": bill["provider_id"], "reference": bill["reference"], "from_account_id": crc["id"]}
+    bad = await client.post("/v1/bills/pay", headers={**ana, **idem()}, json={**body, "expected_amount": "1.00"})
+    assert bad.status_code == 409
+    assert (await account(client, ana, "Colones"))["balance"] == before  # no se cobró nada
+    again = next(b for b in (await client.get("/v1/bills/saved", headers=ana)).json() if b["id"] == bill["id"])
+    look = {"provider_id": bill["provider_id"], "reference": bill["reference"]}
+    q = (await client.post("/v1/bills/lookup", json=look, headers=ana)).json()
+    assert again["pending_amount"] == q["amount"]
+
+
+async def test_bill_pay_rejects_amount_other_than_approved(client, ana):
+    crc = await account(client, ana, "Colones")
+    look = {"provider_id": "kolbi", "reference": "88554433"}
+    q = (await client.post("/v1/bills/lookup", json=look, headers=ana)).json()
+    body = {**look, "from_account_id": crc["id"]}
+    bad = await client.post("/v1/bills/pay", headers={**ana, **idem()}, json={**body, "expected_amount": "1.00"})
+    assert bad.status_code == 409 and bad.json()["code"] == "bill_amount_changed"
+    ok = await client.post("/v1/bills/pay", headers={**ana, **idem()}, json={**body, "expected_amount": q["amount"]})
+    assert ok.status_code == 201 and ok.json()["amount"] == q["amount"]
+
+
 async def test_credit_card_payment_rules(client, ana):
     cards = (await client.get("/v1/cards", headers=ana)).json()
     cc = next(c for c in cards if c["kind"] == "credit")

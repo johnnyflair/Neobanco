@@ -21,7 +21,6 @@ import { CaseScreen, FraudScreen, HelpScreen } from './screens/help/HelpScreens'
 import { HomeScreen } from './screens/HomeScreen';
 import {
   LoanApplyScreen,
-  LoanDoneScreen,
   LoanOptionsScreen,
   LoanReviewScreen,
   LoanSimScreen,
@@ -30,12 +29,11 @@ import {
 import { IbanScreen } from './screens/transfer/IbanScreen';
 import { PullScreen } from './screens/transfer/PullScreen';
 import { ReceiveScreen } from './screens/transfer/ReceiveScreen';
-import { SinpeDoneScreen } from './screens/transfer/SinpeDoneScreen';
-import { SinpeAmountScreen, SinpeDialScreen, SinpeNumberScreen } from './screens/transfer/SinpeScreens';
+import { SendAmountScreen, SinpeDialScreen, SinpeNumberScreen } from './screens/transfer/SinpeScreens';
 import { TransferDoneScreen } from './screens/transfer/TransferDoneScreen';
 import { TransferHubScreen } from './screens/transfer/TransferHubScreen';
 import { ProfileScreen } from './screens/profile/ProfileScreen';
-import { AutoRuleScreen, RedeemDoneScreen, RedeemScreen, RewardsScreen } from './screens/rewards/RewardsScreens';
+import { AutoRuleScreen, RedeemScreen, RewardsScreen } from './screens/rewards/RewardsScreens';
 import { colors } from './theme';
 import { TabBar } from './ui/TabBar';
 
@@ -46,12 +44,23 @@ export type RootParams = {
   TransferHub: undefined;
   SinpeNumber: undefined;
   SinpeDial: { phone?: string } | undefined;
-  SinpeAmount: { phone: string; name: string; isNew?: boolean };
-  SinpeDone: { amount: string; name: string; phone: string; reference: string; createdAt: string; points: number; note: string | null };
+  /** Monto, motivo, revisar y deslizar: igual para SINPE Móvil (a un celular) y para IBAN. */
+  SendAmount: { kind: 'sinpe' | 'iban'; to: string; name: string; isNew?: boolean };
   Iban: undefined;
   Pull: undefined;
   Receive: undefined;
-  TransferDone: { title: string; sub: string; points?: number; shareText?: string };
+  /** ¡Listo! común a todo movimiento de dinero: comprobante con filas, puntos y compartir. */
+  TransferDone: {
+    hi: string;
+    amount?: string;
+    currency?: 'CRC' | 'USD';
+    amountLabel?: string;
+    points?: number;
+    rows: [string, string][];
+    shareText?: string;
+    next?: { label: string; route: 'NewEnvelope' | 'AutoRule' };
+    back?: keyof TabParams;
+  };
   CardLinked: { cardId: string };
   CardLimits: { cardId: string };
   CardPay: { cardId: string };
@@ -63,7 +72,6 @@ export type RootParams = {
   LoanSim: undefined;
   LoanOptions: { amount: number; term: number };
   LoanReview: { amount: number; term: number; monthly: string; total: string };
-  LoanDone: { amount: string; firstDue: string };
   LoanApply: undefined;
   LoanTrack: undefined;
   NewEnvelope: undefined;
@@ -75,7 +83,6 @@ export type RootParams = {
   Profile: undefined;
   Rewards: undefined;
   Redeem: undefined;
-  RedeemDone: { title: string; sub: string };
   AutoRule: undefined;
   Fraud: { reason?: FraudReason };
   Case: { supportCase: SupportCase; fresh?: boolean };
@@ -112,8 +119,7 @@ export function RootNavigator() {
       <Stack.Screen name="TransferHub" component={TransferHubScreen} />
       <Stack.Screen name="SinpeNumber" component={SinpeNumberScreen} />
       <Stack.Screen name="SinpeDial" component={SinpeDialScreen} />
-      <Stack.Screen name="SinpeAmount" component={SinpeAmountScreen} />
-      <Stack.Screen name="SinpeDone" component={SinpeDoneScreen} options={{ gestureEnabled: false }} />
+      <Stack.Screen name="SendAmount" component={SendAmountScreen} />
       <Stack.Screen name="Iban" component={IbanScreen} />
       <Stack.Screen name="Pull" component={PullScreen} />
       <Stack.Screen name="Receive" component={ReceiveScreen} />
@@ -129,7 +135,6 @@ export function RootNavigator() {
       <Stack.Screen name="LoanSim" component={LoanSimScreen} />
       <Stack.Screen name="LoanOptions" component={LoanOptionsScreen} />
       <Stack.Screen name="LoanReview" component={LoanReviewScreen} />
-      <Stack.Screen name="LoanDone" component={LoanDoneScreen} options={{ gestureEnabled: false }} />
       <Stack.Screen name="LoanApply" component={LoanApplyScreen} />
       <Stack.Screen name="LoanTrack" component={LoanTrackScreen} />
       <Stack.Screen name="NewSaving" component={NewSavingScreen} />
@@ -141,7 +146,6 @@ export function RootNavigator() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Rewards" component={RewardsScreen} />
       <Stack.Screen name="Redeem" component={RedeemScreen} />
-      <Stack.Screen name="RedeemDone" component={RedeemDoneScreen} options={{ gestureEnabled: false }} />
       <Stack.Screen name="AutoRule" component={AutoRuleScreen} />
       <Stack.Screen name="Fraud" component={FraudScreen} />
       <Stack.Screen name="Case" component={CaseScreen} options={{ gestureEnabled: false }} />

@@ -12,6 +12,7 @@ import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
 import { Btn, Chips, ErrorText, Field, Loading, Opt, Row, Screen, Sect, Small, Tag } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
+import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
 
 async function cardAndAccounts(cardId: string) {
@@ -155,6 +156,8 @@ export function CardLimitsScreen({ route }: RootProps<'CardLimits'>) {
 
 // ---------- Pagar tarjeta de crédito ----------
 
+const MODE_LABEL = { full: 'Pago de contado', minimum: 'Pago mínimo', other: 'Otro monto' } as const;
+
 export function CardPayScreen({ route }: RootProps<'CardPay'>) {
   const nav = useNavigation();
   const { data, error } = useLoad(() => cardAndAccounts(route.params.cardId));
@@ -162,6 +165,7 @@ export function CardPayScreen({ route }: RootProps<'CardPay'>) {
   const [other, setOther] = useState('');
   const [payError, setPayError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [review, setReview] = useState(false);
   const key = useRef({ sig: '', key: newIdempotencyKey() });
   if (!data) return error ? <Screen title="Pagar tarjeta"><ErrorText>{error}</ErrorText></Screen> : <Loading />;
   const c = data.card.credit;
@@ -170,17 +174,24 @@ export function CardPayScreen({ route }: RootProps<'CardPay'>) {
 
   const amount = mode === 'full' ? c.full_payment : mode === 'minimum' ? c.minimum_payment : parseAmount(other);
 
-  async function pay() {
+  function check() {
     setPayError(null);
     if (!amount) return setPayError('Escribí el monto.');
     if (Number(amount) < Number(c!.minimum_payment) || Number(amount) > Number(c!.full_payment))
       return setPayError(`Elegí un monto entre ${money(c!.minimum_payment)} y ${money(c!.full_payment)}.`);
     if (Number(amount) > Number(crc!.balance)) return setPayError('No te alcanza el saldo de tu cuenta colones.');
+    setReview(true);
+  }
+
+  async function pay() {
+    if (!amount) return;
+    setPayError(null);
     const sig = `${mode}|${amount}`;
     if (key.current.sig !== sig) key.current = { sig, key: newIdempotencyKey() };
     setBusy(true);
     try {
       const r = await api.payCard(data!.card.id, mode, crc!.id, key.current.key, mode === 'other' ? amount : undefined);
+      setReview(false);
       nav.reset({
         index: 1,
         routes: [
@@ -188,8 +199,17 @@ export function CardPayScreen({ route }: RootProps<'CardPay'>) {
           {
             name: 'TransferDone',
             params: {
-              title: `Pagaste ${money(r.amount)}`,
-              sub: `a tu tarjeta •••• ${data!.card.last4} · saldo pendiente ${money(r.new_balance)}`,
+              hi: '¡Listo! Pagaste tu tarjeta',
+              amount: r.amount,
+              back: 'Cards',
+              rows: [
+                ['Tarjeta', `Crédito •••• ${data!.card.last4}`],
+                ['Tipo de pago', MODE_LABEL[mode]],
+                ['Saldo pendiente', money(r.new_balance)],
+                ['Comprobante', r.reference],
+                ['Fecha', receiptDate()],
+              ],
+              shareText: `✅ Pagué ${money(r.amount)} a mi tarjeta •••• ${data!.card.last4}.\nComprobante ${r.reference} · ${receiptDate()}`,
             },
           },
         ],
@@ -202,7 +222,7 @@ export function CardPayScreen({ route }: RootProps<'CardPay'>) {
   }
 
   return (
-    <Screen title="Pagar tarjeta" footer={<Btn label="Pagar" onPress={pay} loading={busy} />}>
+    <Screen title="Pagar tarjeta" footer={<Btn label={amount ? `Pagar ${money(amount)}` : 'Pagar'} onPress={check} />}>
       <Small>
         Crédito •••• {data.card.last4}
         {c.due_date ? ` · fecha de pago ${dayMonth(c.due_date)}` : ''}
@@ -217,6 +237,22 @@ export function CardPayScreen({ route }: RootProps<'CardPay'>) {
         <Row title="Pagar desde" right={<Text style={st.amt}>Colones · {money(crc.balance)}</Text>} />
       </View>
       <ErrorText>{payError}</ErrorText>
+      <ReviewSheet
+        visible={review}
+        onClose={() => setReview(false)}
+        title="Revisá antes de pagar"
+        rows={[
+          ['Tarjeta', `Crédito •••• ${data.card.last4}`],
+          ['Tipo de pago', MODE_LABEL[mode]],
+          ['Monto', amount ? money(amount) : '—'],
+          ['Desde', 'Cuenta en colones'],
+          ['Comisión', 'Gratis'],
+        ]}
+        slideLabel="Deslizá para pagar"
+        onConfirm={pay}
+        busy={busy}
+        error={payError}
+      />
     </Screen>
   );
 }
@@ -238,6 +274,7 @@ export function CardInstallmentsScreen({ route }: RootProps<'CardInstallments'>)
   const [months, setMonths] = useState(6);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [review, setReview] = useState(false);
   if (!purchases.data) return purchases.error ? <Screen title="Pasar a cuotas"><ErrorText>{purchases.error}</ErrorText></Screen> : <Loading />;
 
   const open = purchases.data.filter((p) => !p.installments);
@@ -250,6 +287,7 @@ export function CardInstallmentsScreen({ route }: RootProps<'CardInstallments'>)
     setError(null);
     try {
       const r = await api.installments(cardId, selected.id, months);
+      setReview(false);
       nav.reset({
         index: 1,
         routes: [
@@ -257,8 +295,17 @@ export function CardInstallmentsScreen({ route }: RootProps<'CardInstallments'>)
           {
             name: 'TransferDone',
             params: {
-              title: `${months} cuotas de ${money(r.monthly_payment)}`,
-              sub: `${selected.merchant} · total ${money(r.total)}`,
+              hi: `¡Listo! ${selected.merchant} quedó en ${months} cuotas`,
+              amountLabel: 'Cuota mensual',
+              amount: r.monthly_payment,
+              back: 'Cards',
+              rows: [
+                ['Compra', `${selected.merchant} · ${money(selected.amount)}`],
+                ['Plazo', `${months} meses`],
+                ['Total a pagar', money(r.total)],
+                ['Tasa mensual', `${(Number(r.monthly_rate) * 100).toFixed(2)}%`],
+                ['Fecha', receiptDate()],
+              ],
             },
           },
         ],
@@ -271,7 +318,7 @@ export function CardInstallmentsScreen({ route }: RootProps<'CardInstallments'>)
   }
 
   return (
-    <Screen title="Pasar a cuotas" footer={<Btn label="Pasar a cuotas" onPress={confirm} loading={busy} disabled={!selected} />}>
+    <Screen title="Pasar a cuotas" footer={<Btn label="Pasar a cuotas" onPress={() => setReview(true)} disabled={!selected} />}>
       <Small>Elegí una compra de los últimos 30 días.</Small>
       {purchases.data.map((p) => (
         <Opt
@@ -299,6 +346,23 @@ export function CardInstallmentsScreen({ route }: RootProps<'CardInstallments'>)
         </View>
       )}
       <ErrorText>{error}</ErrorText>
+      {selected ? (
+        <ReviewSheet
+          visible={review}
+          onClose={() => setReview(false)}
+          title="Revisá antes de confirmar"
+          rows={[
+            ['Compra', `${selected.merchant} · ${money(selected.amount)}`],
+            ['Plazo', `${months} meses`],
+            ['Cuota aproximada', money(q)],
+            ['Total aproximado', money(q * months)],
+          ]}
+          slideLabel="Deslizá para confirmar"
+          onConfirm={confirm}
+          busy={busy}
+          error={error}
+        />
+      ) : null}
     </Screen>
   );
 }

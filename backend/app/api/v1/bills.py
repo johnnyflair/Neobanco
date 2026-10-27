@@ -84,6 +84,16 @@ async def pay(body: BillPayIn, request: Request, key: str = Depends(idempotency_
     q = await p.bills.lookup(prov.id, body.reference, member.full_name)
     if q is None:
         raise ApiError(404, "no_bill", "Ese recibo ya no está pendiente.")
+    if body.expected_amount is not None and q.amount != body.expected_amount:
+        # El recibo guardado se pone al día con el monto real, para que al recargar se vea bien.
+        stale = await session.scalar(select(SavedBill).where(SavedBill.member_id == member.id,
+                                                             SavedBill.provider_id == prov.id,
+                                                             SavedBill.reference == body.reference))
+        if stale is not None:
+            stale.pending_amount = q.amount
+            await session.commit()
+        raise ApiError(409, "bill_amount_changed",
+                       f"El recibo ahora es de ₡{q.amount:,.2f}. Revisalo antes de pagar.")
     ref = new_reference("RC")
     try:
         await p.core.post(acct.id, -q.amount, prov.name, "bill", ref, counterparty=prov.name,

@@ -224,10 +224,11 @@ export const api = {
   },
   billLookup: (providerId: string, reference: string) =>
     request<BillQuote>('/v1/bills/lookup', { method: 'POST', body: JSON.stringify({ provider_id: providerId, reference }) }),
-  payBill: (providerId: string, reference: string, fromAccountId: string, key: string, save = true, autopay = false) =>
+  /** expectedAmount: el monto que la persona aprobó; si el recibo cambió, la API no cobra. */
+  payBill: (providerId: string, reference: string, fromAccountId: string, key: string, save = true, autopay = false, expectedAmount?: string) =>
     moneyMove<BillPayment>(
       '/v1/bills/pay',
-      { provider_id: providerId, reference, from_account_id: fromAccountId, save, autopay },
+      { provider_id: providerId, reference, from_account_id: fromAccountId, save, autopay, expected_amount: expectedAmount },
       key,
     ),
   savedBills: () => request<SavedBill[]>('/v1/bills/saved'),

@@ -8,12 +8,13 @@ import { View } from 'react-native';
 
 import { api, newIdempotencyKey } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
-import type { BillProvider, BillQuote, SavedBill } from '../../api/types';
+import type { BillPayment, BillProvider, BillQuote, SavedBill } from '../../api/types';
 import { dayMonth, money } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors } from '../../theme';
 import { Icon, type IconName } from '../../ui/Icon';
 import { Btn, ErrorText, Field, Hero, Loading, Row, Screen, SearchField, Sect, Small, Tabs, Toggle } from '../../ui/kit';
+import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
 
 export function categoryIcon(category: string): IconName {
@@ -55,11 +56,31 @@ async function loadBills() {
   return { bills, crc: accounts.find((a) => a.type === 'savings' && a.currency === 'CRC') };
 }
 
+/** ¡Listo! de un recibo pagado, igual que el de SINPE Móvil. */
+function billDone(r: BillPayment, refLabel: string, ref: string) {
+  return {
+    name: 'TransferDone' as const,
+    params: {
+      hi: `¡Listo! Pagaste ${r.provider}`,
+      amount: r.amount,
+      points: r.points_earned,
+      rows: [
+        ['Servicio', r.provider],
+        [refLabel, ref],
+        ['Comprobante', r.receipt],
+        ['Fecha', receiptDate()],
+      ] as [string, string][],
+      shareText: `✅ Pagué ${money(r.amount)} de ${r.provider} (${refLabel} ${ref}).\nComprobante ${r.receipt} · ${receiptDate()}`,
+    },
+  };
+}
+
 export function BillsScreen() {
   const nav = useNavigation();
   const [tab, setTab] = useState<'mine' | 'other'>('mine');
   const data = useLoad(loadBills);
   const [paying, setPaying] = useState(false);
+  const [review, setReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const keys = useRef<Record<string, string>>({});
 
@@ -75,20 +96,35 @@ export function BillsScreen() {
     setError(null);
     let paid = 0;
     let points = 0;
+    const done: [string, string][] = [];
     try {
       for (const b of toPay) {
         keys.current[b.id] ??= newIdempotencyKey();
-        const r = await api.payBill(b.provider_id, b.reference, crc.id, keys.current[b.id]);
+        const r = await api.payBill(b.provider_id, b.reference, crc.id, keys.current[b.id], true, false, b.pending_amount ?? undefined);
         paid += Number(r.amount);
         points += r.points_earned;
+        done.push([b.nickname, `${money(r.amount)} · ${r.receipt}`]);
       }
-      nav.navigate('TransferDone', {
-        title: `Pagaste ${money(paid)}`,
-        sub: `${toPay.length} recibos al día`,
-        points,
+      setReview(false);
+      nav.reset({
+        index: 1,
+        routes: [
+          { name: 'Tabs' },
+          {
+            name: 'TransferDone',
+            params: {
+              hi: `¡Listo! Pagaste ${toPay.length} recibos`,
+              amount: paid.toFixed(2),
+              points,
+              rows: [...done, ['Fecha', receiptDate()]],
+              shareText: `✅ Pagué ${toPay.length} recibos por ${money(paid)}:\n${done.map(([k, v]) => `${k}: ${v}`).join('\n')}`,
+            },
+          },
+        ],
       });
     } catch (e) {
       setError(errorMessage(e));
+      setReview(false);
       data.reload();
     } finally {
       setPaying(false);
@@ -139,7 +175,32 @@ export function BillsScreen() {
               })}
             </View>
             <ErrorText>{error}</ErrorText>
-            {total > 0 && <Btn label={`Pagar todo · ${money(total)}`} onPress={payAll} loading={paying} />}
+            {total > 0 && (
+              <Btn
+                label={`Pagar todo · ${money(total)}`}
+                onPress={() => {
+                  if (data.data?.crc && total > Number(data.data.crc.balance))
+                    return setError('No te alcanza el saldo para pagar todos. Pagalos uno por uno.');
+                  setError(null);
+                  setReview(true);
+                }}
+              />
+            )}
+            <ReviewSheet
+              visible={review}
+              onClose={() => setReview(false)}
+              title="Revisá antes de pagar"
+              rows={[
+                ...toPay.map((b) => [b.nickname, money(b.pending_amount!)] as [string, string]),
+                ['Total', money(total)],
+                ['Desde', 'Cuenta en colones'],
+                ['Comisión', 'Gratis'],
+              ]}
+              slideLabel="Deslizá para pagar"
+              onConfirm={payAll}
+              busy={paying}
+              error={error}
+            />
             <Btn label="+ Agregar otro servicio" variant="l" onPress={() => setTab('other')} />
           </View>
         )
@@ -227,6 +288,7 @@ export function BillServiceScreen({ route }: RootProps<'BillService'>) {
   const [reference, setReference] = useState('');
   const [quote, setQuote] = useState<BillQuote | null>(null);
   const [save, setSave] = useState(true);
+  const [review, setReview] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const key = useRef(newIdempotencyKey());
@@ -252,22 +314,9 @@ export function BillServiceScreen({ route }: RootProps<'BillService'>) {
     setBusy(true);
     setError(null);
     try {
-      const r = await api.payBill(provider.id, quote.reference, crc.id, key.current, save);
-      nav.reset({
-        index: 1,
-        routes: [
-          { name: 'Tabs' },
-          {
-            name: 'TransferDone',
-            params: {
-              title: `Pagaste ${money(r.amount)}`,
-              sub: `${r.provider} · comprobante ${r.receipt}`,
-              points: r.points_earned,
-              shareText: `Pagué ${money(r.amount)} de ${r.provider}. Comprobante ${r.receipt}.`,
-            },
-          },
-        ],
-      });
+      const r = await api.payBill(provider.id, quote.reference, crc.id, key.current, save, false, quote.amount);
+      setReview(false);
+      nav.reset({ index: 1, routes: [{ name: 'Tabs' }, billDone(r, provider.reference_label, quote.reference)] });
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -280,7 +329,14 @@ export function BillServiceScreen({ route }: RootProps<'BillService'>) {
       title={provider.name}
       footer={
         quote ? (
-          <Btn label={`Pagar ${money(quote.amount)}`} onPress={pay} loading={busy} />
+          <Btn
+            label={`Pagar ${money(quote.amount)}`}
+            onPress={() => {
+              if (crc && Number(quote.amount) > Number(crc.balance)) return setError('No te alcanza el saldo disponible.');
+              setError(null);
+              setReview(true);
+            }}
+          />
         ) : (
           <Btn label="Consultar" onPress={lookup} loading={busy} />
         )
@@ -312,6 +368,23 @@ export function BillServiceScreen({ route }: RootProps<'BillService'>) {
             right={<Toggle value={save} onChange={setSave} label="Guardar en mis recibos" />}
           />
           <Row title="Pagar desde" right={<Small>Cuenta colones · {crc ? money(crc.balance) : '…'}</Small>} />
+          <ReviewSheet
+            visible={review}
+            onClose={() => setReview(false)}
+            title="Revisá antes de pagar"
+            rows={[
+              ['Servicio', provider.name],
+              ['A nombre de', quote.holder],
+              [provider.reference_label, quote.reference],
+              ['Monto', money(quote.amount)],
+              ['Desde', 'Cuenta en colones'],
+              ['Comisión', 'Gratis'],
+            ]}
+            slideLabel="Deslizá para pagar"
+            onConfirm={pay}
+            busy={busy}
+            error={error}
+          />
         </View>
       )}
     </Screen>
@@ -321,6 +394,7 @@ export function BillServiceScreen({ route }: RootProps<'BillService'>) {
 export function BillDetailScreen({ route }: RootProps<'BillDetail'>) {
   const nav = useNavigation();
   const [bill, setBill] = useState<SavedBill>(route.params.bill);
+  const [review, setReview] = useState(false);
   const accounts = useLoad(api.accounts);
   const crc = accounts.data?.find((a) => a.type === 'savings' && a.currency === 'CRC');
   const [busy, setBusy] = useState(false);
@@ -345,19 +419,19 @@ export function BillDetailScreen({ route }: RootProps<'BillDetail'>) {
     setBusy(true);
     setError(null);
     try {
-      const r = await api.payBill(bill.provider_id, bill.reference, crc.id, key.current);
-      nav.reset({
-        index: 1,
-        routes: [
-          { name: 'Tabs' },
-          {
-            name: 'TransferDone',
-            params: { title: `Pagaste ${money(r.amount)}`, sub: `${r.provider} · comprobante ${r.receipt}`, points: r.points_earned },
-          },
-        ],
-      });
+      const r = await api.payBill(bill.provider_id, bill.reference, crc.id, key.current, true, false, bill.pending_amount ?? undefined);
+      setReview(false);
+      nav.reset({ index: 1, routes: [{ name: 'Tabs' }, billDone(r, bill.reference_label, bill.reference)] });
     } catch (e) {
       setError(errorMessage(e));
+      // Si el recibo cambió de monto, se trae el monto real para revisarlo y pagarlo de nuevo.
+      api
+        .savedBills()
+        .then((all) => {
+          const fresh = all.find((x) => x.id === bill.id);
+          if (fresh) setBill(fresh);
+        })
+        .catch(() => {});
     } finally {
       setBusy(false);
     }
@@ -366,7 +440,18 @@ export function BillDetailScreen({ route }: RootProps<'BillDetail'>) {
   return (
     <Screen
       title={bill.nickname}
-      footer={bill.pending_amount ? <Btn label={`Pagar ${money(bill.pending_amount)}`} onPress={pay} loading={busy} /> : undefined}
+      footer={
+        bill.pending_amount ? (
+          <Btn
+            label={`Pagar ${money(bill.pending_amount)}`}
+            onPress={() => {
+              if (crc && Number(bill.pending_amount) > Number(crc.balance)) return setError('No te alcanza el saldo disponible.');
+              setError(null);
+              setReview(true);
+            }}
+          />
+        ) : undefined
+      }
     >
       <Small center>
         {bill.reference_label} {bill.reference}
@@ -393,6 +478,24 @@ export function BillDetailScreen({ route }: RootProps<'BillDetail'>) {
         )}
       </View>
       <ErrorText>{error}</ErrorText>
+      {bill.pending_amount ? (
+        <ReviewSheet
+          visible={review}
+          onClose={() => setReview(false)}
+          title="Revisá antes de pagar"
+          rows={[
+            ['Recibo', bill.nickname],
+            [bill.reference_label, bill.reference],
+            ['Monto', money(bill.pending_amount)],
+            ['Desde', 'Cuenta en colones'],
+            ['Comisión', 'Gratis'],
+          ]}
+          slideLabel="Deslizá para pagar"
+          onConfirm={pay}
+          busy={busy}
+          error={error}
+        />
+      ) : null}
     </Screen>
   );
 }

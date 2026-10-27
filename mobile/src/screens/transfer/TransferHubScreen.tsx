@@ -26,7 +26,7 @@ export function TransferHubScreen() {
       {recent.data && recent.data.length > 0 && (
         <>
           <Sect>Frecuentes</Sect>
-          <Frequents contacts={recent.data} onPick={(c) => nav.navigate('SinpeAmount', { phone: c.phone, name: c.name, isNew: false })} />
+          <Frequents contacts={recent.data} onPick={(c) => nav.navigate('SendAmount', { kind: 'sinpe', to: c.phone, name: c.name, isNew: false })} />
         </>
       )}
     </Screen>

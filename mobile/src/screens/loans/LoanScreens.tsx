@@ -12,8 +12,9 @@ import type { LoanSim } from '../../api/types';
 import { dayMonth, money, parseAmount, shortDate } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
-import { Btn, Check, Chips, Done, ErrorText, Field, Hero, Opt, Row, Screen, Sect, Small, Steps, Tag } from '../../ui/kit';
+import { Btn, Check, Chips, ErrorText, Field, Hero, Opt, Row, Screen, Sect, Small, Steps, Tag } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
+import { receiptDate } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
 
 const TERMS = [12, 24, 36, 48, 60];
@@ -134,7 +135,28 @@ export function LoanReviewScreen({ route }: RootProps<'LoanReview'>) {
     setError(null);
     try {
       const r = await api.loanDisburse(amount, term, crc.id, pin, key.current);
-      nav.reset({ index: 1, routes: [{ name: 'Tabs' }, { name: 'LoanDone', params: { amount: r.amount, firstDue: r.first_due } }] });
+      nav.reset({
+        index: 1,
+        routes: [
+          { name: 'Tabs' },
+          {
+            name: 'TransferDone',
+            params: {
+              hi: '¡Listo! Tu préstamo ya está en tu cuenta',
+              amount: r.amount,
+              rows: [
+                ['Plazo', `${r.term_months} meses`],
+                ['Cuota', money(r.monthly_payment)],
+                ['Primera cuota', dayMonth(r.first_due)],
+                ['Depósito en', 'Cuenta en colones'],
+                ['Comprobante', r.reference],
+                ['Fecha', receiptDate()],
+              ],
+              next: { label: 'Apartar una parte en un sobre', route: 'NewEnvelope' },
+            },
+          },
+        ],
+      });
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -153,20 +175,6 @@ export function LoanReviewScreen({ route }: RootProps<'LoanReview'>) {
       <Check checked={ok} onChange={setOk} label="Leí el contrato y las condiciones" />
       <ErrorText>{error}</ErrorText>
     </Screen>
-  );
-}
-
-export function LoanDoneScreen({ route }: RootProps<'LoanDone'>) {
-  const nav = useNavigation();
-  const { amount, firstDue } = route.params;
-  return (
-    <Done title={`${money(amount)} en tu cuenta`} sub={`Primera cuota: ${dayMonth(firstDue)}`}>
-      <View style={st.mint}>
-        <Text style={{ color: colors.primaryInk, fontSize: 14 }}>¿Querés apartar una parte? Creá un sobre y ganá 50 puntos.</Text>
-      </View>
-      <Btn label="Crear sobre" variant="o" onPress={() => nav.navigate('NewEnvelope')} />
-      <Btn label="Ir al inicio" onPress={() => nav.navigate('Tabs', { screen: 'Home' })} />
-    </Done>
   );
 }
 

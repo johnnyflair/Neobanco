@@ -1,33 +1,31 @@
-// Enviar a una cuenta IBAN: al completar los 22 caracteres se verifica el titular antes de pedir el monto.
+// Enviar a una cuenta IBAN, con el mismo flujo que SINPE Móvil: al completar los 22 caracteres
+// aparece el titular verificado → monto y motivo → revisar y deslizar → ¡listo!
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { api, newIdempotencyKey } from '../../api/client';
-import { errorMessage, useLoad } from '../../api/hooks';
-import { formatIban, money, parseAmount } from '../../format';
-import { Btn, ErrorText, Field, FieldStatic, Screen, Small } from '../../ui/kit';
+import { api } from '../../api/client';
+import { errorMessage } from '../../api/hooks';
+import { formatIban } from '../../format';
+import { Btn, Field, Screen, Small } from '../../ui/kit';
+import { WhoCard } from './SinpeScreens';
 
 export function IbanScreen() {
   const nav = useNavigation();
-  const accounts = useLoad(api.accounts);
-  const crc = accounts.data?.find((a) => a.type === 'savings' && a.currency === 'CRC');
   const [iban, setIban] = useState('');
   const [holder, setHolder] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
-  const [amount, setAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const key = useRef({ sig: '', key: newIdempotencyKey() });
   const clean = iban.replace(/\s/g, '');
 
   useEffect(() => {
     setHolder(null);
+    setError(null);
     if (clean.length !== 22) return;
     let alive = true;
     setChecking(true);
     api
       .ibanLookup(clean)
-      .then((r) => alive && (setHolder(r.holder), setError(null)))
+      .then((r) => alive && setHolder(r.holder))
       .catch((e) => alive && setError(errorMessage(e)))
       .finally(() => alive && setChecking(false));
     return () => {
@@ -35,42 +33,12 @@ export function IbanScreen() {
     };
   }, [clean]);
 
-  async function send() {
-    const amt = parseAmount(amount);
-    if (!crc || !holder) return setError('Escribí un IBAN válido de 22 caracteres.');
-    if (!amt) return setError('Escribí el monto.');
-    if (Number(amt) > Number(crc.balance)) return setError('No te alcanza el saldo disponible.');
-    const sig = `${clean}|${amt}`;
-    if (key.current.sig !== sig) key.current = { sig, key: newIdempotencyKey() };
-    setBusy(true);
-    setError(null);
-    try {
-      const t = await api.iban(crc.id, clean, amt, key.current.key);
-      nav.reset({
-        index: 1,
-        routes: [
-          { name: 'Tabs' },
-          {
-            name: 'TransferDone',
-            params: {
-              title: `Enviaste ${money(t.amount, t.currency)}`,
-              sub: `a ${t.counterparty_name ?? holder} · llega en segundos`,
-              shareText: `Te transferí ${money(t.amount, t.currency)}. Comprobante ${t.reference}.`,
-            },
-          },
-        ],
-      });
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const go = () => holder && nav.navigate('SendAmount', { kind: 'iban', to: clean, name: holder, isNew: true });
 
   return (
     <Screen
       title="Enviar a cuenta IBAN"
-      footer={<Btn label="Enviar" onPress={send} loading={busy} disabled={!holder || !crc} />}
+      footer={<Btn label={holder ? `Sí, es ${holder.split(' ')[0]}` : 'Continuar'} onPress={go} disabled={!holder} />}
     >
       <Field
         label="Cuenta IBAN"
@@ -82,14 +50,14 @@ export function IbanScreen() {
         maxLength={27}
         autoFocus
       />
-      <FieldStatic
-        label="Titular"
-        value={checking ? 'Verificando…' : holder ? `Verificado: ${holder}` : 'Se verifica al completar el IBAN'}
+      <WhoCard
+        looking={checking}
+        found={holder ? { name: holder, seed: clean.replace(/\D/g, '') } : null}
+        okText="Es el titular de esta cuenta"
+        error={error}
+        hint="Al completar los 22 caracteres te mostramos de quién es la cuenta."
       />
-      <Field label="Monto (₡)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0.00" />
-      <FieldStatic label="Llega" value="Inmediato" />
-      <Small style={{ marginTop: 8 }}>Sale de tu cuenta colones · disponible {crc ? money(crc.balance) : '…'}</Small>
-      <ErrorText>{error ?? accounts.error}</ErrorText>
+      <Small center>Llega al instante por SINPE, a cualquier banco del país.</Small>
     </Screen>
   );
 }

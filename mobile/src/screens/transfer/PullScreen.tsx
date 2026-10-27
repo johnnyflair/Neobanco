@@ -8,6 +8,7 @@ import { api, newIdempotencyKey } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
 import { formatIban, money, parseAmount } from '../../format';
 import { Btn, ErrorText, Field, Opt, Screen, Sect, Small, Tag } from '../../ui/kit';
+import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 
 const NEW = 'new';
 
@@ -22,6 +23,7 @@ export function PullScreen() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [review, setReview] = useState(false);
   const key = useRef({ sig: '', key: newIdempotencyKey() });
 
   const selected = pick ?? linked.data?.find((l) => l.authorized)?.id ?? NEW;
@@ -49,6 +51,7 @@ export function PullScreen() {
         return;
       }
       if ('reference' in r) {
+        setReview(false);
         nav.reset({
           index: 1,
           routes: [
@@ -56,8 +59,14 @@ export function PullScreen() {
             {
               name: 'TransferDone',
               params: {
-                title: `Trajiste ${money(r.amount)}`,
-                sub: `desde ${r.counterparty_name ?? 'tu otro banco'} · ya está en tu cuenta colones`,
+                hi: '¡Listo! Trajiste dinero a tu cuenta',
+                amount: r.amount,
+                rows: [
+                  ['Desde', source ? `${source.bank_name} · ${source.iban_masked}` : (r.counterparty_name ?? 'Tu otro banco')],
+                  ['Hacia', 'Cuenta en colones'],
+                  ['Comprobante', r.reference],
+                  ['Fecha', receiptDate(r.created_at)],
+                ],
               },
             },
           ],
@@ -76,8 +85,13 @@ export function PullScreen() {
       footer={
         <Btn
           label={selected === NEW ? 'Agregar y autorizar' : 'Traer dinero'}
-          onPress={go}
-          loading={busy}
+          onPress={() => {
+            if (selected === NEW) return go();
+            if (!amt) return setError('Escribí el monto.');
+            setError(null);
+            setReview(true);
+          }}
+          loading={busy && !review}
           disabled={!crc || (source !== undefined && !source.authorized)}
         />
       }
@@ -126,6 +140,24 @@ export function PullScreen() {
       )}
       {notice && <Small style={{ marginTop: 8, color: '#633806' }}>{notice}</Small>}
       <ErrorText>{error ?? accounts.error ?? linked.error}</ErrorText>
+      {source && amt ? (
+        <ReviewSheet
+          visible={review}
+          onClose={() => setReview(false)}
+          title="Revisá antes de traer"
+          rows={[
+            ['Desde', `${source.bank_name} · ${source.iban_masked}`],
+            ['Hacia', 'Cuenta en colones'],
+            ['Monto', money(amt)],
+            ['Llega', 'Al instante'],
+            ['Comisión', 'Gratis'],
+          ]}
+          slideLabel="Deslizá para traer"
+          onConfirm={go}
+          busy={busy}
+          error={error}
+        />
+      ) : null}
     </Screen>
   );
 }

@@ -15,6 +15,7 @@ import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
 import { Icon } from '../../ui/Icon';
 import { AmountInput, Btn, Chips, ErrorText, Field, Hero, Loading, Opt, Row, Screen, Sect, Small } from '../../ui/kit';
+import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
 
 const pct = (r: string | number) => `${Number(r).toLocaleString('en-US', { maximumFractionDigits: 2 })}% anual`;
@@ -150,7 +151,22 @@ export function NewEnvelopeScreen() {
         index: 1,
         routes: [
           { name: 'Tabs', params: { screen: 'Grow' } },
-          { name: 'TransferDone', params: { title: `Sobre «${a.name}» creado`, sub: `Meta ${money(g)}`, points: 50 } },
+          {
+            name: 'TransferDone',
+            params: {
+              hi: `¡Listo! Creaste tu sobre «${a.name}»`,
+              amountLabel: 'Meta',
+              amount: g.toFixed(2),
+              points: 50,
+              back: 'Grow',
+              rows: [
+                ['Sobre', a.name],
+                ['Plazo de la meta', `${m} meses`],
+                ['Forma de ahorrar', MODES.find((x) => x.value === mode)?.title ?? ''],
+                ['Fecha', receiptDate()],
+              ],
+            },
+          },
         ],
       });
     } catch (e) {
@@ -258,6 +274,7 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
   const [term, setTerm] = useState(route.params.term);
   const [end, setEnd] = useState<(typeof END)[number]['value']>('renew');
   const [busy, setBusy] = useState(false);
+  const [review, setReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const key = useRef({ sig: '', key: newIdempotencyKey() });
   const rate = Number(termRates.find((r) => r.term_months === term)?.annual_rate ?? 0);
@@ -273,6 +290,7 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
     setError(null);
     try {
       const r = await api.openTermDeposit({ from_account_id: crc.id, amount: amount.toFixed(2), term_months: term, on_maturity: end }, key.current.key);
+      setReview(false);
       nav.reset({
         index: 1,
         routes: [
@@ -280,8 +298,18 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
           {
             name: 'TransferDone',
             params: {
-              title: `Abriste ${money(amount)} a ${term} meses`,
-              sub: `Vence ${dayMonth(r.maturity_date)} · ganarías ${money(r.estimated_interest)}`,
+              hi: '¡Listo! Abriste tu ahorro a plazo',
+              amount: amount.toFixed(2),
+              back: 'Grow',
+              rows: [
+                ['Plazo', `${term} meses · ${pct(Number(r.annual_rate))}`],
+                ['Vence', dayMonth(r.maturity_date)],
+                ['Ganancia estimada', money(r.estimated_interest)],
+                ['Al vencer', END.find((x) => x.value === end)?.label ?? ''],
+                ['Comprobante', r.reference],
+                ['Fecha', receiptDate()],
+              ],
+              shareText: `✅ Abrí un ahorro a plazo de ${money(amount)} a ${term} meses. Comprobante ${r.reference}.`,
             },
           },
         ],
@@ -294,7 +322,20 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
   }
 
   return (
-    <Screen title="Ahorro a plazo" footer={<Btn label="Abrir ahorro a plazo" onPress={open} loading={busy} disabled={!crc} />}>
+    <Screen
+      title="Ahorro a plazo"
+      footer={
+        <Btn
+          label="Abrir ahorro a plazo"
+          onPress={() => {
+            if (crc && amount > Number(crc.balance)) return setError('No te alcanza el saldo de tu cuenta colones.');
+            setError(null);
+            setReview(true);
+          }}
+          disabled={!crc}
+        />
+      }
+    >
       <Small>¿Cuánto querés invertir?</Small>
       <Text style={st.big}>{money(amount)}</Text>
       <Slider
@@ -320,6 +361,22 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
       <Sect plain>Al vencer</Sect>
       <Chips options={[...END]} value={end} onChange={setEnd} />
       <ErrorText>{error ?? data.error}</ErrorText>
+      <ReviewSheet
+        visible={review}
+        onClose={() => setReview(false)}
+        title="Revisá antes de invertir"
+        rows={[
+          ['Monto', money(amount)],
+          ['Plazo', `${term} meses · ${pct(rate)}`],
+          ['Ganarías', money(gain)],
+          ['Al vencer', END.find((x) => x.value === end)?.label ?? ''],
+          ['Desde', 'Cuenta en colones'],
+        ]}
+        slideLabel="Deslizá para invertir"
+        onConfirm={open}
+        busy={busy}
+        error={error}
+      />
     </Screen>
   );
 }

@@ -10,11 +10,10 @@ import type { SinpeContact } from '../../api/types';
 import { formatPhone, money } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
-import { BottomSheet } from '../../ui/BottomSheet';
 import { Icon } from '../../ui/Icon';
 import { applyAmountKey, applyPhoneKey, Keypad } from '../../ui/Keypad';
 import { Btn, ErrorText, Screen, SearchField, Small } from '../../ui/kit';
-import { SlideToConfirm } from '../../ui/SlideToConfirm';
+import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text, TextInput } from '../../ui/typography';
 
 const AV_COLORS = [
@@ -95,7 +94,7 @@ export function SinpeNumberScreen() {
     if (!t) return contacts;
     return contacts.filter((c) => c.name.toLowerCase().includes(t) || (digits && c.phone.includes(digits)));
   }, [contacts, q, digits]);
-  const pick = (c: SinpeContact) => nav.navigate('SinpeAmount', { phone: c.phone, name: c.name, isNew: false });
+  const pick = (c: SinpeContact) => nav.navigate('SendAmount', { kind: 'sinpe', to: c.phone, name: c.name, isNew: false });
   const typedNew = digits.length === 8 && !contacts.some((c) => c.phone === digits);
 
   return (
@@ -187,7 +186,7 @@ export function SinpeDialScreen({ route }: RootProps<'SinpeDial'>) {
   function go() {
     if (!found) return;
     const isNew = !(recent.data ?? []).some((c) => c.phone === found.phone);
-    nav.navigate('SinpeAmount', { phone: found.phone, name: found.name, isNew });
+    nav.navigate('SendAmount', { kind: 'sinpe', to: found.phone, name: found.name, isNew });
   }
 
   return (
@@ -198,42 +197,71 @@ export function SinpeDialScreen({ route }: RootProps<'SinpeDial'>) {
       <Text style={[st.dial, !digits && { color: colors.fieldBorder }]} accessibilityLabel={`Número ${digits || 'vacío'}`}>
         {digits ? formatPhone(digits) : '0000-0000'}
       </Text>
-      <View style={st.lookup}>
-        {looking && (
-          <View style={[st.who, st.whoLoading]}>
-            <ActivityIndicator color={colors.primary} />
-            <Text style={st.rowSub}>Buscando al dueño del número…</Text>
-          </View>
-        )}
-        {found && (
-          <View style={st.who} accessibilityLiveRegion="polite">
-            <Avatar name={found.name} phone={found.phone} size={52} />
-            <View style={{ flex: 1, gap: 3 }}>
-              <Text style={st.whoName}>{found.name}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <Icon name="check" size={14} color={colors.primary} />
-                <Text style={st.whoOk}>Es quien tiene este número</Text>
-              </View>
-            </View>
-          </View>
-        )}
-        {error && (
-          <View style={[st.who, st.whoErr]} accessibilityLiveRegion="polite">
-            <Icon name="alert" size={22} color={colors.danger} />
-            <Text style={[st.rowSub, { color: colors.danger, flex: 1 }]}>{error}</Text>
-          </View>
-        )}
-        {!looking && !found && !error && <Small center>Al completar los 8 dígitos te mostramos de quién es.</Small>}
-      </View>
+      <WhoCard
+        looking={looking}
+        found={found ? { name: found.name, seed: found.phone } : null}
+        okText="Es quien tiene este número"
+        error={error}
+        hint="Al completar los 8 dígitos te mostramos de quién es."
+      />
       <Keypad onKey={(k) => setDigits((d) => applyPhoneKey(d, k))} />
     </Screen>
   );
 }
 
-// ---------- 2. Monto y motivo · 3. Revisar y deslizar ----------
-export function SinpeAmountScreen({ route }: RootProps<'SinpeAmount'>) {
+/** Tarjeta que aparece sola al completar el número o el IBAN: buscando, dueño verificado o error. */
+export function WhoCard({
+  looking,
+  found,
+  okText,
+  error,
+  hint,
+}: {
+  looking: boolean;
+  found: { name: string; seed: string } | null;
+  okText: string;
+  error: string | null;
+  hint: string;
+}) {
+  return (
+    <View style={st.lookup}>
+      {looking && (
+        <View style={[st.who, st.whoLoading]}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={st.rowSub}>Buscando al titular…</Text>
+        </View>
+      )}
+      {found && (
+        <View style={st.who} accessibilityLiveRegion="polite">
+          <Avatar name={found.name} phone={found.seed} size={52} />
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text style={st.whoName}>{found.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Icon name="check" size={14} color={colors.primary} />
+              <Text style={st.whoOk}>{okText}</Text>
+            </View>
+          </View>
+        </View>
+      )}
+      {error && (
+        <View style={[st.who, st.whoErr]} accessibilityLiveRegion="polite">
+          <Icon name="alert" size={22} color={colors.danger} />
+          <Text style={[st.rowSub, { color: colors.danger, flex: 1 }]}>{error}</Text>
+        </View>
+      )}
+      {!looking && !found && !error && <Small center>{hint}</Small>}
+    </View>
+  );
+}
+
+// ---------- 2. Monto y motivo · 3. Revisar y deslizar (SINPE Móvil e IBAN) ----------
+const maskIban = (iban: string) => `${iban.slice(0, 4)} •••• ${iban.slice(-4)}`;
+
+export function SendAmountScreen({ route }: RootProps<'SendAmount'>) {
   const nav = useNavigation();
-  const { phone, name, isNew } = route.params;
+  const { kind, to, name, isNew } = route.params;
+  const sinpe = kind === 'sinpe';
+  const toLabel = sinpe ? formatPhone(to) : maskIban(to);
   const accounts = useLoad(api.accounts);
   const crc = accounts.data?.find((a) => a.type === 'savings' && a.currency === 'CRC');
   const [amt, setAmt] = useState('');
@@ -248,6 +276,7 @@ export function SinpeAmountScreen({ route }: RootProps<'SinpeAmount'>) {
   const [int, dec] = amt.split('.');
   const shown = `₡${Number(int || '0').toLocaleString('en-US')}${dec !== undefined ? `.${dec}` : ''}`;
   const value = Number(amt || '0');
+  const reason = note.trim();
 
   function next() {
     if (!crc) return;
@@ -260,28 +289,37 @@ export function SinpeAmountScreen({ route }: RootProps<'SinpeAmount'>) {
   async function send() {
     if (!crc) return;
     const amount = value.toFixed(2);
-    const description = note.trim() || undefined;
+    const description = reason || undefined;
     const sig = `${amount}|${description ?? ''}`;
     if (key.current.sig !== sig) key.current = { sig, key: newIdempotencyKey() };
     setBusy(true);
     setSendError(null);
     try {
-      const t = await api.sinpe(crc.id, phone, amount, key.current.key, description);
+      const t = sinpe
+        ? await api.sinpe(crc.id, to, amount, key.current.key, description)
+        : await api.iban(crc.id, to, amount, key.current.key, description);
+      const who = t.counterparty_name ?? name;
+      const motive = t.description ?? description;
       setReview(false);
       nav.reset({
         index: 1,
         routes: [
           { name: 'Tabs' },
           {
-            name: 'SinpeDone',
+            name: 'TransferDone',
             params: {
+              hi: `¡Listo! Le enviaste a ${firstName(who)}`,
               amount: t.amount,
-              name: t.counterparty_name ?? name,
-              phone,
-              reference: t.reference,
-              createdAt: t.created_at,
+              currency: t.currency,
               points: t.points_earned,
-              note: t.description ?? description ?? null,
+              rows: [
+                ['Para', `${who} · ${toLabel}`],
+                ['Por', sinpe ? 'SINPE Móvil' : 'Transferencia IBAN'],
+                ['Comprobante', t.reference],
+                ['Fecha', receiptDate(t.created_at)],
+                ...(motive ? ([['Motivo', motive]] as [string, string][]) : []),
+              ],
+              shareText: `✅ Te envié ${money(t.amount, t.currency)} por ${sinpe ? 'SINPE Móvil' : 'transferencia IBAN'}${motive ? ` (${motive})` : ''}.\nComprobante ${t.reference} · ${receiptDate(t.created_at)}`,
             },
           },
         ],
@@ -296,12 +334,12 @@ export function SinpeAmountScreen({ route }: RootProps<'SinpeAmount'>) {
   return (
     <Screen title="" footer={<Btn label="Continuar" onPress={next} disabled={!crc || !value} />}>
       <View style={st.to}>
-        <Avatar name={name} phone={phone} size={68} />
+        <Avatar name={name} phone={to.replace(/\D/g, '')} size={68} />
         <Text style={st.toName}>{name}</Text>
-        <Text style={st.rowSub}>{formatPhone(phone)}</Text>
+        <Text style={st.rowSub}>{sinpe ? toLabel : `IBAN ${toLabel}`}</Text>
         <View style={st.verified}>
           <Icon name="check" size={13} color={colors.primary} />
-          <Text style={st.verifiedTxt}>Número verificado</Text>
+          <Text style={st.verifiedTxt}>{sinpe ? 'Número verificado' : 'Titular verificado'}</Text>
         </View>
       </View>
       <Text style={[st.amount, !amt && { color: colors.fieldBorder }]} accessibilityLabel={`Monto ${shown}`} adjustsFontSizeToFit numberOfLines={1}>
@@ -344,40 +382,35 @@ export function SinpeAmountScreen({ route }: RootProps<'SinpeAmount'>) {
         }}
       />
 
-      <BottomSheet visible={review} onClose={() => !busy && setReview(false)}>
-        <Text style={st.sheetTitle}>Revisá antes de enviar</Text>
-        {isNew && (
-          <View style={st.warn}>
-            <Icon name="alert" size={18} color={colors.amberFg} />
-            <Text style={st.warnTxt}>Es la primera vez que le enviás a este número. Verificá que {firstName(name)} sea la persona correcta.</Text>
-          </View>
-        )}
-        <Kv k="Para" v={`${name} · ${formatPhone(phone)}`} />
-        <Kv k="Monto" v={money(value)} />
-        <Kv k="Desde" v="Cuenta en colones" />
-        {note.trim() ? <Kv k="Motivo" v={note.trim()} /> : null}
-        <Kv k="Comisión" v="Gratis" green last />
-        <ErrorText>{sendError}</ErrorText>
-        <View style={{ marginTop: 14 }}>
-          <SlideToConfirm label="Deslizá para enviar" onConfirm={send} busy={busy} />
-        </View>
-      </BottomSheet>
+      <ReviewSheet
+        visible={review}
+        onClose={() => setReview(false)}
+        title="Revisá antes de enviar"
+        warn={
+          isNew
+            ? sinpe
+              ? `Es la primera vez que le enviás a este número. Verificá que ${firstName(name)} sea la persona correcta.`
+              : `Verificá que ${name} sea el titular correcto de la cuenta. Una transferencia enviada no se puede reversar desde la App.`
+            : null
+        }
+        rows={[
+          ['Para', `${name} · ${toLabel}`],
+          ['Monto', money(value)],
+          ['Desde', 'Cuenta en colones'],
+          ...(reason ? ([['Motivo', reason]] as [string, string][]) : []),
+          ['Comisión', 'Gratis'],
+        ]}
+        slideLabel="Deslizá para enviar"
+        onConfirm={send}
+        busy={busy}
+        error={sendError}
+      />
     </Screen>
   );
 }
 
-export function Kv({ k, v, green, last }: { k: string; v: string; green?: boolean; last?: boolean }) {
-  return (
-    <View style={[st.kv, last && { borderBottomWidth: 0 }]}>
-      <Text style={st.kvK}>{k}</Text>
-      <Text style={[st.kvV, green && { color: colors.primary }]} numberOfLines={2}>
-        {v}
-      </Text>
-    </View>
-  );
-}
-
 const st = StyleSheet.create({
+
   avs: { flexDirection: 'row', gap: 16, marginTop: 4, marginBottom: 4 },
   av: { alignItems: 'center', gap: 6, width: 62 },
   avName: { fontSize: 13, fontWeight: '600', color: colors.ink },
@@ -419,10 +452,4 @@ const st = StyleSheet.create({
   chipTxt: { fontSize: 14, fontWeight: '600', color: colors.ink },
   note: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingHorizontal: 14, marginTop: 14, height: 48 },
   noteInput: { flex: 1, fontSize: 15, color: colors.ink, height: 48, outlineWidth: 0 },
-  sheetTitle: { fontSize: 20, fontWeight: '700', color: colors.ink, marginBottom: 10 },
-  warn: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: colors.amberBg, borderRadius: radius.md, padding: 12, marginBottom: 6 },
-  warnTxt: { flex: 1, fontSize: 13, lineHeight: 18, color: colors.amberFg },
-  kv: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
-  kvK: { fontSize: 15, color: colors.muted },
-  kvV: { fontSize: 15, fontWeight: '600', color: colors.ink, flexShrink: 1, textAlign: 'right' },
 });

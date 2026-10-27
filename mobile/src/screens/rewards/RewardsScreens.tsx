@@ -10,8 +10,9 @@ import type { RedeemDestination, Rewards } from '../../api/types';
 import { money, shortDate } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
-import { Btn, Done, ErrorText, Loading, Opt, Row, Screen, Sect, Small, Tag } from '../../ui/kit';
+import { Btn, ErrorText, Loading, Opt, Row, Screen, Sect, Small, Tag } from '../../ui/kit';
 import { Icon } from '../../ui/Icon';
+import { receiptDate } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
 
 export const MIN_REDEEM = 500;
@@ -178,17 +179,27 @@ export function RedeemScreen() {
     setErr(null);
     try {
       const r = await api.redeem(dest.id, dest.targetId);
-      nav.navigate('RedeemDone', {
-        title: dest.id === 'cause' ? `Donaste ${money(r.value)}` : `Recibiste ${money(r.value)}`,
-        sub:
-          dest.id === 'account'
-            ? 'Ya está en tu cuenta colones.'
-            : dest.id === 'envelope'
-              ? `Ya está en ${dest.title.replace('Al sobre ', '')}.`
-              : dest.id === 'loan'
-                ? 'Lo aplicamos a tu préstamo hoy mismo.'
-                : 'Gracias. La cooperativa duplicó tus puntos.',
-      });
+      const where =
+        dest.id === 'account'
+          ? 'Cuenta en colones'
+          : dest.id === 'envelope'
+            ? dest.title.replace('Al sobre ', 'Sobre ')
+            : dest.id === 'loan'
+              ? 'Abono a tu préstamo'
+              : 'Donación a una causa';
+      nav.dispatch(
+        StackActions.replace('TransferDone', {
+          hi: dest.id === 'cause' ? '¡Gracias! Donaste tus puntos' : '¡Listo! Canjeaste tus puntos',
+          amount: r.value,
+          rows: [
+            ['Puntos usados', n0(r.points_used)],
+            ['Valor por punto', `×${Number(r.multiplier)}`],
+            ['Destino', where],
+            ['Fecha', receiptDate()],
+          ],
+          next: { label: 'Automatizar cada mes', route: 'AutoRule' },
+        }),
+      );
     } catch (e) {
       setErr(errorMessage(e));
     } finally {
@@ -214,16 +225,6 @@ export function RedeemScreen() {
       ))}
       <ErrorText>{err}</ErrorText>
     </Screen>
-  );
-}
-
-export function RedeemDoneScreen({ route }: RootProps<'RedeemDone'>) {
-  const nav = useNavigation();
-  return (
-    <Done title={route.params.title} sub={route.params.sub}>
-      <Btn label="Automatizar cada mes" variant="o" onPress={() => nav.navigate('AutoRule')} />
-      <Btn label="Listo" onPress={() => nav.navigate('Tabs', { screen: 'Home' })} />
-    </Done>
   );
 }
 

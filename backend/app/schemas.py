@@ -313,6 +313,8 @@ class BillPayIn(BillLookupIn):
     from_account_id: uuid.UUID
     save: bool = True
     autopay: bool = False
+    # Monto que la persona vio y aprobó: si el recaudador cobra otro, no se paga.
+    expected_amount: PositiveMoney | None = None
 
 
 class SavedBillOut(Out):

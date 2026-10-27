@@ -102,7 +102,7 @@ export function AmountInput({
   );
 }
 
-type BtnVariant = 'p' | 'o' | 'do' | 'l';
+type BtnVariant = 'p' | 'o' | 'do' | 'l' | 'lime';
 
 export function Btn({
   label,
@@ -121,7 +121,7 @@ export function Btn({
   loading?: boolean;
   style?: ViewStyle;
 }) {
-  const fg = variant === 'p' ? colors.white : variant === 'do' ? colors.danger : colors.primary;
+  const fg = variant === 'p' ? colors.white : variant === 'do' ? colors.danger : variant === 'lime' ? colors.navy : colors.primary;
   return (
     <Pressable
       onPress={onPress}
@@ -157,10 +157,12 @@ export function Row({
   onPress,
   chevron = !!onPress,
   first,
+  subColor,
 }: {
   icon?: IconName;
   title: string;
   sub?: string;
+  subColor?: string;
   right?: ReactNode;
   onPress?: () => void;
   chevron?: boolean;
@@ -171,7 +173,7 @@ export function Row({
       {icon && <Icon name={icon} size={22} color={colors.emeraldDark} />}
       <View style={{ flex: 1 }}>
         <Text style={s.rowTitle}>{title}</Text>
-        {sub ? <Text style={s.sm}>{sub}</Text> : null}
+        {sub ? <Text style={[s.sm, subColor ? { color: subColor } : null]}>{sub}</Text> : null}
       </View>
       {right}
       {chevron && <Icon name="chev" size={16} color={colors.muted} />}
@@ -340,6 +342,99 @@ export function Done({ title, sub, extra, children }: { title: string; sub?: str
   );
 }
 
+/** Tarjeta azul marino del prototipo: título, bajada, número grande y línea en lima. */
+export function Hero({ title, sub, big, up, center }: { title: string; sub?: string; big?: string; up?: string; center?: boolean }) {
+  const a = center ? ({ textAlign: 'center' } as const) : undefined;
+  return (
+    <View style={s.hero}>
+      <Text style={[s.heroT, a]}>{title}</Text>
+      {sub ? <Text style={[s.heroD, a]}>{sub}</Text> : null}
+      {big ? <Text style={[s.heroBig, a]}>{big}</Text> : null}
+      {up ? <Text style={[s.heroUp, a]}>{up}</Text> : null}
+    </View>
+  );
+}
+
+/** Pestañas de texto con subrayado verde (Mis recibos / Otros servicios). */
+export function Tabs<T extends string>({ options, value, onChange }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+  return (
+    <View style={s.tabs} accessibilityRole="tablist">
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <Pressable key={o.value} onPress={() => onChange(o.value)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={s.tab}>
+            <Text style={[s.tabText, on && { color: colors.navy }]}>{o.label}</Text>
+            {on && <View style={s.tabLine} />}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Buscador redondo con lupa. */
+export function SearchField(props: TextInputProps) {
+  return (
+    <View style={s.search}>
+      <TextInput
+        {...props}
+        placeholderTextColor={colors.muted}
+        style={s.searchInput}
+        autoCorrect={false}
+        returnKeyType="search"
+      />
+      <Icon name="search" size={20} color={colors.muted} />
+    </View>
+  );
+}
+
+export function Check({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <Pressable
+      onPress={() => onChange(!checked)}
+      style={s.check}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+    >
+      <View style={[s.checkBox, checked && { backgroundColor: colors.emerald, borderColor: colors.emerald }]}>
+        {checked && <Icon name="check" size={14} color={colors.white} />}
+      </View>
+      <Text style={s.checkText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/** Pasos de seguimiento (préstamo, caso de fraude): hechos en lima, el actual en verde, los demás en gris. */
+export function Steps({ steps, current }: { steps: { t: string; s?: string }[]; current: number }) {
+  return (
+    <View style={{ marginBottom: 6 }}>
+      {steps.map((x, i) => {
+        const n = i + 1;
+        const done = n < current;
+        const now = n === current;
+        return (
+          <View key={x.t} style={s.step}>
+            <View style={[s.dot, done && s.dotDone, now && s.dotNow]}>
+              <Text style={[s.dotText, (done || now) && { color: done ? colors.navy : colors.white }]}>{done ? '✓' : n}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.stepT, n > current && { color: '#98A2B3' }, now && { fontWeight: '700' }]}>{x.t}</Text>
+              {n <= current && x.s ? <Text style={s.sm}>{x.s}</Text> : null}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Aviso en verde menta (buenas noticias, confirmaciones). */
+export const Note = ({ children }: { children: ReactNode }) => (
+  <View style={s.note}>
+    <Text style={s.noteText}>{children}</Text>
+  </View>
+);
+
 export function Loading() {
   return (
     <View style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.white }}>
@@ -349,6 +444,53 @@ export function Loading() {
 }
 
 export const s = StyleSheet.create({
+  step: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingBottom: 18 },
+  dot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.fieldBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dotDone: { backgroundColor: colors.lime, borderColor: colors.lime },
+  dotNow: { backgroundColor: colors.primary, borderColor: colors.primary },
+  dotText: { fontSize: 12, fontWeight: '700', color: '#98A2B3' },
+  stepT: { fontSize: 15, color: colors.ink },
+  note: { backgroundColor: colors.mint, borderRadius: radius.md, padding: 12, marginTop: 6 },
+  noteText: { fontSize: 14, color: colors.primaryInk, lineHeight: 20 },
+  check: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 },
+  checkBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.fieldBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkText: { fontSize: 13.5, color: colors.ink, flex: 1 },
+  hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: 16 },
+  heroT: { fontSize: 16, fontWeight: '700', color: colors.white },
+  heroD: { fontSize: 12, color: colors.heroSub, marginTop: 2, marginBottom: 8 },
+  heroBig: { fontSize: 24, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
+  heroUp: { fontSize: 12, color: colors.lime, marginTop: 2 },
+  tabs: { flexDirection: 'row', gap: 28, marginTop: 4, marginBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
+  tab: { paddingTop: 6, paddingBottom: 10, alignItems: 'center' },
+  tabText: { fontSize: 17, fontWeight: '700', color: '#98A2B3' },
+  tabLine: { position: 'absolute', bottom: -1, width: 36, height: 3, borderRadius: 2, backgroundColor: colors.emerald },
+  search: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: colors.fieldBorder,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    height: 48,
+  },
+  searchInput: { flex: 1, fontSize: 15, color: colors.ink, outlineWidth: 0 },
   screen: { flex: 1, backgroundColor: colors.white },
   content: { paddingHorizontal: 18, paddingBottom: 32 },
   footer: { paddingHorizontal: 18, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.white },
@@ -381,6 +523,8 @@ export const s = StyleSheet.create({
   btn_o: { backgroundColor: colors.white, borderColor: colors.primary },
   btn_do: { backgroundColor: colors.white, borderColor: colors.danger },
   btn_l: { minHeight: 40, marginTop: 4 },
+  // Lima con texto azul marino (nunca blanco sobre lima): acción principal sobre fondos oscuros.
+  btn_lime: { backgroundColor: colors.lime },
   btnText: { fontSize: 15, fontWeight: '600' },
   row: {
     flexDirection: 'row',

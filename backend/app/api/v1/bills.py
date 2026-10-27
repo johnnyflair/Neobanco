@@ -1,6 +1,7 @@
 """Pago de servicios: categorías, búsqueda de empresas, consulta, pago y recibos guardados."""
 
 import unicodedata
+import uuid
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
@@ -14,7 +15,7 @@ from app.db.models import BillProvider, Currency, Member, SavedBill
 from app.db.session import get_session
 from app.providers import Providers, get_providers
 from app.providers.base import InsufficientFunds
-from app.schemas import BillLookupIn, BillPayIn, BillProviderOut, BillQuoteOut, SavedBillOut
+from app.schemas import BillLookupIn, BillPayIn, BillProviderOut, BillQuoteOut, SavedBillOut, SavedBillUpdateIn
 from app.services import POINTS_RULES, earn, new_reference
 
 router = APIRouter(prefix="/bills", tags=["Pago de servicios"])
@@ -107,8 +108,32 @@ async def pay(body: BillPayIn, request: Request, key: str = Depends(idempotency_
     return resp
 
 
+def _saved_out(b: SavedBill, prov: BillProvider) -> SavedBillOut:
+    out = SavedBillOut.model_validate(b)
+    out.provider_name, out.category, out.reference_label = prov.name, prov.category, prov.reference_label
+    return out
+
+
 @router.get("/saved", response_model=list[SavedBillOut])
 async def saved(member: Member = Depends(current_member), session: AsyncSession = Depends(get_session)):
-    rows = await session.scalars(select(SavedBill).where(SavedBill.member_id == member.id)
-                                 .order_by(SavedBill.due_date.nulls_last()))
-    return list(rows)
+    rows = await session.execute(select(SavedBill, BillProvider).join(BillProvider)
+                                 .where(SavedBill.member_id == member.id).order_by(SavedBill.due_date.nulls_last()))
+    return [_saved_out(b, prov) for b, prov in rows]
+
+
+@router.patch("/saved/{bill_id}", response_model=SavedBillOut)
+async def update_saved(bill_id: uuid.UUID, body: SavedBillUpdateIn, request: Request,
+                       member: Member = Depends(current_member), session: AsyncSession = Depends(get_session)):
+    """Activa o apaga el pago automático. La primera vez que se activa suma puntos."""
+    b = await session.scalar(select(SavedBill).where(SavedBill.id == bill_id, SavedBill.member_id == member.id))
+    if b is None:
+        raise not_found("recibo")
+    prov = await _provider(session, b.provider_id)
+    if body.autopay and not b.autopay:
+        await earn(session, member, POINTS_RULES["bill_autopay"], f"Pago automático de {prov.name}")
+    b.autopay = body.autopay
+    if body.autopay_cap is not None:
+        b.autopay_cap = body.autopay_cap
+    audit(session, request, "bill_autopay", member_id=member.id, autopay=body.autopay)
+    await session.commit()
+    return _saved_out(b, prov)

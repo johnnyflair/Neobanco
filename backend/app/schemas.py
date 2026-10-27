@@ -124,6 +124,7 @@ class MeOut(Out):
     id: uuid.UUID
     full_name: str
     phone_masked: str
+    cedula_masked: str = ""
     sinpe_phone: str = Field(description="Número propio completo, para compartir en Recibir dinero")
     email: str
     province: str
@@ -143,18 +144,19 @@ class AccountOut(Out):
     balance: Decimal
     iban_masked: str | None = None
     subtitle: str
-
-
-class AccountDetailOut(AccountOut):
-    iban: str | None = None
-    client_account: str | None = Field(default=None, description="Cuenta cliente SINPE (17 dígitos), sale del IBAN")
-    holder_name: str | None = None
+    # Datos de ahorro (sobres y plazos), para mostrar metas y vencimientos sin pedir cada cuenta.
     goal_amount: Decimal | None = None
     savings_mode: str | None = None
     rate: Decimal | None = None
     term_months: int | None = None
     maturity_date: date | None = None
     on_maturity: str | None = None
+
+
+class AccountDetailOut(AccountOut):
+    iban: str | None = None
+    client_account: str | None = Field(default=None, description="Cuenta cliente SINPE (17 dígitos), sale del IBAN")
+    holder_name: str | None = None
     monthly_contribution: Decimal | None = None
 
 
@@ -313,6 +315,15 @@ class SavedBillOut(Out):
     autopay_cap: Decimal | None
     pending_amount: Decimal | None
     due_date: date | None
+    provider_name: str = ""
+    category: str = ""
+    reference_label: str = ""
+
+
+class SavedBillUpdateIn(BaseModel):
+    autopay: bool
+    # Tope: si el recibo llega por encima de este monto, se le consulta antes de pagar.
+    autopay_cap: PositiveMoney | None = None
 
 
 # ---------- Ahorro ----------
@@ -376,6 +387,21 @@ class LoanApplicationIn(BaseModel):
     monthly_income: PositiveMoney
 
 
+class LoanDisburseIn(BaseModel):
+    amount: Annotated[Decimal, Field(ge=100_000, le=50_000_000, max_digits=16, decimal_places=2)]
+    term_months: Annotated[int, Field(ge=6, le=120)]
+    to_account_id: uuid.UUID
+    pin: Pin
+
+
+class LoanDisburseOut(BaseModel):
+    reference: str
+    amount: Decimal
+    term_months: int
+    monthly_payment: Decimal
+    first_due: date
+
+
 class LoanApplicationOut(Out):
     id: uuid.UUID
     amount: Decimal
@@ -390,6 +416,7 @@ class RewardsOut(BaseModel):
     points: int
     value_crc: Decimal
     level: Literal["Bronce", "Plata", "Oro"]
+    points_lifetime: int = Field(description="Puntos acumulados en total: definen el nivel")
     next_level_at: int | None
     history: list[dict]
 
@@ -399,8 +426,30 @@ class RedeemIn(BaseModel):
     target_id: uuid.UUID | None = None
 
 
+RedeemDestination = Literal["account", "loan", "envelope", "cause"]
+
+
+class AutoRuleIO(BaseModel):
+    destination: RedeemDestination | None = None
+
+
 class RedeemOut(BaseModel):
     points_used: int
     value: Decimal
     multiplier: Decimal
     destination: str
+
+
+# ---------- Ayuda ----------
+
+class FraudReportIn(BaseModel):
+    reason: Literal["unknown_charge", "lost_card", "stolen_phone", "suspicious_contact"]
+
+
+class CaseOut(Out):
+    number: str
+    kind: str
+    reason: str
+    status: str
+    cards_locked: int
+    created_at: datetime

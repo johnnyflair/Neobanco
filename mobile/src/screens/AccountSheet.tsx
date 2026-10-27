@@ -20,9 +20,10 @@ type Props = {
   account: Account | null;
   sinpePhone?: string;
   onClose: () => void;
+  onMovements?: (a: Account) => void;
 };
 
-export function AccountSheet({ account, sinpePhone, onClose }: Props) {
+export function AccountSheet({ account, sinpePhone, onClose, onMovements }: Props) {
   const [detail, setDetail] = useState<AccountDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -146,6 +147,9 @@ export function AccountSheet({ account, sinpePhone, onClose }: Props) {
               style={{ flex: 1 }}
             />
           </View>
+          {onMovements && account && (
+            <Btn label="Ver movimientos" variant="l" onPress={() => onMovements(account)} />
+          )}
         </>
       )}
     </BottomSheet>

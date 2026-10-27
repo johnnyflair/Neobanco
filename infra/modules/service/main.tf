@@ -322,6 +322,8 @@ locals {
     { name = "NEO_JWT_ALGORITHM", value = "ES256" },
     { name = "NEO_JWT_PUBLIC_KEY", value = tls_private_key.jwt.public_key_pem },
     { name = "NEO_EXPOSE_DOCS", value = var.env == "prod" ? "false" : "true" },
+    # Solo en ambientes de demostración: sin SMS real, la App muestra el código de prueba.
+    { name = "NEO_EXPOSE_DEBUG_OTP", value = var.seed_demo_data && var.env == "dev" ? "true" : "false" },
     { name = "WEB_CONCURRENCY", value = "2" },
   ]
   secrets = [

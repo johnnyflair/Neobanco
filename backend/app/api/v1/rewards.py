@@ -12,11 +12,13 @@ from app.core.errors import ApiError, not_found
 from app.db.models import AccountType, Currency, Member, RewardEntry
 from app.db.session import get_session
 from app.providers import Providers, get_providers
-from app.schemas import RedeemIn, RedeemOut, RewardsOut
+from app.schemas import AutoRuleIO, RedeemIn, RedeemOut, RewardsOut
 from app.services import REDEEM_MULTIPLIER, level_for, new_reference
 
 router = APIRouter(prefix="/rewards", tags=["Recompensas"])
 MIN_REDEEM = 500
+REDEEM_LABEL = {"account": "Canje a mi cuenta", "loan": "Canje: abono a préstamo", "envelope": "Canje a sobre",
+                "cause": "Donación al fondo solidario"}
 
 
 @router.get("", response_model=RewardsOut)
@@ -25,6 +27,7 @@ async def rewards(member: Member = Depends(current_member), session: AsyncSessio
                                  .order_by(RewardEntry.created_at.desc()).limit(20))
     level, nxt = level_for(member.points_lifetime)
     return RewardsOut(points=member.points, value_crc=Decimal(member.points), level=level, next_level_at=nxt,
+                      points_lifetime=member.points_lifetime,
                       history=[{"points": r.points, "reason": r.reason, "at": r.created_at.isoformat()} for r in rows])
 
 
@@ -48,7 +51,21 @@ async def redeem(body: RedeemIn, request: Request, member: Member = Depends(curr
         await p.core.post(target.id, value, "Canje de puntos", "rewards", ref)
     # "loan" y "cause" se registran para que el core los aplique (abono a préstamo / fondo solidario).
     member.points = 0
-    session.add(RewardEntry(member_id=member.id, points=-pts, reason=f"Canje: {body.destination}"))
+    session.add(RewardEntry(member_id=member.id, points=-pts, reason=REDEEM_LABEL[body.destination]))
     audit(session, request, "rewards_redeem", member_id=member.id, destination=body.destination, reference=ref)
     await session.commit()
     return RedeemOut(points_used=pts, value=value, multiplier=mult, destination=body.destination)
+
+
+@router.get("/auto-rule", response_model=AutoRuleIO)
+async def get_auto_rule(member: Member = Depends(current_member)):
+    return AutoRuleIO(destination=member.auto_redeem)
+
+
+@router.put("/auto-rule", response_model=AutoRuleIO)
+async def set_auto_rule(body: AutoRuleIO, request: Request, member: Member = Depends(current_member),
+                        session: AsyncSession = Depends(get_session)):
+    member.auto_redeem = body.destination
+    audit(session, request, "rewards_auto_rule", member_id=member.id, destination=body.destination)
+    await session.commit()
+    return body

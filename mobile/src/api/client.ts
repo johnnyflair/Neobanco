@@ -9,6 +9,14 @@ import type {
   Account,
   AccountDetail,
   Card,
+  FraudReason,
+  RedeemDestination,
+  RedeemResult,
+  RegisterBody,
+  RegisterResult,
+  OtpStart,
+  Rewards,
+  SupportCase,
   CardLimits,
   CardPayment,
   CardSecrets,
@@ -24,6 +32,16 @@ import type {
   Tokens,
   TransactionPage,
   Transfer,
+  BillPayment,
+  BillProvider,
+  BillQuote,
+  SavedBill,
+  LoanApplication,
+  LoanDisbursement,
+  LoanOffer,
+  LoanSim,
+  Rate,
+  TermDepositResult,
 } from './types';
 import { secureStore } from '../secureStore';
 
@@ -125,6 +143,24 @@ export const api = {
     const t = await parse<Tokens>(await raw('/v1/auth/login', { method: 'POST', body: JSON.stringify({ identifier, pin }) }));
     await saveTokens(t);
   },
+  // Registro (público): código por SMS, verificación y alta. Si queda verificado, entra directo.
+  otpStart: (phone: string) =>
+    raw('/v1/auth/otp/start', { method: 'POST', body: JSON.stringify({ phone }) }).then((r) => parse<OtpStart>(r)),
+  otpVerify: (challengeId: string, code: string) =>
+    raw('/v1/auth/otp/verify', { method: 'POST', body: JSON.stringify({ challenge_id: challengeId, code }) }).then((r) =>
+      parse<{ onboarding_token: string; expires_in: number }>(r),
+    ),
+  async register(body: RegisterBody) {
+    const r = await parse<RegisterResult>(await raw('/v1/auth/register', { method: 'POST', body: JSON.stringify(body) }));
+    if (r.tokens) await saveTokens(r.tokens);
+    return r;
+  },
+  // Simuladores públicos (modo visitante): no requieren sesión.
+  publicLoanSimulate: (amount: number, termMonths: number) =>
+    raw('/v1/loans/simulate', { method: 'POST', body: JSON.stringify({ amount, term_months: termMonths }) }).then((r) =>
+      parse<LoanSim>(r),
+    ),
+  publicRates: () => raw('/v1/savings/rates').then((r) => parse<Rate[]>(r)),
   async logout() {
     const rt = await secureStore.get(REFRESH_KEY);
     if (rt) await raw('/v1/auth/logout', { method: 'POST', body: JSON.stringify({ refresh_token: rt }) }).catch(() => {});
@@ -171,4 +207,65 @@ export const api = {
   linkedAccounts: () => request<LinkedAccount[]>('/v1/transfers/linked-accounts'),
   pull: (toAccountId: string, amount: string, source: { linked_account_id: string } | { new_iban: string }, key: string) =>
     moneyMove<Transfer | PullPending>('/v1/transfers/pull', { to_account_id: toAccountId, amount, ...source }, key),
+
+  // Pago de servicios
+  billCategories: () => request<{ name: string }[]>('/v1/bills/categories'),
+  billProviders: (q?: string, category?: string) => {
+    const qs = new URLSearchParams();
+    if (q) qs.set('q', q);
+    if (category) qs.set('category', category);
+    return request<BillProvider[]>(`/v1/bills/providers?${qs.toString()}`);
+  },
+  billLookup: (providerId: string, reference: string) =>
+    request<BillQuote>('/v1/bills/lookup', { method: 'POST', body: JSON.stringify({ provider_id: providerId, reference }) }),
+  payBill: (providerId: string, reference: string, fromAccountId: string, key: string, save = true, autopay = false) =>
+    moneyMove<BillPayment>(
+      '/v1/bills/pay',
+      { provider_id: providerId, reference, from_account_id: fromAccountId, save, autopay },
+      key,
+    ),
+  savedBills: () => request<SavedBill[]>('/v1/bills/saved'),
+  setAutopay: (id: string, autopay: boolean) =>
+    request<SavedBill>(`/v1/bills/saved/${id}`, { method: 'PATCH', body: JSON.stringify({ autopay }) }),
+
+  // Préstamos
+  loanSimulate: (amount: number, termMonths: number) =>
+    request<LoanSim>('/v1/loans/simulate', { method: 'POST', body: JSON.stringify({ amount, term_months: termMonths }) }),
+  loanOffer: () => request<LoanOffer>('/v1/loans/offer'),
+  loanApplications: () => request<LoanApplication[]>('/v1/loans/applications'),
+  loanApply: (body: { amount: number; term_months: number; income_type: string; monthly_income: string }) =>
+    request<LoanApplication>('/v1/loans/applications', { method: 'POST', body: JSON.stringify(body) }),
+  loanDisburse: (amount: number, termMonths: number, toAccountId: string, pin: string, key: string) =>
+    moneyMove<LoanDisbursement>(
+      '/v1/loans/disbursements',
+      { amount, term_months: termMonths, to_account_id: toAccountId, pin },
+      key,
+    ),
+
+  // Ahorro: sobres y plazos
+  rates: () => request<Rate[]>('/v1/savings/rates'),
+  createEnvelope: (body: { name: string; goal_amount: string; months: number; mode: 'fixed' | 'roundup' | 'percent' }) =>
+    request<Account>('/v1/savings/envelopes', { method: 'POST', body: JSON.stringify(body) }),
+  envelopeMove: (envelopeId: string, direction: 'deposit' | 'withdraw', amount: string, accountId: string, key: string) =>
+    moneyMove<{ reference: string; envelope_balance: string }>(
+      `/v1/savings/envelopes/${envelopeId}/${direction}`,
+      { amount, account_id: accountId },
+      key,
+    ),
+  openTermDeposit: (body: { from_account_id: string; amount: string; term_months: number; on_maturity: string }, key: string) =>
+    moneyMove<TermDepositResult>('/v1/savings/term-deposits', body, key),
+
+  // Recompensas
+  rewards: () => request<Rewards>('/v1/rewards'),
+  redeem: (destination: RedeemDestination, targetId?: string) =>
+    request<RedeemResult>('/v1/rewards/redeem', { method: 'POST', body: JSON.stringify({ destination, target_id: targetId }) }),
+  autoRule: () => request<{ destination: RedeemDestination | null }>('/v1/rewards/auto-rule'),
+  setAutoRule: (destination: RedeemDestination | null) =>
+    request<{ destination: RedeemDestination | null }>('/v1/rewards/auto-rule', { method: 'PUT', body: JSON.stringify({ destination }) }),
+
+  // Ayuda
+  reportFraud: (reason: FraudReason) =>
+    request<SupportCase>('/v1/support/fraud', { method: 'POST', body: JSON.stringify({ reason }) }),
+  supportCases: () => request<SupportCase[]>('/v1/support/cases'),
+  supportCase: (n: string) => request<SupportCase>(`/v1/support/cases/${encodeURIComponent(n)}`),
 };

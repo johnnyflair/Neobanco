@@ -8,13 +8,13 @@ import {
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { api, hasSavedSession, refreshSession, setSessionLostHandler } from './src/api/client';
 import { RootNavigator } from './src/navigation';
-import { LoginScreen } from './src/screens/LoginScreen';
+import { PublicNavigator } from './src/publicNavigation';
 import { SessionContext } from './src/session';
 import { colors } from './src/theme';
 import { Loading } from './src/ui/kit';
@@ -52,6 +52,7 @@ export default function App() {
     })();
   }, []);
 
+  const signedIn = useCallback(() => setStage('signedIn'), []);
   const session = useMemo(
     () => ({
       signOut: async () => {
@@ -76,7 +77,9 @@ export default function App() {
           </PinProvider>
         </SessionContext.Provider>
       ) : (
-        <LoginScreen onSignedIn={() => setStage('signedIn')} />
+        <NavigationContainer theme={theme}>
+          <PublicNavigator onSignedIn={signedIn} />
+        </NavigationContainer>
       )}
     </SafeAreaProvider>
   );

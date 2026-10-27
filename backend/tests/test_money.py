@@ -161,3 +161,37 @@ async def test_account_detail_has_client_account(client, ana):
     assert d["iban"].startswith("CR") and len(d["iban"]) == 22
     assert d["client_account"] == d["iban"][5:] and len(d["client_account"]) == 17
     assert d["holder_name"] == "Ana Rojas Mora"
+
+
+async def test_saved_bills_and_autopay(client, ana):
+    bills = (await client.get("/v1/bills/saved", headers=ana)).json()
+    assert bills and all(b["provider_name"] and b["category"] for b in bills)
+    manual = next(b for b in bills if not b["autopay"])
+    pts = (await client.get("/v1/me", headers=ana)).json()["points"]
+    r = await client.patch(f"/v1/bills/saved/{manual['id']}", json={"autopay": True}, headers=ana)
+    assert r.status_code == 200 and r.json()["autopay"] is True
+    assert (await client.get("/v1/me", headers=ana)).json()["points"] == pts + 20
+    # Apagarlo no resta ni suma puntos.
+    await client.patch(f"/v1/bills/saved/{manual['id']}", json={"autopay": False}, headers=ana)
+    assert (await client.get("/v1/me", headers=ana)).json()["points"] == pts + 20
+
+
+async def test_preapproved_loan_disbursement(client, ana):
+    crc = await account(client, ana, "Colones")
+    before = Decimal(crc["balance"])
+    body = {"amount": "1500000", "term_months": 36, "to_account_id": crc["id"], "pin": "000000"}
+    bad = await client.post("/v1/loans/disbursements", json=body, headers={**ana, **idem()})
+    assert bad.status_code in (401, 403, 422)  # clave incorrecta: no hay desembolso
+    h = {**ana, **idem()}
+    r = await client.post("/v1/loans/disbursements", json={**body, "pin": "482915"}, headers=h)
+    assert r.status_code == 201, r.text
+    again = await client.post("/v1/loans/disbursements", json={**body, "pin": "482915"}, headers=h)
+    assert again.json() == r.json()  # reintento: un solo desembolso
+    after = Decimal((await account(client, ana, "Colones"))["balance"])
+    assert after - before == Decimal("1500000.00")
+    assert r.json()["first_due"].endswith("-15")
+    over = await client.post("/v1/loans/disbursements", json={**body, "amount": "6000000", "pin": "482915"},
+                             headers={**ana, **idem()})
+    assert over.status_code == 422
+    apps = (await client.get("/v1/loans/applications", headers=ana)).json()
+    assert apps[0]["status"] == "disbursed"

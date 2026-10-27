@@ -89,6 +89,8 @@ class Member(TimestampMixin, Base):
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     points: Mapped[int] = mapped_column(Integer, default=0)
     points_lifetime: Mapped[int] = mapped_column(Integer, default=0)
+    # Regla de canje automático: al llegar al mínimo, los puntos se aplican solos a este destino.
+    auto_redeem: Mapped[str | None] = mapped_column(String(20))
 
     accounts: Mapped[list["Account"]] = relationship(back_populates="member")
 
@@ -245,6 +247,22 @@ class RewardEntry(TimestampMixin, Base):
     member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
     points: Mapped[int] = mapped_column(Integer)
     reason: Mapped[str] = mapped_column(String(120))
+
+
+# ---------- Soporte ----------
+
+class SupportCase(TimestampMixin, Base):
+    """Casos abiertos desde la app (reporte de fraude, reclamos). El número es el que ve el asociado."""
+
+    __tablename__ = "support_cases"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    number: Mapped[str] = mapped_column(String(20), unique=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    reason: Mapped[str] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(20), default="open")
+    cards_locked: Mapped[int] = mapped_column(Integer, default=0)
 
 
 # ---------- Seguridad ----------

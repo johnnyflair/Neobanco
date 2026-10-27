@@ -5,7 +5,8 @@ import { colors } from '../theme';
 
 export type IconName =
   | 'home' | 'card' | 'grow' | 'chat' | 'phone' | 'bank' | 'pull' | 'qr' | 'back' | 'chev' | 'check'
-  | 'lock' | 'eye' | 'eyeOff' | 'share' | 'receipt' | 'file' | 'star' | 'send' | 'swap' | 'copy' | 'cash' | 'hands' | 'pig' | 'chevDown' | 'chevUp' | 'x';
+  | 'lock' | 'eye' | 'eyeOff' | 'share' | 'receipt' | 'file' | 'star' | 'send' | 'swap' | 'copy' | 'cash' | 'hands' | 'pig' | 'chevDown' | 'chevUp' | 'x'
+  | 'bolt' | 'drop' | 'wifi' | 'search' | 'tv' | 'car' | 'school' | 'shield' | 'building' | 'gift' | 'heart' | 'calendar' | 'user' | 'logout' | 'alert' | 'clock' | 'plus' | 'minus';
 
 const stroke = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
@@ -104,6 +105,72 @@ function shapes(name: IconName, c: string) {
           <Path {...p} d="M16 4v3.803a6.019 6.019 0 0 1 2.658 3.197h1.341a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-1.342c-.336 .95 -.907 1.8 -1.658 2.473v2.027a1.5 1.5 0 0 1 -3 0v-.583a6.04 6.04 0 0 1 -1 .083h-4a6.04 6.04 0 0 1 -1 -.083v.583a1.5 1.5 0 0 1 -3 0v-2.027a6 6 0 0 1 4 -10.473h2.5l4.5 -3z" />
         </>
       );
+    case 'bolt':
+      return <Path {...p} d="M13 3l-7 11h6l-1 7 7-11h-6z" />;
+    case 'drop':
+      return <Path {...p} d="M12 3.5s-6 6.5-6 10.5a6 6 0 0 0 12 0c0-4-6-10.5-6-10.5z" />;
+    case 'wifi':
+      return <Path {...p} d="M2 9a14 14 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01" />;
+    case 'search':
+      return (
+        <>
+          <Circle {...p} cx={11} cy={11} r={6.5} />
+          <Path {...p} d="M20 20l-4.3-4.3" />
+        </>
+      );
+    case 'tv':
+      return (
+        <>
+          <Rect {...p} x={3} y={7} width={18} height={13} rx={2} />
+          <Path {...p} d="M8 3l4 4 4-4" />
+        </>
+      );
+    case 'car':
+      return <Path {...p} d="M5 16h14v-3.5L17 8H7l-2 4.5zM6.5 16v2.5M17.5 16v2.5M5 12.5h14" />;
+    case 'school':
+      return <Path {...p} d="M3 9l9-5 9 5-9 5zM7 11.2V16c0 1.4 2.3 3 5 3s5-1.6 5-3v-4.8M21 9v6" />;
+    case 'shield':
+      return <Path {...p} d="M12 3l8 3v6c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6z" />;
+    case 'building':
+      return <Path {...p} d="M4 21V5l8-2v18M12 21h8V9l-8-2M3 21h18M8 8v.01M8 12v.01M8 16v.01M16 12v.01M16 16v.01" />;
+    case 'gift':
+      return (
+        <>
+          <Rect {...p} x={3} y={8} width={18} height={4} rx={1} />
+          <Path {...p} d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C9.5 3 12 8 12 8s2.5-5 4.5-5a2.5 2.5 0 0 1 0 5" />
+        </>
+      );
+    case 'heart':
+      return <Path {...p} d="M19.5 12.6L12 20l-7.5-7.4A5 5 0 1 1 12 6a5 5 0 1 1 7.5 6.6z" />;
+    case 'calendar':
+      return (
+        <>
+          <Rect {...p} x={4} y={5} width={16} height={16} rx={2} />
+          <Path {...p} d="M16 3v4M8 3v4M4 11h16" />
+        </>
+      );
+    case 'user':
+      return (
+        <>
+          <Circle {...p} cx={12} cy={8} r={4} />
+          <Path {...p} d="M5 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1" />
+        </>
+      );
+    case 'logout':
+      return <Path {...p} d="M14 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2M9 12h12l-3-3M21 12l-3 3" />;
+    case 'alert':
+      return <Path {...p} d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />;
+    case 'clock':
+      return (
+        <>
+          <Circle {...p} cx={12} cy={12} r={9} />
+          <Path {...p} d="M12 7v5l3 3" />
+        </>
+      );
+    case 'plus':
+      return <Path {...p} strokeWidth={2} d="M12 5v14M5 12h14" />;
+    case 'minus':
+      return <Path {...p} strokeWidth={2} d="M5 12h14" />;
     case 'x':
       return <Path {...p} strokeWidth={2} d="M18 6L6 18M6 6l12 12" />;
     case 'chevDown':

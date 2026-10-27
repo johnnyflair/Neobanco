@@ -4,7 +4,7 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError, api } from '../api/client';
@@ -12,7 +12,6 @@ import type { Account, Me, Transaction } from '../api/types';
 import { money, shortDate } from '../format';
 import { secureStore } from '../secureStore';
 import { AccountSheet } from './AccountSheet';
-import { useSession } from '../session';
 import { accountsGlow, colors, radius, type } from '../theme';
 import { Icon, type IconName } from '../ui/Icon';
 import { Text } from '../ui/typography';
@@ -23,8 +22,6 @@ const MAIN_TYPES = new Set(['savings', 'capital']); // colones, dólares y capit
 export function HomeScreen() {
   const nav = useNavigation();
   const insets = useSafeAreaInsets();
-  const { signOut } = useSession();
-  const soon = (what: string) => Alert.alert(what, 'Esta sección se construye en la próxima etapa.');
   const [me, setMe] = useState<Me | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [moves, setMoves] = useState<Transaction[]>([]);
@@ -74,11 +71,12 @@ export function HomeScreen() {
   const QUICK: { label: string; icon: IconName; go: () => void; accent?: boolean; badge?: boolean }[] = [
     { label: 'SINPE\nMóvil', icon: 'phone', go: () => nav.navigate('SinpeNumber'), badge: newSinpe },
     { label: 'Transferir\ndinero', icon: 'swap', go: () => nav.navigate('TransferHub') },
-    { label: 'Pagar\nrecibos', icon: 'receipt', go: () => soon('Pagar recibos') },
-    { label: 'Pedí un\npréstamo', icon: 'cash', go: () => soon('Préstamos'), accent: true },
+    { label: 'Pagar\nrecibos', icon: 'receipt', go: () => nav.navigate('Bills') },
+    { label: 'Pedí un\npréstamo', icon: 'cash', go: () => nav.navigate('LoanSim'), accent: true },
   ];
 
   const main = accounts.filter((a) => MAIN_TYPES.has(a.type));
+  const crcAccount = accounts.find((a) => a.type === 'savings' && a.currency === 'CRC');
 
   if (loading) {
     return <ActivityIndicator style={{ flex: 1 }} color={colors.primary} />;
@@ -92,11 +90,11 @@ export function HomeScreen() {
           <Text style={s.name}>{me?.full_name.split(' ').slice(0, 2).join(' ')}</Text>
         </View>
         <View style={s.headerRight}>
-          <View style={s.pill} accessibilityLabel={`${me?.points ?? 0} puntos de recompensas`}>
+          <Pressable style={s.pill} onPress={() => nav.navigate('Rewards')} accessibilityLabel={`${me?.points ?? 0} puntos de recompensas`}>
             <Icon name="star" size={15} color={colors.primaryInk} />
             <Text style={s.pillText}>{me?.points.toLocaleString('en-US')}</Text>
-          </View>
-          <Pressable style={s.avatar} onPress={signOut} accessibilityLabel="Mi perfil">
+          </Pressable>
+          <Pressable style={s.avatar} onPress={() => nav.navigate('Profile')} accessibilityLabel="Mi perfil">
             <Text style={s.avatarText}>{me?.full_name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</Text>
           </Pressable>
         </View>
@@ -169,7 +167,14 @@ export function HomeScreen() {
         ))}
       </View>
 
-      <Text style={s.section}>Movimientos</Text>
+      <View style={s.sectionRow}>
+        <Text style={[s.section, { marginTop: 0, marginBottom: 0 }]}>Movimientos</Text>
+        {crcAccount && (
+          <Pressable onPress={() => nav.navigate('AccountDetail', { account: crcAccount })} hitSlop={10} accessibilityRole="button">
+            <Text style={s.link}>Ver todos</Text>
+          </Pressable>
+        )}
+      </View>
       {moves.map((t) => (
         <View key={t.id} style={s.row}>
           <View style={{ flex: 1 }}>
@@ -182,12 +187,22 @@ export function HomeScreen() {
         </View>
       ))}
       <Text style={s.version}>Versión {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'local').slice(0, 7)}</Text>
-      <AccountSheet account={sheet} sinpePhone={me?.sinpe_phone} onClose={() => setSheet(null)} />
+      <AccountSheet
+        account={sheet}
+        sinpePhone={me?.sinpe_phone}
+        onClose={() => setSheet(null)}
+        onMovements={(a) => {
+          setSheet(null);
+          nav.navigate('AccountDetail', { account: a });
+        }}
+      />
     </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, marginBottom: 4 },
+  link: { fontSize: 14, fontWeight: '600', color: colors.primary },
   screen: { flex: 1, backgroundColor: colors.white },
   content: { padding: 18, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, marginBottom: 26 },

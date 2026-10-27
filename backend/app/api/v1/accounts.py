@@ -34,13 +34,15 @@ def _subtitle(a: Account) -> str:
 
 def account_out(a: Account) -> AccountOut:
     return AccountOut(id=a.id, type=a.type.value, name=a.name, currency=a.currency.value, balance=a.balance,
-                      iban_masked=mask_iban(a.iban), subtitle=_subtitle(a))
+                      iban_masked=mask_iban(a.iban), subtitle=_subtitle(a), goal_amount=a.goal_amount,
+                      savings_mode=a.savings_mode, rate=a.rate, term_months=a.term_months,
+                      maturity_date=a.maturity_date, on_maturity=a.on_maturity)
 
 
 @router.get("/me", response_model=MeOut)
 async def me(member: Member = Depends(current_member)):
     return MeOut(id=member.id, full_name=member.full_name, phone_masked=mask_phone(member.phone),
-                 sinpe_phone=member.phone,
+                 sinpe_phone=member.phone, cedula_masked=f"{member.cedula[:2]}••••-{member.cedula[-4:]}",
                  email=member.email, province=member.province, canton=member.canton,
                  kyc_status=member.kyc_status.value, points=member.points, member_since=member.created_at)
 
@@ -61,10 +63,7 @@ async def get_account(account_id: uuid.UUID, member: Member = Depends(current_me
     # (la que piden otros bancos para SINPE) son esos últimos 17 dígitos.
     client = a.iban[5:] if a.iban and len(a.iban) == 22 else None
     return AccountDetailOut(**account_out(a).model_dump(), iban=a.iban, client_account=client,
-                            holder_name=member.full_name, goal_amount=a.goal_amount,
-                            savings_mode=a.savings_mode, rate=a.rate, term_months=a.term_months,
-                            maturity_date=a.maturity_date, on_maturity=a.on_maturity,
-                            monthly_contribution=a.monthly_contribution)
+                            holder_name=member.full_name, monthly_contribution=a.monthly_contribution)
 
 
 @router.get("/accounts/{account_id}/transactions", response_model=TransactionPage)

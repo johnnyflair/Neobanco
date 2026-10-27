@@ -433,7 +433,7 @@ export function Steps({ steps, current }: { steps: { t: string; s?: string }[]; 
 export function ActionButtons({
   items,
 }: {
-  items: { label: string; icon: IconName; onPress: () => void; disabled?: boolean; on?: boolean }[];
+  items: { label: string; icon: IconName; onPress: () => void; disabled?: boolean; on?: boolean; danger?: boolean }[];
 }) {
   return (
     <View style={s.actions}>
@@ -447,8 +447,14 @@ export function ActionButtons({
           accessibilityLabel={a.label.replace('\n', ' ')}
           accessibilityState={{ disabled: !!a.disabled, selected: !!a.on }}
         >
-          <View style={[s.actionIcon, a.on && { backgroundColor: colors.emeraldDark }]}>
-            <Icon name={a.icon} size={25} color={a.on ? colors.white : colors.emeraldDark} />
+          <View
+            style={[
+              s.actionIcon,
+              a.danger && { backgroundColor: colors.dangerSoft },
+              a.on && { backgroundColor: a.danger ? colors.danger : colors.emeraldDark },
+            ]}
+          >
+            <Icon name={a.icon} size={25} color={a.on ? colors.white : a.danger ? colors.danger : colors.emeraldDark} />
           </View>
           <Text style={s.actionText}>{a.label}</Text>
         </Pressable>

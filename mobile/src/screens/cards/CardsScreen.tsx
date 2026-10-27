@@ -193,7 +193,7 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
       <ActionButtons
         items={[
           { label: secrets ? 'Ocultar\ndatos' : 'Ver\ndatos', icon: 'eye', onPress: reveal, disabled: locked, on: !!secrets },
-          { label: locked ? 'Descongelar\ntarjeta' : 'Congelar\ntarjeta', icon: 'snowflake', onPress: toggleLock, on: locked },
+          { label: locked ? 'Descongelar\ntarjeta' : 'Congelar\ntarjeta', icon: 'snowflake', onPress: toggleLock, on: locked, danger: true },
           { label: 'Límites\ndiarios', icon: 'sliders', onPress: () => nav.navigate('CardLimits', { cardId: card.id }) },
           { label: 'Configu-\nración', icon: 'settings', onPress: () => setSettings(true) },
         ]}
@@ -262,7 +262,7 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
       <ActionButtons
         items={[
           { label: secrets ? 'Ocultar\ndatos' : 'Ver\ndatos', icon: 'eye', onPress: reveal, disabled: locked, on: !!secrets },
-          { label: locked ? 'Descongelar\ntarjeta' : 'Congelar\ntarjeta', icon: 'snowflake', onPress: toggleLock, on: locked },
+          { label: locked ? 'Descongelar\ntarjeta' : 'Congelar\ntarjeta', icon: 'snowflake', onPress: toggleLock, on: locked, danger: true },
           { label: 'Límites\ndiarios', icon: 'sliders', onPress: () => nav.navigate('CardLimits', { cardId: card.id }) },
           { label: 'Configu-\nración', icon: 'settings', onPress: () => setSettings(true) },
         ]}

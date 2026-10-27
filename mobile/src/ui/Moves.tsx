@@ -3,7 +3,7 @@
 // Al tocarlo sube una hoja con todo el detalle y opciones para compartir el comprobante.
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
-import { useRef, useState, type ComponentRef } from 'react';
+import { useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import { Linking, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 
@@ -53,15 +53,19 @@ export function MoveRow({
   currency = 'CRC',
   mask = (s) => s,
   first,
+  grouped,
   onPress,
 }: {
   t: Transaction;
   currency?: 'CRC' | 'USD';
   mask?: (s: string) => string;
   first?: boolean;
+  grouped?: boolean;
   onPress: () => void;
 }) {
-  const sub = [t.counterparty, shortDate(t.created_at)].filter(Boolean).join(' · ');
+  // Agrupado por día, la fecha ya está en el separador: abajo va quién y la hora.
+  const when = grouped ? timeOf(t.created_at) : shortDate(t.created_at);
+  const sub = [t.counterparty, when].filter(Boolean).join(' · ');
   return (
     <Pressable
       onPress={onPress}
@@ -82,6 +86,53 @@ export function MoveRow({
       <Icon name="chev" size={14} color={colors.muted} />
     </Pressable>
   );
+}
+
+const timeOf = (iso: string) => new Date(iso).toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
+
+function dayLabel(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const date = d.toLocaleDateString('es-CR', {
+    day: 'numeric',
+    month: 'short',
+    ...(d.getFullYear() !== today.getFullYear() ? { year: 'numeric' as const } : {}),
+  });
+  if (d.toDateString() === today.toDateString()) return `Hoy · ${date}`;
+  if (d.toDateString() === yesterday.toDateString()) return `Ayer · ${date}`;
+  return date;
+}
+
+/** Lista de movimientos agrupada por día: separador con la fecha y una línea debajo. */
+export function MoveList({
+  items,
+  currency = 'CRC',
+  mask,
+  onPress,
+}: {
+  items: Transaction[];
+  currency?: 'CRC' | 'USD';
+  mask?: (s: string) => string;
+  onPress: (t: Transaction) => void;
+}) {
+  const out: ReactNode[] = [];
+  let last = '';
+  for (const t of items) {
+    const day = new Date(t.created_at).toDateString();
+    const newDay = day !== last;
+    if (newDay) {
+      out.push(
+        <Text key={`d-${day}`} style={st.day} accessibilityRole="header">
+          {dayLabel(t.created_at)}
+        </Text>,
+      );
+      last = day;
+    }
+    out.push(<MoveRow key={t.id} t={t} currency={currency} mask={mask} first={newDay} grouped onPress={() => onPress(t)} />);
+  }
+  return <View>{out}</View>;
 }
 
 export function MoveSheet({
@@ -165,6 +216,7 @@ export function MoveSheet({
 
 const st = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderColor: colors.line },
+  day: { fontSize: 12.5, fontWeight: '600', color: colors.muted, paddingTop: 16, paddingBottom: 6, borderBottomWidth: 1, borderColor: '#D0D5DD' },
   receipt: { backgroundColor: colors.white, paddingBottom: 4 },
   head: { alignItems: 'center', gap: 4, marginBottom: 10 },
   title: { fontSize: 16, fontWeight: '600', color: colors.ink, marginTop: 4 },

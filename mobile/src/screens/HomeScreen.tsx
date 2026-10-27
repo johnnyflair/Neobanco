@@ -13,7 +13,7 @@ import { money } from '../format';
 import { secureStore } from '../secureStore';
 import { AccountSheet } from './AccountSheet';
 import { accountsGlow, colors, radius, type } from '../theme';
-import { MoveRow, MoveSheet } from '../ui/Moves';
+import { MoveList, MoveSheet } from '../ui/Moves';
 import { Icon, type IconName } from '../ui/Icon';
 import { Text } from '../ui/typography';
 
@@ -149,6 +149,7 @@ export function HomeScreen() {
         </View>
       </LinearGradient>
 
+      <View style={s.band} />
       <View style={s.quick}>
         {QUICK.map((q) => (
           <Pressable
@@ -167,17 +168,16 @@ export function HomeScreen() {
         ))}
       </View>
 
+      <View style={s.band} />
       <View style={s.sectionRow}>
-        <Text style={[s.section, { marginTop: 0, marginBottom: 0 }]}>Movimientos</Text>
+        <Text style={s.sectionTitle}>Movimientos</Text>
         {crcAccount && (
           <Pressable onPress={() => nav.navigate('AccountDetail', { account: crcAccount })} hitSlop={10} accessibilityRole="button">
             <Text style={s.link}>Ver todos</Text>
           </Pressable>
         )}
       </View>
-      {moves.slice(0, 8).map((t, i) => (
-        <MoveRow key={t.id} t={t} mask={mask} first={i === 0} onPress={() => setMove(t)} />
-      ))}
+      <MoveList items={moves.slice(0, 8)} mask={mask} onPress={setMove} />
       <MoveSheet t={move} accountName="Cuenta colones" onClose={() => setMove(null)} />
       <Text style={s.version}>Versión {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'local').slice(0, 7)}</Text>
       <AccountSheet
@@ -194,7 +194,7 @@ export function HomeScreen() {
 }
 
 const s = StyleSheet.create({
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, marginBottom: 4 },
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
   link: { fontSize: 14, fontWeight: '600', color: colors.primary },
   screen: { flex: 1, backgroundColor: colors.white },
   content: { padding: 18, paddingBottom: 40 },
@@ -215,6 +215,7 @@ const s = StyleSheet.create({
   avatarText: { color: colors.white, fontWeight: '700', fontSize: 15 },
   error: { color: colors.danger, marginBottom: 8 },
   glow: {
+    marginBottom: 20,
     borderRadius: radius.lg,
     padding: 1.5,
     shadowColor: colors.primary,
@@ -233,7 +234,10 @@ const s = StyleSheet.create({
   icon: { fontSize: 20, fontWeight: '600', color: colors.primary },
   more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
   moreText: { fontSize: 14, fontWeight: '600', color: colors.primary },
-  quick: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginBottom: 8 },
+  quick: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 18, paddingBottom: 16 },
+  // Franja gris de borde a borde entre secciones (cuentas · accesos · movimientos).
+  band: { height: 10, backgroundColor: '#F2F4F7', marginHorizontal: -18 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
   quickItem: { width: '24%', alignItems: 'center', gap: 7 },
   quickIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   quickText: { fontSize: 12.5, lineHeight: 16, fontWeight: '600', textAlign: 'center', color: colors.ink },

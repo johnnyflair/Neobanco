@@ -8,7 +8,7 @@ import { api } from '../api/client';
 import { errorMessage } from '../api/hooks';
 import type { Transaction } from '../api/types';
 import { money } from '../format';
-import { MoveRow, MoveSheet } from '../ui/Moves';
+import { MoveList, MoveSheet } from '../ui/Moves';
 import type { RootProps } from '../navigation';
 import { Btn, ErrorText, Hero, Screen, Sect, Small } from '../ui/kit';
 
@@ -69,9 +69,7 @@ export function AccountDetailScreen({ route }: RootProps<'AccountDetail'>) {
         </View>
       )}
       <Sect>Movimientos</Sect>
-      {items.map((t, i) => (
-        <MoveRow key={t.id} t={t} currency={cur} first={i === 0} onPress={() => setMove(t)} />
-      ))}
+      <MoveList items={items} currency={cur} onPress={setMove} />
       <MoveSheet t={move} accountName={title} currency={cur} onClose={() => setMove(null)} />
       {!items.length && !error && <Small>Sin movimientos todavía.</Small>}
       {next && <Btn label="Ver más" variant="l" onPress={more} loading={busy} />}

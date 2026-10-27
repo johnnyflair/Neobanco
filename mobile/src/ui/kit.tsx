@@ -313,7 +313,21 @@ export function FieldStatic({ label, value }: { label: string; value: string }) 
   );
 }
 
-export const Sect = ({ children }: { children: string }) => <Text style={s.sect}>{children}</Text>;
+/** Sección (regla del inicio, para toda la App): franja gris de borde a borde y título.
+ *  `plain` es para etiquetas de una pregunta dentro de un formulario (sin franja). */
+export const Sect = ({ children, plain, first }: { children: string; plain?: boolean; first?: boolean }) =>
+  plain ? (
+    <Text style={s.sect}>{children}</Text>
+  ) : (
+    <>
+      {!first && <View style={s.band} />}
+      <Text style={[s.sectTitle, first && { marginTop: 4 }]} accessibilityRole="header">
+        {children}
+      </Text>
+    </>
+  );
+/** Franja gris entre secciones, de borde a borde. */
+export const Band = () => <View style={s.band} />;
 export const Small = ({ children, center, style }: { children: ReactNode; center?: boolean; style?: object }) => (
   <Text style={[s.sm, center && { textAlign: 'center' }, style]}>{children}</Text>
 );
@@ -545,6 +559,8 @@ export const s = StyleSheet.create({
   },
   h2: { fontSize: 20, fontWeight: '700', color: colors.ink, flexShrink: 1 },
   sm: { fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 16 },
+  band: { height: 10, backgroundColor: '#F2F4F7', marginHorizontal: -18, marginTop: 20 },
+  sectTitle: { fontSize: 16, fontWeight: '700', color: colors.ink, marginTop: 16, marginBottom: 4 },
   sect: { fontSize: 12, color: colors.muted, marginTop: 16, marginBottom: 4, fontWeight: '600', letterSpacing: 0.2 },
   btn: {
     flexDirection: 'row',

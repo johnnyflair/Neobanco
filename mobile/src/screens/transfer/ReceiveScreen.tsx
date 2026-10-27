@@ -47,7 +47,7 @@ export function ReceiveScreen() {
         <Text style={st.up}>{data.me.full_name.split(' ').slice(0, 2).join(' ')}</Text>
       </View>
       {iban && <FieldStatic label="IBAN" value={iban} />}
-      <Sect>Así le va a llegar</Sect>
+      <Sect plain>Así le va a llegar</Sect>
       <Text style={st.msg}>{text}</Text>
       <Btn
         label="Compartir por WhatsApp"

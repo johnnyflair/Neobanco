@@ -205,11 +205,11 @@ export function LoanApplyScreen() {
   return (
     <Screen title="Solicitá tu préstamo" footer={<Btn label="Enviar solicitud" onPress={send} loading={busy} />}>
       <Small>Te respondemos el mismo día hábil</Small>
-      <Sect>¿Cómo generás ingresos?</Sect>
+      <Sect plain>¿Cómo generás ingresos?</Sect>
       <Chips options={[...INCOME]} value={incomeType} onChange={setIncomeType} />
       <Field label="Ingreso mensual (₡)" value={income} onChangeText={setIncome} keyboardType="decimal-pad" placeholder="850,000" />
       <Field label="Monto que necesitás (₡)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="2,000,000" />
-      <Sect>Plazo en meses</Sect>
+      <Sect plain>Plazo en meses</Sect>
       <Chips options={TERMS.map((n) => ({ value: n, label: String(n) }))} value={term} onChange={setTerm} />
       <Small style={{ marginTop: 12 }}>
         Si hace falta, un asesor te pide la constancia de salario por WhatsApp. No tenés que ir a ninguna oficina.

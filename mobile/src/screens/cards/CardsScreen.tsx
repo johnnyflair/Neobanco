@@ -12,7 +12,7 @@ import { dayMonth, groupPan, money } from '../../format';
 import { colors, radius } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { Icon } from '../../ui/Icon';
-import { ActionButtons, Btn, ErrorText, Loading, Row, Screen, Small, Tag, Toggle } from '../../ui/kit';
+import { ActionButtons, Band, Btn, ErrorText, Loading, Row, Screen, Small, Tag, Toggle } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
 import { Text } from '../../ui/typography';
 
@@ -199,6 +199,7 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
         ]}
       />
       <ErrorText>{error}</ErrorText>
+      <Band />
       <View style={{ marginTop: 8 }}>
         <Row
           first
@@ -297,6 +298,7 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
       </View>
       <Btn label="Pagar tarjeta" onPress={() => nav.navigate('CardPay', { cardId: card.id })} disabled={Number(c.balance) <= 0} />
       <ErrorText>{error}</ErrorText>
+      <Band />
       <View style={{ marginTop: 8 }}>
         <Row
           icon="receipt"

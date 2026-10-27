@@ -11,7 +11,7 @@ export function TransferHubScreen() {
   const recent = useLoad(api.sinpeRecent);
   return (
     <Screen title="Transferir dinero">
-      <Sect>Enviar</Sect>
+      <Sect first>Enviar</Sect>
       <Row icon="phone" title="SINPE Móvil" sub="A un número de celular, al instante" onPress={() => nav.navigate('SinpeNumber')} first />
       <Row icon="bank" title="Cuenta IBAN" sub="A cualquier cuenta en otro banco o cooperativa" onPress={() => nav.navigate('Iban')} />
       <Sect>Traer</Sect>

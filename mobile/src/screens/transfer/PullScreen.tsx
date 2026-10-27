@@ -83,7 +83,7 @@ export function PullScreen() {
       }
     >
       <Small>Solo de cuentas a tu nombre. Viaja por SINPE y llega en segundos.</Small>
-      <Sect>¿De cuál cuenta?</Sect>
+      <Sect plain>¿De cuál cuenta?</Sect>
       {linked.data?.map((l) => (
         <Opt
           key={l.id}

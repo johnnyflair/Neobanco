@@ -171,7 +171,7 @@ export function NewEnvelopeScreen() {
           <Text style={{ color: colors.primaryInk, fontSize: 14 }}>Son {money(g / (m * 2))} por quincena</Text>
         </View>
       )}
-      <Sect>¿Cómo querés ahorrar?</Sect>
+      <Sect plain>¿Cómo querés ahorrar?</Sect>
       {MODES.map((x) => (
         <Opt key={x.value} selected={mode === x.value} onPress={() => setMode(x.value)} title={x.title} sub={x.sub} />
       ))}
@@ -317,7 +317,7 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
       <View style={{ marginTop: 14 }}>
         <Hero title="Ganarías" sub="Intereses al vencer" big={money(gain)} up={`Tasa de ejemplo ${pct(rate)} · ${term} meses`} />
       </View>
-      <Sect>Al vencer</Sect>
+      <Sect plain>Al vencer</Sect>
       <Chips options={[...END]} value={end} onChange={setEnd} />
       <ErrorText>{error ?? data.error}</ErrorText>
     </Screen>

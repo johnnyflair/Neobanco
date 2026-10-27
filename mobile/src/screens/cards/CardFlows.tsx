@@ -284,7 +284,7 @@ export function CardInstallmentsScreen({ route }: RootProps<'CardInstallments'>)
         />
       ))}
       {open.length === 0 && <Small style={{ marginTop: 8 }}>No tenés compras recientes para pasar a cuotas.</Small>}
-      <Sect>¿En cuántos meses?</Sect>
+      <Sect plain>¿En cuántos meses?</Sect>
       <Chips
         options={[3, 6, 12, 18].map((n) => ({ value: n, label: String(n) }))}
         value={months}

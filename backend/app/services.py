@@ -124,8 +124,9 @@ TX_TITLES: dict[str, tuple[str, str]] = {
     "card_payment": ("Pago de tarjeta de crédito", "Pago de tarjeta de crédito"),
     "loan": ("Pago de préstamo", "Desembolso de préstamo"),
     "envelope": ("Pasaste a un sobre", "Recibiste en tu sobre"),
-    "term": ("Ahorro a plazo", "Apertura de ahorro a plazo"),
+    "term": ("Ahorro a plazo", "Intereses de tu plazo"),
     "rewards": ("Canje de puntos", "Canje de puntos"),
+    "capital": ("Retiro de capital", "Aporte a capital social"),
     "salary": ("Ajuste de salario", "Salario"),
     "opening": ("Saldo anterior", "Saldo anterior"),
 }

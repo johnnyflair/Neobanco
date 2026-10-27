@@ -53,6 +53,9 @@ export type Transaction = {
   counterparty: string | null;
   detail: string | null;
   reference: string | null;
+  account_id?: string | null;
+  account_name?: string | null;
+  currency?: string | null;
 };
 
 export type TransactionPage = { items: Transaction[]; next_before: string | null };

@@ -205,3 +205,17 @@ async def test_transactions_have_titles_and_counterparty(client, ana):
     card = next(t for t in items if t["category"] == "card")
     assert card["title"] == "Compra con tarjeta" and card["detail"].startswith("Débito")
     assert all(t["title"] for t in items)
+
+
+async def test_combined_transactions(client, ana, carlos):
+    r = (await client.get("/v1/transactions?limit=100", headers=ana)).json()
+    names = {t["account_name"] for t in r["items"]}
+    assert "Colones" in names and all(t["currency"] in ("CRC", "USD") for t in r["items"])
+    dates = [t["created_at"] for t in r["items"]]
+    assert dates == sorted(dates, reverse=True)
+    crc = await account(client, ana, "Colones")
+    only = (await client.get(f"/v1/transactions?account_id={crc['id']}", headers=ana)).json()["items"]
+    assert only and {t["account_name"] for t in only} == {"Colones"}
+    # Cuentas de otro asociado se ignoran.
+    other = (await client.get(f"/v1/transactions?account_id={crc['id']}", headers=carlos)).json()
+    assert other["items"] == []

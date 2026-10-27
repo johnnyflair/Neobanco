@@ -169,6 +169,36 @@ async def seed(reset: bool = False) -> None:
                                        reference=new_reference("MV")))
             crc.balance = bal
             s.add_all(txs)
+
+            # Historia también en dólares, sobres, plazo y capital, para que "Todas" se vea real.
+            # Cada cuenta cierra en el saldo con el que se creó.
+            def history(acct: Account, moves: list[tuple[int, Decimal, str, str, str | None, str | None]]) -> None:
+                first = now - timedelta(days=max(d for d, *_ in moves) + 1)
+                running = acct.balance - sum(mv[1] for mv in moves)
+                rows = [Transaction(account_id=acct.id, amount=running, balance_after=running,
+                                    description="Saldo anterior", category="opening", created_at=first)]
+                for d, amt, desc, cat, cp, det in sorted(moves, key=lambda mv: -mv[0]):
+                    running += amt
+                    rows.append(Transaction(account_id=acct.id, amount=amt, balance_after=running, description=desc,
+                                            category=cat, counterparty=cp, detail=det, reference=new_reference("MV"),
+                                            created_at=now - timedelta(days=d, hours=rnd.randint(1, 9))))
+                s.add_all(rows)
+
+            usd_card = f"Débito •••• 44{17 + i}"
+            history(usd, [(1, Decimal("-24.99"), "Amazon", "card", "Amazon", usd_card),
+                          (6, Decimal("-15.49"), "Netflix", "card", "Netflix", usd_card),
+                          (12, Decimal("350.00"), "Transferencia de Juan Pérez", "iban", "Juan Pérez",
+                           "CR61 •••• 2231"),
+                          (20, Decimal("-9.99"), "Spotify", "card", "Spotify", usd_card)])
+            history(envs[0], [(d, Decimal("5000"), "Ahorro automático", "envelope", None, "Monto fijo")
+                              for d in (0, 15, 30, 45)])
+            history(envs[1], [(d, Decimal(v), "Redondeo de compras", "envelope", None, "Redondeo")
+                              for d, v in ((2, 500), (8, 1100), (19, 900))])
+            history(envs[2], [(d, Decimal("42500"), "10% del salario", "envelope", None, "Salario")
+                              for d in (15, 45)])
+            history(cap, [(d, Decimal("15000"), "Aporte mensual", "capital", "Cooperativa", "Aporte de asociado")
+                          for d in (3, 33)])
+            history(term, [(40, Decimal("2731.67"), "Intereses del mes", "term", None, "5.5% anual")])
             s.add_all([Transfer(member_id=m.id, kind=TransferKind.sinpe, account_id=crc.id, amount=amt,
                                 currency=Currency.CRC, counterparty=to, counterparty_name=KNOWN_PHONES[to][0],
                                 reference=new_reference("SM"), created_at=when) for to, amt, when in sent])

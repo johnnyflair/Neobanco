@@ -8,6 +8,7 @@ import { createNativeStackNavigator, type NativeStackScreenProps } from '@react-
 import { CardInstallmentsScreen, CardLimitsScreen, CardLinkedScreen, CardPayScreen } from './screens/cards/CardFlows';
 import { CardsScreen } from './screens/cards/CardsScreen';
 import { AccountDetailScreen } from './screens/AccountDetailScreen';
+import { MovementsScreen } from './screens/MovementsScreen';
 import { BillCategoryScreen, BillDetailScreen, BillServiceScreen, BillsScreen } from './screens/bills/BillsScreens';
 import {
   EnvelopeScreen,
@@ -67,6 +68,7 @@ export type RootParams = {
   Envelope: { account: Account };
   TermDeposit: { term: number };
   AccountDetail: { account: Account };
+  Movements: undefined;
   Profile: undefined;
   Rewards: undefined;
   Redeem: undefined;
@@ -130,6 +132,7 @@ export function RootNavigator() {
       <Stack.Screen name="Envelope" component={EnvelopeScreen} />
       <Stack.Screen name="TermDeposit" component={TermDepositScreen} />
       <Stack.Screen name="AccountDetail" component={AccountDetailScreen} />
+      <Stack.Screen name="Movements" component={MovementsScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Rewards" component={RewardsScreen} />
       <Stack.Screen name="Redeem" component={RedeemScreen} />

@@ -31,6 +31,8 @@ function moveIcon(t: Transaction): IconName {
       return 'pig';
     case 'rewards':
       return 'star';
+    case 'capital':
+      return 'hands';
     case 'opening':
       return 'file';
     default:
@@ -54,9 +56,11 @@ export function MoveRow({
   mask = (s) => s,
   first,
   grouped,
+  showAccount,
   onPress,
 }: {
   t: Transaction;
+  showAccount?: boolean;
   currency?: 'CRC' | 'USD';
   mask?: (s: string) => string;
   first?: boolean;
@@ -65,7 +69,9 @@ export function MoveRow({
 }) {
   // Agrupado por día, la fecha ya está en el separador: abajo va quién y la hora.
   const when = grouped ? timeOf(t.created_at) : shortDate(t.created_at);
-  const sub = [t.counterparty, when].filter(Boolean).join(' · ');
+  // En la vista combinada (Todas) cada movimiento dice de qué cuenta es.
+  const sub = [showAccount ? t.account_name : null, t.counterparty, when].filter(Boolean).join(' · ');
+  currency = (t.currency as 'CRC' | 'USD' | null) ?? currency;
   return (
     <Pressable
       onPress={onPress}
@@ -110,9 +116,11 @@ export function MoveList({
   items,
   currency = 'CRC',
   mask,
+  showAccount,
   onPress,
 }: {
   items: Transaction[];
+  showAccount?: boolean;
   currency?: 'CRC' | 'USD';
   mask?: (s: string) => string;
   onPress: (t: Transaction) => void;
@@ -130,7 +138,7 @@ export function MoveList({
       );
       last = day;
     }
-    out.push(<MoveRow key={t.id} t={t} currency={currency} mask={mask} first={newDay} grouped onPress={() => onPress(t)} />);
+    out.push(<MoveRow key={t.id} t={t} currency={currency} mask={mask} first={newDay} grouped showAccount={showAccount} onPress={() => onPress(t)} />);
   }
   return <View>{out}</View>;
 }
@@ -151,6 +159,8 @@ export function MoveSheet({
   if (!t) return <BottomSheet visible={false} onClose={onClose}>{null}</BottomSheet>;
 
   const incoming = isIn(t);
+  currency = (t.currency as 'CRC' | 'USD' | null) ?? currency;
+  accountName = t.account_name ? (t.account_name === 'Colones' || t.account_name === 'Dólares' ? `Cuenta ${t.account_name.toLowerCase()}` : t.account_name) : accountName;
   const detail = t.detail && t.category === 'sinpe' && /^\d{8}$/.test(t.detail) ? formatPhone(t.detail) : t.detail;
   const rows: { k: string; v: string; copy?: boolean }[] = [
     ...(t.counterparty ? [{ k: incoming ? 'De' : 'Para', v: t.counterparty }] : []),

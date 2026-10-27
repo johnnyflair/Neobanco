@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import current_member, mask_iban, mask_phone
 from app.core.errors import not_found
-from app.db.models import Account, AccountType, Member
+from app.db.models import Account, AccountType, Member, Transaction
 from app.providers import Providers, get_providers
 from app.schemas import (
     AccountDetailOut,
@@ -75,8 +75,34 @@ async def list_transactions(account_id: uuid.UUID, limit: int = Query(20, ge=1, 
     if await p.core.get_account(member.id, account_id) is None:
         raise not_found("cuenta")
     rows = await p.core.list_transactions(account_id, limit + 1, before)
-    items = [TransactionOut.model_validate(t).model_copy(update={
-        "title": tx_title(t.category, t.amount),
-        "counterparty": tx_counterparty(t.category, t.description, t.counterparty)}) for t in rows[:limit]]
+    items = [_tx_out(t) for t in rows[:limit]]
+    nxt = items[-1].created_at.isoformat() if len(rows) > limit else None
+    return TransactionPage(items=items, next_before=nxt)
+
+
+ACCOUNT_LABEL = {("savings", "CRC"): "Colones", ("savings", "USD"): "Dólares"}
+
+
+def _tx_out(t: Transaction, acct: Account | None = None) -> TransactionOut:
+    extra: dict[str, object] = {"title": tx_title(t.category, t.amount),
+             "counterparty": tx_counterparty(t.category, t.description, t.counterparty)}
+    if acct is not None:
+        extra |= {"account_id": acct.id, "currency": acct.currency.value,
+                  "account_name": ACCOUNT_LABEL.get((acct.type.value, acct.currency.value), acct.name)}
+    return TransactionOut.model_validate(t).model_copy(update=extra)
+
+
+@router.get("/transactions", response_model=TransactionPage)
+async def all_transactions(limit: int = Query(30, ge=1, le=100),
+                           before: str | None = Query(None, max_length=40),
+                           account_id: list[uuid.UUID] | None = Query(None, description="Filtrar por cuentas"),
+                           member: Member = Depends(current_member), p: Providers = Depends(get_providers)):
+    """Historial combinado de todas las cuentas (o de las elegidas), con la cuenta de cada movimiento."""
+    accts = {a.id: a for a in await p.core.list_accounts(member.id)}
+    ids = [i for i in (account_id or accts) if i in accts]
+    if not ids:
+        return TransactionPage(items=[], next_before=None)
+    rows = await p.core.list_transactions_many(ids, limit + 1, before)
+    items = [_tx_out(t, accts[t.account_id]) for t in rows[:limit]]
     nxt = items[-1].created_at.isoformat() if len(rows) > limit else None
     return TransactionPage(items=items, next_before=nxt)

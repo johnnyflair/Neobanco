@@ -39,8 +39,8 @@ export function HomeScreen() {
       const [m, accts] = await Promise.all([api.me(), api.accounts()]);
       setMe(m);
       setAccounts(accts);
-      const crc = accts.find((a) => a.type === 'savings' && a.currency === 'CRC');
-      if (crc) setMoves((await api.transactions(crc.id)).items);
+      // Los últimos movimientos de todas las cuentas, como en "Ver todos".
+      setMoves((await api.allTransactions()).items);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No pudimos cargar tus cuentas.');
     } finally {
@@ -78,7 +78,6 @@ export function HomeScreen() {
   ];
 
   const main = accounts.filter((a) => MAIN_TYPES.has(a.type));
-  const crcAccount = accounts.find((a) => a.type === 'savings' && a.currency === 'CRC');
 
   if (loading) {
     return <ActivityIndicator style={{ flex: 1 }} color={colors.primary} />;
@@ -171,13 +170,11 @@ export function HomeScreen() {
       <View style={s.band} />
       <View style={s.sectionRow}>
         <Text style={s.sectionTitle}>Movimientos</Text>
-        {crcAccount && (
-          <Pressable onPress={() => nav.navigate('AccountDetail', { account: crcAccount })} hitSlop={10} accessibilityRole="button">
-            <Text style={s.link}>Ver todos</Text>
-          </Pressable>
-        )}
+        <Pressable onPress={() => nav.navigate('Movements')} hitSlop={10} accessibilityRole="button">
+          <Text style={s.link}>Ver todos</Text>
+        </Pressable>
       </View>
-      <MoveList items={moves.slice(0, 8)} mask={mask} onPress={setMove} />
+      <MoveList items={moves.slice(0, 8)} mask={mask} showAccount onPress={setMove} />
       <MoveSheet t={move} accountName="Cuenta colones" onClose={() => setMove(null)} />
       <Text style={s.version}>Versión {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'local').slice(0, 7)}</Text>
       <AccountSheet

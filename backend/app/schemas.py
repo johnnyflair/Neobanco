@@ -175,6 +175,10 @@ class TransactionOut(Out):
     counterparty: str | None = None
     detail: str | None = None
     reference: str | None = None
+    # En la vista combinada: de qué cuenta es cada movimiento.
+    account_id: uuid.UUID | None = None
+    account_name: str | None = None
+    currency: str | None = None
 
 
 class TransactionPage(BaseModel):

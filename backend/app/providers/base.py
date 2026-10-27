@@ -23,6 +23,10 @@ class CoreBanking(Protocol):
     async def get_account(self, member_id: uuid.UUID, account_id: uuid.UUID) -> Account | None: ...
     async def list_transactions(self, account_id: uuid.UUID, limit: int,
                                 before: str | None) -> list[Transaction]: ...
+    async def list_transactions_many(self, account_ids: list[uuid.UUID], limit: int,
+                                     before: str | None) -> list[Transaction]:
+        """Movimientos de varias cuentas a la vez, del más nuevo al más viejo."""
+        ...
     async def post(self, account_id: uuid.UUID, amount: Decimal, description: str, category: str,
                    reference: str | None = None, counterparty: str | None = None,
                    detail: str | None = None) -> Transaction:

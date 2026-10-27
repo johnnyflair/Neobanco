@@ -42,6 +42,15 @@ class MockCore:
         rows = await self.s.scalars(q.order_by(Transaction.created_at.desc()).limit(limit))
         return list(rows)
 
+    async def list_transactions_many(self, account_ids: list[uuid.UUID], limit: int,
+                                     before: str | None) -> list[Transaction]:
+        # El "saldo anterior" de apertura no es un movimiento real: no va en la vista combinada.
+        q = select(Transaction).where(Transaction.account_id.in_(account_ids), Transaction.category != "opening")
+        if before:
+            q = q.where(Transaction.created_at < datetime.fromisoformat(before))
+        rows = await self.s.scalars(q.order_by(Transaction.created_at.desc()).limit(limit))
+        return list(rows)
+
     async def post(self, account_id: uuid.UUID, amount: Decimal, description: str, category: str,
                    reference: str | None = None, counterparty: str | None = None,
                    detail: str | None = None) -> Transaction:

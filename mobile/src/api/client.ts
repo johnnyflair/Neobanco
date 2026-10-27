@@ -173,6 +173,12 @@ export const api = {
     request<TransactionPage>(
       `/v1/accounts/${accountId}/transactions?limit=20${before ? `&before=${encodeURIComponent(before)}` : ''}`,
     ),
+  allTransactions: (accountIds: string[] = [], before?: string) => {
+    const q = new URLSearchParams({ limit: '30' });
+    accountIds.forEach((id) => q.append('account_id', id));
+    if (before) q.set('before', before);
+    return request<TransactionPage>(`/v1/transactions?${q.toString()}`);
+  },
   account: (id: string) => request<AccountDetail>(`/v1/accounts/${id}`),
 
   // Tarjetas

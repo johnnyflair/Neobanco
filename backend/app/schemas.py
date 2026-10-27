@@ -270,6 +270,7 @@ class TransferOut(Out):
     amount: Decimal
     currency: str
     counterparty_name: str | None
+    description: str | None = None
     status: str
     reference: str
     created_at: datetime

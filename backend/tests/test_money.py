@@ -149,7 +149,7 @@ async def test_sinpe_recent_recipients(client, ana, carlos):
     recent = (await client.get("/v1/transfers/sinpe/recent", headers=ana)).json()
     phones = [r["phone"] for r in recent]
     assert len(phones) == len(set(phones)) and "88112030" not in phones  # sin repetidos ni ella misma
-    assert recent[0]["name"]
+    assert recent[0]["name"] and recent[0]["last_amount"] and recent[0]["last_at"]
     # Cada quien ve solo los suyos: Carlos sí le envió a Ana.
     carlos_recent = (await client.get("/v1/transfers/sinpe/recent", headers=carlos)).json()
     assert "88112030" in [r["phone"] for r in carlos_recent] and "70231188" not in [r["phone"] for r in carlos_recent]

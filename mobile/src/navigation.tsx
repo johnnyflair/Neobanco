@@ -30,7 +30,8 @@ import {
 import { IbanScreen } from './screens/transfer/IbanScreen';
 import { PullScreen } from './screens/transfer/PullScreen';
 import { ReceiveScreen } from './screens/transfer/ReceiveScreen';
-import { SinpeAmountScreen, SinpeNumberScreen } from './screens/transfer/SinpeScreens';
+import { SinpeDoneScreen } from './screens/transfer/SinpeDoneScreen';
+import { SinpeAmountScreen, SinpeDialScreen, SinpeNumberScreen } from './screens/transfer/SinpeScreens';
 import { TransferDoneScreen } from './screens/transfer/TransferDoneScreen';
 import { TransferHubScreen } from './screens/transfer/TransferHubScreen';
 import { ProfileScreen } from './screens/profile/ProfileScreen';
@@ -44,7 +45,9 @@ export type RootParams = {
   Tabs: NavigatorScreenParams<TabParams>;
   TransferHub: undefined;
   SinpeNumber: undefined;
-  SinpeAmount: { phone: string; name: string };
+  SinpeDial: { phone?: string } | undefined;
+  SinpeAmount: { phone: string; name: string; isNew?: boolean };
+  SinpeDone: { amount: string; name: string; phone: string; reference: string; createdAt: string; points: number; note: string | null };
   Iban: undefined;
   Pull: undefined;
   Receive: undefined;
@@ -108,7 +111,9 @@ export function RootNavigator() {
       <Stack.Screen name="Tabs" component={Tabs} />
       <Stack.Screen name="TransferHub" component={TransferHubScreen} />
       <Stack.Screen name="SinpeNumber" component={SinpeNumberScreen} />
+      <Stack.Screen name="SinpeDial" component={SinpeDialScreen} />
       <Stack.Screen name="SinpeAmount" component={SinpeAmountScreen} />
+      <Stack.Screen name="SinpeDone" component={SinpeDoneScreen} options={{ gestureEnabled: false }} />
       <Stack.Screen name="Iban" component={IbanScreen} />
       <Stack.Screen name="Pull" component={PullScreen} />
       <Stack.Screen name="Receive" component={ReceiveScreen} />

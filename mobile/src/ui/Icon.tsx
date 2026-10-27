@@ -7,7 +7,7 @@ export type IconName =
   | 'home' | 'card' | 'grow' | 'chat' | 'phone' | 'bank' | 'pull' | 'qr' | 'back' | 'chev' | 'check'
   | 'lock' | 'eye' | 'eyeOff' | 'share' | 'receipt' | 'file' | 'star' | 'send' | 'swap' | 'copy' | 'cash' | 'hands' | 'pig' | 'chevDown' | 'chevUp' | 'x'
   | 'bolt' | 'drop' | 'wifi' | 'search' | 'tv' | 'car' | 'school' | 'shield' | 'building' | 'gift' | 'heart' | 'calendar' | 'user' | 'logout' | 'alert' | 'clock' | 'plus' | 'minus'
-  | 'arrowUp' | 'arrowDown' | 'snowflake' | 'sliders' | 'settings' | 'medal' | 'crown';
+  | 'arrowUp' | 'arrowDown' | 'snowflake' | 'sliders' | 'settings' | 'medal' | 'crown' | 'backspace';
 
 const stroke = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
@@ -64,6 +64,13 @@ function shapes(name: IconName, c: string) {
           <Rect {...p} x={14} y={4} width={6} height={6} />
           <Rect {...p} x={4} y={14} width={6} height={6} />
           <Path {...p} d="M14 14h3v3h3M20 20h-3" />
+        </>
+      );
+    case 'backspace':
+      return (
+        <>
+          <Path {...p} d="M21 5H8l-6 7 6 7h13a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z" />
+          <Path {...p} d="M17 9l-5 5M12 9l5 5" />
         </>
       );
     case 'back':

@@ -25,7 +25,8 @@ router = APIRouter(prefix="/transfers", tags=["Transferencias"])
 
 def _out(t: Transfer, points: int = 0) -> dict:
     return TransferOut(id=t.id, kind=t.kind.value, amount=t.amount, currency=t.currency.value,
-                       counterparty_name=t.counterparty_name, status=t.status, reference=t.reference,
+                       counterparty_name=t.counterparty_name, description=t.description, status=t.status,
+                       reference=t.reference,
                        created_at=t.created_at, points_earned=points).model_dump(mode="json")
 
 
@@ -41,13 +42,17 @@ async def sinpe_lookup(phone: Phone = Query(...), member: Member = Depends(curre
 
 @router.get("/sinpe/recent")
 async def sinpe_recent(member: Member = Depends(current_member), session: AsyncSession = Depends(get_session)):
-    """Últimos destinatarios de SINPE Móvil (sin repetir), para la fila de "Frecuentes"."""
-    last = func.max(Transfer.created_at).label("last")
+    """Últimos destinatarios de SINPE Móvil (sin repetir), con el último envío a cada uno:
+    para "Recientes" y para mostrar "Le enviaste ₡15.000 · ayer" en la lista."""
     rows = await session.execute(
-        select(Transfer.counterparty, func.max(Transfer.counterparty_name), last)
-        .where(Transfer.member_id == member.id, Transfer.kind == TransferKind.sinpe)
-        .group_by(Transfer.counterparty).order_by(last.desc()).limit(6))
-    return [{"phone": phone, "name": name} for phone, name, _ in rows]
+        select(Transfer).where(Transfer.member_id == member.id, Transfer.kind == TransferKind.sinpe)
+        .order_by(Transfer.created_at.desc()).limit(80))
+    seen: dict[str, dict] = {}
+    for t in rows.scalars():
+        if t.counterparty not in seen:
+            seen[t.counterparty] = {"phone": t.counterparty, "name": t.counterparty_name,
+                                    "last_amount": str(t.amount), "last_at": t.created_at.isoformat()}
+    return list(seen.values())[:12]
 
 
 @router.post("/sinpe", status_code=201)

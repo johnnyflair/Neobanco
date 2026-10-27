@@ -100,13 +100,14 @@ export type Transfer = {
   amount: string;
   currency: Currency;
   counterparty_name: string | null;
+  description?: string | null;
   status: string;
   reference: string;
   created_at: string;
   points_earned: number;
 };
 
-export type SinpeContact = { phone: string; name: string; bank?: string };
+export type SinpeContact = { phone: string; name: string; bank?: string; last_amount?: string; last_at?: string };
 export type IbanHolder = { iban_masked: string; holder: string };
 export type LinkedAccount = { id: string; bank_name: string; label: string; iban_masked: string; authorized: boolean };
 export type PullPending = { status: 'pending_authorization'; linked_account_id: string; message: string };

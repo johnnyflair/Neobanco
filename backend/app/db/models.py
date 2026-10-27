@@ -128,6 +128,9 @@ class Transaction(TimestampMixin, Base):
     description: Mapped[str] = mapped_column(String(140))
     category: Mapped[str] = mapped_column(String(30))
     reference: Mapped[str | None] = mapped_column(String(40))
+    # Con quién fue y un dato de apoyo (celular, IBAN enmascarado, número de servicio): para el detalle.
+    counterparty: Mapped[str | None] = mapped_column(String(120))
+    detail: Mapped[str | None] = mapped_column(String(60))
 
 
 class Card(TimestampMixin, Base):

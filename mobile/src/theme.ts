@@ -25,6 +25,7 @@ export const colors = {
   heroSub: '#9FE1CB',
   orangeSoft: '#FCEFE6', // fondo del acceso a préstamos (naranja de la paleta)
   orangeInk: '#B85A1F',
+  amount: '#475467', // todos los montos: gris oscuro legible, para leerse como dinero y no como texto
 };
 
 export const radius = { sm: 10, md: 14, lg: 18, xl: 24 };
@@ -33,7 +34,7 @@ export const type = {
   title: { fontSize: 22, fontWeight: '700' as const, color: colors.ink },
   itemTitle: { fontSize: 15, fontWeight: '600' as const, color: colors.ink },
   itemSub: { fontSize: 12, color: colors.muted },
-  amount: { fontSize: 14, fontWeight: '600' as const, color: colors.ink, fontVariant: ['tabular-nums' as const] },
+  amount: { fontSize: 14, fontWeight: '600' as const, color: colors.amount, fontVariant: ['tabular-nums' as const] },
 };
 
 // Borde con destello de la tarjeta "Mis cuentas" (al 50 % de intensidad, como se aprobó).

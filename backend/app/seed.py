@@ -127,39 +127,46 @@ async def seed(reset: bool = False) -> None:
             await s.flush()
 
             # Movimientos de los últimos 60 días en la cuenta en colones; el saldo final queda en ₡248,500.00
-            flows: list[tuple[datetime, Decimal, str, str]] = []
+            # (cuándo, monto, descripción, categoría, contraparte, detalle)
+            flows: list[tuple[datetime, Decimal, str, str, str | None, str | None]] = []
+            card_ref = f"Débito •••• 44{17 + i}"
             for d in range(60, 0, -1):
                 when = now - timedelta(days=d, hours=rnd.randint(0, 10))
                 if d in (45, 15):
-                    flows.append((when, Decimal("425000"), "Salario CoopeEjemplo", "salary"))
+                    flows.append((when, Decimal("425000"), "Salario CoopeEjemplo", "salary", "CoopeEjemplo",
+                                  "Planilla"))
                 if rnd.random() < 0.5:
                     amt = -Decimal(rnd.choice([2500, 4500, 8900, 12500, 18200, 23400]))
-                    flows.append((when, amt, rnd.choice(MERCHANTS), "card"))
-            flows.append((now - timedelta(hours=2), Decimal("15000"), "SINPE de María Rojas", "sinpe"))
+                    shop = rnd.choice(MERCHANTS)
+                    flows.append((when, amt, shop, "card", shop, card_ref))
+            flows.append((now - timedelta(hours=2), Decimal("15000"), "SINPE de María Rojas", "sinpe", "María Rojas",
+                          "88124455"))
             # SINPE enviados recientes: alimentan "Frecuentes" en la App.
             others = [p for p in ("88124455", "88902210", "60145522", *(d[2] for d in DEMO_MEMBERS)) if p != phone]
             sent = [(others[k], Decimal(v), now - timedelta(days=dd, hours=3))
                     for k, v, dd in ((0, 8000, 1), (1, 12000, 4), (3, 5000, 9), (2, 3500, 16))]
             for to, amt, when in sent:
-                flows.append((when, -amt, f"SINPE a {KNOWN_PHONES[to][0]}", "sinpe"))
-            flows.append((now - timedelta(days=5), Decimal("-285000"), "Pago de alquiler", "iban"))
+                flows.append((when, -amt, f"SINPE a {KNOWN_PHONES[to][0]}", "sinpe", KNOWN_PHONES[to][0], to))
+            flows.append((now - timedelta(days=5), Decimal("-285000"), "Pago de alquiler", "iban",
+                          "Inmobiliaria Los Robles", "CR05 •••• 4066"))
             # Saldo inicial que hace que la cuenta termine en ₡248,500.00. Si los salarios dejan el
             # saldo inicial muy bajo, la diferencia sale como pago de la tarjeta de crédito, para que
             # la historia se vea normal y la cuenta cierre exacta.
             opening = Decimal("248500") - sum(f[1] for f in flows)
             if opening < Decimal("120000"):
                 flows.append((now - timedelta(days=31), opening - Decimal("120000"),
-                              "Pago tarjeta de crédito", "card_payment"))
+                              "Pago tarjeta de crédito", "card_payment", None, None))
                 opening = Decimal("120000")
             flows.sort(key=lambda f: f[0])
             bal = opening
             txs: list[Transaction] = [Transaction(account_id=crc.id, amount=opening, balance_after=opening,
                                                   description="Saldo anterior", category="opening",
                                                   created_at=now - timedelta(days=61))]
-            for when, amt, desc, cat in flows:
+            for when, amt, desc, cat, cp, det in flows:
                 bal += amt
                 txs.append(Transaction(account_id=crc.id, amount=amt, balance_after=bal, description=desc,
-                                       category=cat, created_at=when))
+                                       category=cat, created_at=when, counterparty=cp, detail=det,
+                                       reference=new_reference("MV")))
             crc.balance = bal
             s.add_all(txs)
             s.add_all([Transfer(member_id=m.id, kind=TransferKind.sinpe, account_id=crc.id, amount=amt,

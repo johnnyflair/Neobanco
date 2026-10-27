@@ -128,7 +128,7 @@ export function BillsScreen() {
                     subColor={due.urgent ? colors.danger : undefined}
                     right={
                       b.pending_amount ? (
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.ink }}>{money(b.pending_amount)}</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.amount }}>{money(b.pending_amount)}</Text>
                       ) : (
                         <Icon name="check" size={18} color={colors.emeraldDark} />
                       )
@@ -371,7 +371,7 @@ export function BillDetailScreen({ route }: RootProps<'BillDetail'>) {
       <Small center>
         {bill.reference_label} {bill.reference}
       </Small>
-      <Text style={{ fontSize: 34, fontWeight: '700', textAlign: 'center', color: colors.ink, marginTop: 14 }}>
+      <Text style={{ fontSize: 34, fontWeight: '700', textAlign: 'center', color: colors.amount, marginTop: 14 }}>
         {bill.pending_amount ? money(bill.pending_amount) : 'Al día'}
       </Text>
       <Small center style={due.urgent ? { color: colors.danger } : undefined}>

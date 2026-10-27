@@ -195,3 +195,13 @@ async def test_preapproved_loan_disbursement(client, ana):
     assert over.status_code == 422
     apps = (await client.get("/v1/loans/applications", headers=ana)).json()
     assert apps[0]["status"] == "disbursed"
+
+
+async def test_transactions_have_titles_and_counterparty(client, ana):
+    crc = await account(client, ana, "Colones")
+    items = (await client.get(f"/v1/accounts/{crc['id']}/transactions?limit=50", headers=ana)).json()["items"]
+    received = next(t for t in items if t["category"] == "sinpe" and Decimal(t["amount"]) > 0)
+    assert received["title"] == "Recibiste por SINPE Móvil" and received["counterparty"] == "María Rojas"
+    card = next(t for t in items if t["category"] == "card")
+    assert card["title"] == "Compra con tarjeta" and card["detail"].startswith("Débito")
+    assert all(t["title"] for t in items)

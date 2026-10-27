@@ -325,7 +325,7 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
 }
 
 const st = StyleSheet.create({
-  amt: { fontSize: 14, fontWeight: '600', color: colors.ink },
+  amt: { fontSize: 14, fontWeight: '600', color: colors.amount },
   goal: { borderWidth: 1.5, borderColor: colors.line, borderRadius: radius.md, padding: 12, marginTop: 8 },
   goalHead: { flexDirection: 'row', justifyContent: 'space-between' },
   goalName: { fontSize: 15, fontWeight: '600', color: colors.ink },
@@ -346,5 +346,5 @@ const st = StyleSheet.create({
   heroBox: { position: 'relative' },
   heroBar: { position: 'absolute', left: 16, right: 16, bottom: 10, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.15)' },
   heroBarFill: { height: 6, borderRadius: 3, backgroundColor: colors.lime },
-  big: { fontSize: 32, fontWeight: '700', textAlign: 'center', color: colors.ink, marginTop: 12, marginBottom: 6 },
+  big: { fontSize: 32, fontWeight: '700', textAlign: 'center', color: colors.amount, marginTop: 12, marginBottom: 6 },
 });

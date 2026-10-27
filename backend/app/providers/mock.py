@@ -43,7 +43,8 @@ class MockCore:
         return list(rows)
 
     async def post(self, account_id: uuid.UUID, amount: Decimal, description: str, category: str,
-                   reference: str | None = None) -> Transaction:
+                   reference: str | None = None, counterparty: str | None = None,
+                   detail: str | None = None) -> Transaction:
         acct = await self.s.scalar(select(Account).where(Account.id == account_id).with_for_update())
         if acct is None:
             raise LookupError("account")
@@ -53,7 +54,8 @@ class MockCore:
             raise InsufficientFunds()
         acct.balance = new_balance
         tx = Transaction(account_id=acct.id, amount=amount, balance_after=new_balance,
-                         description=description[:140], category=category, reference=reference)
+                         description=description[:140], category=category, reference=reference,
+                         counterparty=counterparty, detail=detail)
         self.s.add(tx)
         await self.s.flush()
         return tx

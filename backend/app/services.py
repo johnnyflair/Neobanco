@@ -112,3 +112,38 @@ ENVELOPE_RATE = Decimal("3.00")
 
 def new_reference(prefix: str) -> str:
     return f"{prefix}{datetime.now(UTC):%y%m%d}{secrets.randbelow(10**8):08d}"
+
+
+# Cómo se nombra cada movimiento en la App: (si sale, si entra).
+TX_TITLES: dict[str, tuple[str, str]] = {
+    "sinpe": ("Envío por SINPE Móvil", "Recibiste por SINPE Móvil"),
+    "iban": ("Envío por transferencia", "Recibiste por transferencia"),
+    "pull": ("Envío a otro banco", "Trajiste dinero"),
+    "bill": ("Pago de servicio", "Reintegro de servicio"),
+    "card": ("Compra con tarjeta", "Devolución de compra"),
+    "card_payment": ("Pago de tarjeta de crédito", "Pago de tarjeta de crédito"),
+    "loan": ("Pago de préstamo", "Desembolso de préstamo"),
+    "envelope": ("Pasaste a un sobre", "Recibiste en tu sobre"),
+    "term": ("Ahorro a plazo", "Apertura de ahorro a plazo"),
+    "rewards": ("Canje de puntos", "Canje de puntos"),
+    "salary": ("Ajuste de salario", "Salario"),
+    "opening": ("Saldo anterior", "Saldo anterior"),
+}
+# Movimientos viejos (sin contraparte guardada): se saca de la descripción.
+_PREFIXES = ("SINPE a ", "SINPE de ", "Transferencia a ", "Traído de ", "Desde ", "A ")
+
+
+def tx_title(category: str, amount: Decimal) -> str:
+    out, inc = TX_TITLES.get(category, ("Pago", "Recibiste dinero"))
+    return out if amount < 0 else inc
+
+
+def tx_counterparty(category: str, description: str, counterparty: str | None) -> str | None:
+    if counterparty:
+        return counterparty
+    if category in ("opening", "loan", "rewards", "card_payment", "term"):
+        return None
+    for p in _PREFIXES:
+        if description.startswith(p):
+            return description[len(p):]
+    return description

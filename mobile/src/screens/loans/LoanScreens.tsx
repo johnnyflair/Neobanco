@@ -251,7 +251,7 @@ export function LoanTrackScreen() {
 }
 
 const st = StyleSheet.create({
-  amount: { fontSize: 32, fontWeight: '700', textAlign: 'center', color: colors.ink, marginTop: 12, marginBottom: 6 },
-  amt: { fontSize: 14, fontWeight: '600', color: colors.ink },
+  amount: { fontSize: 32, fontWeight: '700', textAlign: 'center', color: colors.amount, marginTop: 12, marginBottom: 6 },
+  amt: { fontSize: 14, fontWeight: '600', color: colors.amount },
   mint: { backgroundColor: colors.mint, borderRadius: radius.md, padding: 12, marginTop: 18 },
 });

@@ -16,6 +16,7 @@ from app.schemas import (
     TransactionOut,
     TransactionPage,
 )
+from app.services import tx_counterparty, tx_title
 
 router = APIRouter(tags=["Perfil y cuentas"])
 
@@ -74,6 +75,8 @@ async def list_transactions(account_id: uuid.UUID, limit: int = Query(20, ge=1, 
     if await p.core.get_account(member.id, account_id) is None:
         raise not_found("cuenta")
     rows = await p.core.list_transactions(account_id, limit + 1, before)
-    items = [TransactionOut.model_validate(t) for t in rows[:limit]]
+    items = [TransactionOut.model_validate(t).model_copy(update={
+        "title": tx_title(t.category, t.amount),
+        "counterparty": tx_counterparty(t.category, t.description, t.counterparty)}) for t in rows[:limit]]
     nxt = items[-1].created_at.isoformat() if len(rows) > limit else None
     return TransactionPage(items=items, next_before=nxt)

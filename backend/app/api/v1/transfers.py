@@ -67,7 +67,8 @@ async def sinpe(body: SinpeIn, request: Request, key: str = Depends(idempotency_
         raise ApiError(404, "no_sinpe", "Ese número no tiene SINPE Móvil.")
     ref = new_reference("SM")
     try:
-        await p.core.post(acct.id, -body.amount, f"SINPE a {contact.display_name}", "sinpe", ref)
+        await p.core.post(acct.id, -body.amount, f"SINPE a {contact.display_name}", "sinpe", ref,
+                          counterparty=contact.display_name, detail=body.phone)
     except InsufficientFunds as e:
         raise ApiError(422, "insufficient_funds", "No te alcanza el saldo disponible.") from e
     status = await p.sinpe.send(ref, body.amount, body.phone)
@@ -112,7 +113,8 @@ async def iban(body: IbanIn, request: Request, key: str = Depends(idempotency_ke
     holder = await p.sinpe.lookup_iban(body.iban)
     ref = new_reference("TR")
     try:
-        await p.core.post(acct.id, -body.amount, f"Transferencia a {holder}", "iban", ref)
+        await p.core.post(acct.id, -body.amount, f"Transferencia a {holder}", "iban", ref,
+                          counterparty=holder, detail=mask_iban(body.iban))
     except InsufficientFunds as e:
         raise ApiError(422, "insufficient_funds", "No te alcanza el saldo disponible.") from e
     status = await p.sinpe.send(ref, body.amount, body.iban)
@@ -177,7 +179,8 @@ async def pull(body: PullIn, request: Request, key: str = Depends(idempotency_ke
         raise ApiError(422, "daily_limit", f"El máximo por día es ₡{cap:,.2f}.")
     ref = new_reference("PL")
     status = await p.sinpe.pull(ref, body.amount, linked.iban)
-    await p.core.post(acct.id, body.amount, f"Traído de {linked.bank_name}", "pull", ref)
+    await p.core.post(acct.id, body.amount, f"Traído de {linked.bank_name}", "pull", ref,
+                      counterparty=linked.bank_name, detail=mask_iban(linked.iban))
     t = Transfer(member_id=member.id, kind=TransferKind.pull, account_id=acct.id, amount=body.amount,
                  currency=Currency.CRC, counterparty=linked.iban, counterparty_name=linked.bank_name,
                  status=status, reference=ref)

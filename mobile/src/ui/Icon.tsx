@@ -6,13 +6,29 @@ import { colors } from '../theme';
 export type IconName =
   | 'home' | 'card' | 'grow' | 'chat' | 'phone' | 'bank' | 'pull' | 'qr' | 'back' | 'chev' | 'check'
   | 'lock' | 'eye' | 'eyeOff' | 'share' | 'receipt' | 'file' | 'star' | 'send' | 'swap' | 'copy' | 'cash' | 'hands' | 'pig' | 'chevDown' | 'chevUp' | 'x'
-  | 'bolt' | 'drop' | 'wifi' | 'search' | 'tv' | 'car' | 'school' | 'shield' | 'building' | 'gift' | 'heart' | 'calendar' | 'user' | 'logout' | 'alert' | 'clock' | 'plus' | 'minus';
+  | 'bolt' | 'drop' | 'wifi' | 'search' | 'tv' | 'car' | 'school' | 'shield' | 'building' | 'gift' | 'heart' | 'calendar' | 'user' | 'logout' | 'alert' | 'clock' | 'plus' | 'minus'
+  | 'arrowUp' | 'arrowDown' | 'snowflake' | 'sliders' | 'settings';
 
 const stroke = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
 function shapes(name: IconName, c: string) {
   const p = { ...stroke, stroke: c };
   switch (name) {
+    case 'arrowUp':
+      return <Path {...p} d="M12 5v14M18 11l-6-6M6 11l6-6" />;
+    case 'arrowDown':
+      return <Path {...p} d="M12 5v14M18 13l-6 6M6 13l6 6" />;
+    case 'snowflake':
+      return <Path {...p} d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 6l2.5-1.5M9.5 19.5L12 18l2.5 1.5M4.5 10.2l2.2 -1.3-.1-2.9M17.4 6l-.1 2.9 2.2 1.3M4.5 13.8l2.2 1.3-.1 2.9M17.4 18l-.1-2.9 2.2-1.3" />;
+    case 'sliders':
+      return <Path {...p} d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h11M19 18h1M12 6a2 2 0 1 0 4 0a2 2 0 1 0-4 0M6 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0M15 18a2 2 0 1 0 4 0a2 2 0 1 0-4 0" />;
+    case 'settings':
+      return (
+        <Path
+          {...p}
+          d="M10.3 4.3c.4-1.8 2.9-1.8 3.4 0a1.7 1.7 0 0 0 2.6 1.1c1.5-.9 3.3.8 2.4 2.4a1.7 1.7 0 0 0 1 2.6c1.8.4 1.8 2.9 0 3.4a1.7 1.7 0 0 0-1 2.6c.9 1.5-.8 3.3-2.4 2.4a1.7 1.7 0 0 0-2.6 1c-.4 1.8-2.9 1.8-3.4 0a1.7 1.7 0 0 0-2.6-1c-1.5.9-3.3-.8-2.4-2.4a1.7 1.7 0 0 0-1-2.6c-1.8-.4-1.8-2.9 0-3.4a1.7 1.7 0 0 0 1-2.6c-.9-1.5.8-3.3 2.4-2.4 1 .6 2.3.1 2.6-1.1M9 12a3 3 0 1 0 6 0a3 3 0 0 0-6 0"
+        />
+      );
     case 'home':
       return <Path {...p} d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z" />;
     case 'card':

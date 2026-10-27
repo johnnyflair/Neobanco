@@ -7,11 +7,10 @@ import { StyleSheet, View } from 'react-native';
 import { api } from '../api/client';
 import { errorMessage } from '../api/hooks';
 import type { Transaction } from '../api/types';
-import { money, shortDate } from '../format';
+import { money } from '../format';
+import { MoveRow, MoveSheet } from '../ui/Moves';
 import type { RootProps } from '../navigation';
-import { colors, type } from '../theme';
 import { Btn, ErrorText, Hero, Screen, Sect, Small } from '../ui/kit';
-import { Text } from '../ui/typography';
 
 const TITLES: Record<string, string> = { savings: 'Cuenta', capital: 'Capital social', envelope: 'Sobre', term: 'Ahorro a plazo' };
 
@@ -21,6 +20,7 @@ export function AccountDetailScreen({ route }: RootProps<'AccountDetail'>) {
   const [items, setItems] = useState<Transaction[]>([]);
   const [next, setNext] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [move, setMove] = useState<Transaction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const cur = account.currency;
   const title =
@@ -70,16 +70,9 @@ export function AccountDetailScreen({ route }: RootProps<'AccountDetail'>) {
       )}
       <Sect>Movimientos</Sect>
       {items.map((t, i) => (
-        <View key={t.id} style={[st.row, i === 0 && { borderTopWidth: 0 }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={type.itemTitle}>{t.description}</Text>
-            <Text style={type.itemSub}>{shortDate(t.created_at)}</Text>
-          </View>
-          <Text style={[type.amount, Number(t.amount) > 0 && { color: colors.primary }]}>
-            {`${Number(t.amount) > 0 ? '+' : ''}${money(t.amount, cur)}`}
-          </Text>
-        </View>
+        <MoveRow key={t.id} t={t} currency={cur} first={i === 0} onPress={() => setMove(t)} />
       ))}
+      <MoveSheet t={move} accountName={title} currency={cur} onClose={() => setMove(null)} />
       {!items.length && !error && <Small>Sin movimientos todavía.</Small>}
       {next && <Btn label="Ver más" variant="l" onPress={more} loading={busy} />}
       <ErrorText>{error}</ErrorText>
@@ -89,5 +82,4 @@ export function AccountDetailScreen({ route }: RootProps<'AccountDetail'>) {
 
 const st = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderTopWidth: 1, borderColor: colors.line },
 });

@@ -24,7 +24,8 @@ class CoreBanking(Protocol):
     async def list_transactions(self, account_id: uuid.UUID, limit: int,
                                 before: str | None) -> list[Transaction]: ...
     async def post(self, account_id: uuid.UUID, amount: Decimal, description: str, category: str,
-                   reference: str | None = None) -> Transaction:
+                   reference: str | None = None, counterparty: str | None = None,
+                   detail: str | None = None) -> Transaction:
         """Asienta un movimiento con bloqueo de fila. amount < 0 debita; lanza InsufficientFunds."""
         ...
     async def open_account(self, account: Account) -> Account: ...

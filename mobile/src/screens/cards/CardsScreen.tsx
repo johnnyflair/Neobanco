@@ -3,14 +3,16 @@
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
-import { Alert, ImageBackground, StyleSheet, View } from 'react-native';
+import { Alert, ImageBackground, Pressable, StyleSheet, View } from 'react-native';
 
 import { api } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
 import type { Card, CardSecrets } from '../../api/types';
 import { dayMonth, groupPan, money } from '../../format';
 import { colors, radius } from '../../theme';
-import { Btn, ErrorText, Loading, Row, Screen, Seg, Small, Tag, Toggle } from '../../ui/kit';
+import { BottomSheet } from '../../ui/BottomSheet';
+import { Icon } from '../../ui/Icon';
+import { ActionButtons, Btn, ErrorText, Loading, Row, Screen, Seg, Small, Tag, Toggle } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
 import { Text } from '../../ui/typography';
 
@@ -44,6 +46,57 @@ export function CardsScreen() {
   );
 }
 
+/** Configuración de la tarjeta en una hoja: compras en línea y en el exterior. */
+function SettingsSheet({ card, visible, onClose, onChange }: { card: Card; visible: boolean; onClose: () => void; onChange: (c: Card) => void }) {
+  const [error, setError] = useState<string | null>(null);
+  async function setting(body: { online_enabled?: boolean; international_enabled?: boolean }) {
+    setError(null);
+    onChange({ ...card, ...body });
+    try {
+      onChange(await api.cardSettings(card.id, body));
+    } catch (e) {
+      onChange(card);
+      setError(errorMessage(e));
+    }
+  }
+  return (
+    <BottomSheet visible={visible} onClose={onClose}>
+      <Text style={st.sheetTitle}>Configuración</Text>
+      <Small>{`Tarjeta •••• ${card.last4}`}</Small>
+      <View style={{ marginTop: 8 }}>
+        <Row
+          first
+          icon="phone"
+          title="Compras en línea"
+          right={<Toggle value={card.online_enabled} onChange={(v) => setting({ online_enabled: v })} label="Compras en línea" />}
+        />
+        <Row
+          icon="send"
+          title="Compras en el exterior"
+          sub="Activalas antes de viajar"
+          right={<Toggle value={card.international_enabled} onChange={(v) => setting({ international_enabled: v })} label="Compras en el exterior" />}
+        />
+      </View>
+      <ErrorText>{error}</ErrorText>
+    </BottomSheet>
+  );
+}
+
+/** Bloqueo definitivo (robo o pérdida): rojo y separado de Congelar, que sí se revierte. */
+function StolenBar() {
+  const nav = useNavigation();
+  return (
+    <Pressable style={st.stolen} onPress={() => nav.navigate('Fraud', { reason: 'lost_card' })} accessibilityRole="button">
+      <Icon name="alert" size={20} color={colors.danger} />
+      <View style={{ flex: 1 }}>
+        <Text style={st.stolenT}>Bloquear por robo o pérdida</Text>
+        <Small>Es definitivo: te enviamos una tarjeta nueva</Small>
+      </View>
+      <Icon name="chev" size={16} color={colors.danger} />
+    </Pressable>
+  );
+}
+
 function useLockToggle(card: Card, onChange: (c: Card) => void, setError: (e: string | null) => void) {
   const ask = usePin();
   return async function toggleLock() {
@@ -52,7 +105,7 @@ function useLockToggle(card: Card, onChange: (c: Card) => void, setError: (e: st
       if (card.status === 'active') {
         onChange(await api.lockCard(card.id));
       } else {
-        const pin = await ask({ title: 'Desbloquear tarjeta', sub: `Confirmá con tu clave para desbloquear la •••• ${card.last4}.` });
+        const pin = await ask({ title: 'Descongelar tarjeta', sub: `Confirmá con tu clave para volver a usar la •••• ${card.last4}.` });
         if (pin) onChange(await api.unlockCard(card.id, pin));
       }
     } catch (e) {
@@ -61,21 +114,15 @@ function useLockToggle(card: Card, onChange: (c: Card) => void, setError: (e: st
   };
 }
 
-function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void }) {
-  const nav = useNavigation();
+/** Ver datos completos con la clave; se ocultan solos después de 30 segundos. */
+function useReveal(card: Card, setError: (e: string | null) => void) {
   const ask = usePin();
   const [secrets, setSecrets] = useState<CardSecrets | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const toggleLock = useLockToggle(card, onChange, setError);
-  const locked = card.status === 'locked';
-
-  // Los datos completos se ocultan solos después de 30 segundos.
   useEffect(() => {
     if (!secrets) return;
     const t = setTimeout(() => setSecrets(null), REVEAL_SECONDS * 1000);
     return () => clearTimeout(t);
   }, [secrets]);
-
   async function reveal() {
     if (secrets) return setSecrets(null);
     setError(null);
@@ -87,17 +134,16 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
       setError(errorMessage(e));
     }
   }
+  return { secrets, reveal };
+}
 
-  async function setting(body: { online_enabled?: boolean; international_enabled?: boolean }) {
-    setError(null);
-    onChange({ ...card, ...body });
-    try {
-      onChange(await api.cardSettings(card.id, body));
-    } catch (e) {
-      onChange(card);
-      setError(errorMessage(e));
-    }
-  }
+function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void }) {
+  const nav = useNavigation();
+  const [error, setError] = useState<string | null>(null);
+  const toggleLock = useLockToggle(card, onChange, setError);
+  const locked = card.status === 'locked';
+  const [settings, setSettings] = useState(false);
+  const { secrets, reveal } = useReveal(card, setError);
 
   return (
     <View>
@@ -109,7 +155,7 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
       >
         <View style={st.cardTop}>
           <Text style={st.cardLabel}>Débito · {LINKED_LABEL[card.linked_mode ?? 'crc']}</Text>
-          {locked && <Text style={st.cardLabel}>Bloqueada</Text>}
+          {locked && <Text style={st.cardLabel}>Congelada</Text>}
         </View>
         <View>
           <Text style={st.cardNum} selectable={!!secrets}>
@@ -121,47 +167,31 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
           </Text>
         </View>
       </ImageBackground>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Btn label={secrets ? 'Ocultar' : 'Ver datos'} icon="eye" variant="o" onPress={reveal} style={{ flex: 1 }} disabled={locked} />
-        <Btn
-          label={locked ? 'Desbloquear' : 'Bloquear'}
-          icon="lock"
-          variant={locked ? 'o' : 'do'}
-          onPress={toggleLock}
-          style={{ flex: 1 }}
-        />
-      </View>
+      <ActionButtons
+        items={[
+          { label: secrets ? 'Ocultar\ndatos' : 'Ver\ndatos', icon: 'eye', onPress: reveal, disabled: locked, on: !!secrets },
+          { label: locked ? 'Descongelar\ntarjeta' : 'Congelar\ntarjeta', icon: 'snowflake', onPress: toggleLock, on: locked },
+          { label: 'Límites\ndiarios', icon: 'sliders', onPress: () => nav.navigate('CardLimits', { cardId: card.id }) },
+          { label: 'Configu-\nración', icon: 'settings', onPress: () => setSettings(true) },
+        ]}
+      />
       <ErrorText>{error}</ErrorText>
-      <View style={{ marginTop: 12 }}>
+      <View style={{ marginTop: 8 }}>
         <Row
+          first
+          icon="swap"
           title="Cuenta ligada"
           sub={LINKED_LABEL[card.linked_mode ?? 'crc']}
           onPress={() => nav.navigate('CardLinked', { cardId: card.id })}
         />
         <Row
-          title="Límites diarios"
-          sub={card.limits_are_default ? 'Usás los límites estándar · personalizalos' : `Comercios ${money(card.limits.store)} · en línea ${money(card.limits.online)}`}
-          onPress={() => nav.navigate('CardLimits', { cardId: card.id })}
-        />
-        <Row
-          title="Compras en línea"
-          right={<Toggle value={card.online_enabled} onChange={(v) => setting({ online_enabled: v })} label="Compras en línea" />}
-        />
-        <Row
-          title="Compras en el exterior"
-          right={
-            <Toggle
-              value={card.international_enabled}
-              onChange={(v) => setting({ international_enabled: v })}
-              label="Compras en el exterior"
-            />
-          }
-        />
-        <Row
+          icon="phone"
           title="Agregar a Apple o Google Pay"
           onPress={() => Alert.alert('Billeteras', 'Se habilita cuando la cooperativa conecte su procesador de tarjetas.')}
         />
       </View>
+      <StolenBar />
+      <SettingsSheet card={card} visible={settings} onClose={() => setSettings(false)} onChange={onChange} />
     </View>
   );
 }
@@ -170,6 +200,8 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
   const nav = useNavigation();
   const [error, setError] = useState<string | null>(null);
   const toggleLock = useLockToggle(card, onChange, setError);
+  const [settings, setSettings] = useState(false);
+  const { secrets, reveal } = useReveal(card, setError);
   const c = card.credit;
   if (!c) return null;
   const used = Number(c.limit) > 0 ? Math.min(100, (Number(c.balance) / Number(c.limit)) * 100) : 0;
@@ -191,15 +223,27 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
         />
         <View style={st.cardTop}>
           <Text style={st.cardLabel}>Crédito · {card.product_name}</Text>
-          {locked && <Text style={st.cardLabel}>Bloqueada</Text>}
+          {locked && <Text style={st.cardLabel}>Congelada</Text>}
         </View>
         <View>
-          <Text style={st.cardNum}>•••• •••• •••• {card.last4}</Text>
+          <Text style={st.cardNum} selectable={!!secrets}>
+            {secrets ? groupPan(secrets.pan) : `•••• •••• •••• ${card.last4}`}
+          </Text>
           <Text style={st.cardMeta}>
             {card.holder_name} · {card.expiry}
+            {secrets ? `   CVV ${secrets.cvv}` : ''}
           </Text>
         </View>
       </LinearGradient>
+
+      <ActionButtons
+        items={[
+          { label: secrets ? 'Ocultar\ndatos' : 'Ver\ndatos', icon: 'eye', onPress: reveal, disabled: locked, on: !!secrets },
+          { label: locked ? 'Descongelar\ntarjeta' : 'Congelar\ntarjeta', icon: 'snowflake', onPress: toggleLock, on: locked },
+          { label: 'Límites\ndiarios', icon: 'sliders', onPress: () => nav.navigate('CardLimits', { cardId: card.id }) },
+          { label: 'Configu-\nración', icon: 'settings', onPress: () => setSettings(true) },
+        ]}
+      />
 
       <View style={{ marginTop: 14 }}>
         <Small>Saldo actual</Small>
@@ -249,13 +293,9 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
           title="Puntos de la tarjeta"
           sub={`${c.points_per_1000} puntos por cada ₡1,000.00 · suman a tus recompensas`}
         />
-        <Row
-          icon="lock"
-          title="Bloquear tarjeta de crédito"
-          sub={locked ? 'Bloqueada' : 'Activa'}
-          right={<Toggle value={locked} onChange={toggleLock} label="Bloquear tarjeta de crédito" />}
-        />
       </View>
+      <StolenBar />
+      <SettingsSheet card={card} visible={settings} onClose={() => setSettings(false)} onChange={onChange} />
     </View>
   );
 }
@@ -281,11 +321,24 @@ const st = StyleSheet.create({
     textShadowRadius: 3,
   },
   cardMeta: { color: colors.white, fontSize: 12, marginTop: 4, textShadowColor: 'rgba(0,0,0,.45)', textShadowRadius: 3 },
-  ccBig: { fontSize: 26, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'], marginTop: 2, marginBottom: 6 },
+  ccBig: { fontSize: 26, fontWeight: '700', color: colors.amount, fontVariant: ['tabular-nums'], marginTop: 2, marginBottom: 6 },
   bar: { height: 7, backgroundColor: colors.card, borderRadius: 4, marginTop: 4, marginBottom: 4 },
   barFill: { height: 7, backgroundColor: colors.emerald, borderRadius: 4 },
   kpi: { flexDirection: 'row', gap: 8, marginTop: 12, marginBottom: 6 },
   kpiBox: { flex: 1, backgroundColor: colors.card, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12 },
   kpiVal: { fontSize: 15, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'] },
-  amt: { fontSize: 14, fontWeight: '600', color: colors.ink },
+  amt: { fontSize: 14, fontWeight: '600', color: colors.amount },
+  sheetTitle: { fontSize: 19, fontWeight: '700', color: colors.ink },
+  stolen: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.dangerSoft,
+    borderWidth: 1.5,
+    borderColor: colors.danger,
+    borderRadius: radius.md,
+    padding: 14,
+    marginTop: 16,
+  },
+  stolenT: { fontSize: 15, fontWeight: '700', color: colors.danger },
 });

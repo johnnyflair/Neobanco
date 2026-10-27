@@ -9,10 +9,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError, api } from '../api/client';
 import type { Account, Me, Transaction } from '../api/types';
-import { money, shortDate } from '../format';
+import { money } from '../format';
 import { secureStore } from '../secureStore';
 import { AccountSheet } from './AccountSheet';
 import { accountsGlow, colors, radius, type } from '../theme';
+import { MoveRow, MoveSheet } from '../ui/Moves';
 import { Icon, type IconName } from '../ui/Icon';
 import { Text } from '../ui/typography';
 
@@ -28,6 +29,7 @@ export function HomeScreen() {
   const [hidden, setHidden] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [sheet, setSheet] = useState<Account | null>(null);
+  const [move, setMove] = useState<Transaction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -111,16 +113,14 @@ export function HomeScreen() {
             </Pressable>
           </View>
           {(showAll ? accounts : main).map((a) => {
-            // Colones y dólares reciben dinero: al tocarlas se abren sus datos para compartir.
-            const receives = a.type === 'savings';
+            // Toda cuenta se toca: abre la hoja con sus datos (y para compartir, si recibe dinero).
             return (
             <Pressable
               key={a.id}
-              style={({ pressed }) => [s.row, pressed && receives && { opacity: 0.6 }]}
-              onPress={receives ? () => setSheet(a) : undefined}
-              disabled={!receives}
-              accessibilityRole={receives ? 'button' : undefined}
-              accessibilityHint={receives ? 'Muestra los datos para recibir dinero' : undefined}
+              style={({ pressed }) => [s.row, s.acctRow, pressed && { opacity: 0.6 }]}
+              onPress={() => setSheet(a)}
+              accessibilityRole="button"
+              accessibilityHint="Muestra los datos de la cuenta"
             >
               <View style={s.iconBox}>
                 {a.type === 'savings' ? (
@@ -131,7 +131,7 @@ export function HomeScreen() {
               </View>
               <Text style={[type.itemTitle, { flex: 1 }]}>{a.name}</Text>
               <Text style={type.amount}>{mask(money(a.balance, a.currency))}</Text>
-              {receives ? <Icon name="chev" size={16} color={colors.muted} /> : <View style={{ width: 16 }} />}
+              <Icon name="chev" size={16} color={colors.muted} />
             </Pressable>
             );
           })}
@@ -175,17 +175,10 @@ export function HomeScreen() {
           </Pressable>
         )}
       </View>
-      {moves.map((t) => (
-        <View key={t.id} style={s.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={type.itemTitle}>{t.description}</Text>
-            <Text style={type.itemSub}>{shortDate(t.created_at)}</Text>
-          </View>
-          <Text style={[type.amount, Number(t.amount) > 0 && { color: colors.primary }]}>
-            {mask(`${Number(t.amount) > 0 ? '+' : ''}${money(t.amount)}`)}
-          </Text>
-        </View>
+      {moves.slice(0, 8).map((t, i) => (
+        <MoveRow key={t.id} t={t} mask={mask} first={i === 0} onPress={() => setMove(t)} />
       ))}
+      <MoveSheet t={move} accountName="Cuenta colones" onClose={() => setMove(null)} />
       <Text style={s.version}>Versión {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'local').slice(0, 7)}</Text>
       <AccountSheet
         account={sheet}
@@ -235,7 +228,8 @@ const s = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
   eye: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
-  iconBox: { width: 28, alignItems: 'center' },
+  iconBox: { width: 22, alignItems: 'center' },
+  acctRow: { gap: 8 },
   icon: { fontSize: 20, fontWeight: '600', color: colors.primary },
   more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
   moreText: { fontSize: 14, fontWeight: '600', color: colors.primary },

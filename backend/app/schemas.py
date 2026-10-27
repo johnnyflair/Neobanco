@@ -171,6 +171,10 @@ class TransactionOut(Out):
     description: str
     category: str
     created_at: datetime
+    title: str = Field(default="", description="Tipo de movimiento en lenguaje simple (Envío por SINPE Móvil…)")
+    counterparty: str | None = None
+    detail: str | None = None
+    reference: str | None = None
 
 
 class TransactionPage(BaseModel):

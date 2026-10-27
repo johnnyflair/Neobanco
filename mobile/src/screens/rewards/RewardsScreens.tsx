@@ -238,7 +238,7 @@ const st = StyleSheet.create({
   barFill: { height: 8, borderRadius: 4, backgroundColor: colors.lime },
   hist: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderTopWidth: 1, borderColor: colors.line },
   histT: { fontSize: 15, fontWeight: '600', color: colors.ink },
-  amt: { fontSize: 14, fontWeight: '600', color: colors.ink },
+  amt: { fontSize: 14, fontWeight: '600', color: colors.amount },
   mult: {
     fontSize: 12,
     fontWeight: '700',

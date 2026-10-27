@@ -35,7 +35,12 @@ export type Account = {
   on_maturity?: string | null;
 };
 
-export type AccountDetail = Account & { iban: string | null; client_account: string | null; holder_name: string | null };
+export type AccountDetail = Account & {
+  iban: string | null;
+  client_account: string | null;
+  holder_name: string | null;
+  monthly_contribution: string | null;
+};
 
 export type Transaction = {
   id: string;
@@ -44,6 +49,10 @@ export type Transaction = {
   description: string;
   category: string;
   created_at: string;
+  title: string;
+  counterparty: string | null;
+  detail: string | null;
+  reference: string | null;
 };
 
 export type TransactionPage = { items: Transaction[]; next_before: string | null };

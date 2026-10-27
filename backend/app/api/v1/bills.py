@@ -86,7 +86,8 @@ async def pay(body: BillPayIn, request: Request, key: str = Depends(idempotency_
         raise ApiError(404, "no_bill", "Ese recibo ya no está pendiente.")
     ref = new_reference("RC")
     try:
-        await p.core.post(acct.id, -q.amount, prov.name, "bill", ref)
+        await p.core.post(acct.id, -q.amount, prov.name, "bill", ref, counterparty=prov.name,
+                          detail=f"{prov.reference_label} {body.reference}"[:60])
     except InsufficientFunds as e:
         raise ApiError(422, "insufficient_funds", "No te alcanza el saldo disponible.") from e
     receipt = await p.bills.pay(q, ref)

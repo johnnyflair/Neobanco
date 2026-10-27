@@ -1,6 +1,7 @@
 // Hoja que sube desde abajo con los datos de una cuenta para recibir dinero (opción A aprobada):
 // titular, IBAN, cuenta cliente y SINPE Móvil (solo colones), sin saldo. Se copian con un toque
 // o se comparten por WhatsApp, por el menú del teléfono o como QR.
+import { useNavigation } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, Share, StyleSheet, View } from 'react-native';
@@ -9,7 +10,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { api } from '../api/client';
 import { errorMessage } from '../api/hooks';
 import type { Account, AccountDetail } from '../api/types';
-import { formatIban, formatPhone } from '../format';
+import { dayMonth, formatIban, formatPhone, money } from '../format';
 import { colors } from '../theme';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Text } from '../ui/typography';
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export function AccountSheet({ account, sinpePhone, onClose, onMovements }: Props) {
+  const nav = useNavigation();
   const [detail, setDetail] = useState<AccountDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -38,7 +40,20 @@ export function AccountSheet({ account, sinpePhone, onClose, onMovements }: Prop
   }, [account]);
 
   const isCrc = account?.currency === 'CRC';
-  const title = isCrc ? 'Cuenta colones' : 'Cuenta dólares';
+  const shareable = account?.type === 'savings';
+  const title = !account
+    ? ''
+    : account.type === 'savings'
+      ? isCrc
+        ? 'Cuenta colones'
+        : 'Cuenta dólares'
+      : account.name;
+  const SUBTITLE: Record<string, string> = {
+    savings: `Ahorro a la vista · ${account?.currency ?? ''}`,
+    capital: 'Tu aporte como asociado',
+    envelope: 'Sobre a la vista · sacás cuando querés',
+    term: 'Ahorro a plazo',
+  };
   const phone = isCrc && sinpePhone ? formatPhone(sinpePhone) : null;
   const iban = detail?.iban ? formatIban(detail.iban) : null;
 
@@ -59,7 +74,35 @@ export function AccountSheet({ account, sinpePhone, onClose, onMovements }: Prop
     setTimeout(() => setCopied((c) => (c === label ? null : c)), 1800);
   }
 
-  const rows: { label: string; value: string; raw?: string }[] = detail
+  const cur = (account?.currency ?? 'CRC') as 'CRC' | 'USD';
+  const ON_MATURITY: Record<string, string> = { renew: 'Se renueva', to_account: 'Pasa a tu cuenta', to_envelope: 'Pasa a un sobre' };
+  const goal = Number(detail?.goal_amount ?? 0);
+  // Cuentas que no reciben dinero (capital, sobres, plazos): sus datos propios, sin compartir.
+  const infoRows: { label: string; value: string; raw?: string }[] = !detail
+    ? []
+    : detail.type === 'capital'
+      ? [
+          { label: 'Aportado', value: money(detail.balance, cur) },
+          ...(detail.monthly_contribution ? [{ label: 'Aporte mensual', value: money(detail.monthly_contribution, cur) }] : []),
+          { label: 'Titular', value: detail.holder_name ?? '' },
+        ]
+      : detail.type === 'envelope'
+        ? [
+            { label: 'Ahorrado', value: money(detail.balance, cur) },
+            ...(goal ? [{ label: 'Meta', value: `${money(goal, cur)} · ${Math.min(100, Math.round((Number(detail.balance) / goal) * 100))}%` }] : []),
+            ...(detail.savings_mode ? [{ label: 'Forma de ahorrar', value: detail.savings_mode }] : []),
+            ...(detail.rate ? [{ label: 'Tasa', value: `${Number(detail.rate)}% anual` }] : []),
+          ]
+        : [
+            { label: 'Monto', value: money(detail.balance, cur) },
+            ...(detail.rate ? [{ label: 'Tasa', value: `${Number(detail.rate)}% anual · ${detail.term_months} meses` }] : []),
+            ...(detail.maturity_date ? [{ label: 'Vence', value: dayMonth(detail.maturity_date) }] : []),
+            ...(detail.on_maturity ? [{ label: 'Al vencer', value: ON_MATURITY[detail.on_maturity] ?? detail.on_maturity }] : []),
+          ];
+
+  const rows: { label: string; value: string; raw?: string }[] = !shareable
+    ? infoRows
+    : detail
     ? [
         { label: 'Titular', value: detail.holder_name ?? '' },
         ...(iban ? [{ label: 'IBAN', value: iban, raw: detail.iban ?? '' }] : []),
@@ -81,7 +124,7 @@ export function AccountSheet({ account, sinpePhone, onClose, onMovements }: Prop
       <View style={st.head}>
         <View style={{ flex: 1 }}>
           <Text style={st.title}>{title}</Text>
-          <Small>Ahorro a la vista · {account?.currency}</Small>
+          <Small>{SUBTITLE[account?.type ?? 'savings']}</Small>
         </View>
         <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar">
           <Icon name="x" size={22} color={colors.muted} />
@@ -124,7 +167,23 @@ export function AccountSheet({ account, sinpePhone, onClose, onMovements }: Prop
           </View>
         ))}
 
-      {detail && (
+      {detail && !shareable && (
+        <>
+          {detail.type === 'envelope' && (
+            <Btn
+              label="Meter o sacar plata"
+              icon="swap"
+              onPress={() => {
+                onClose();
+                nav.navigate('Envelope', { account: detail });
+              }}
+            />
+          )}
+          {onMovements && account && <Btn label="Ver movimientos" variant="o" onPress={() => onMovements(account)} />}
+        </>
+      )}
+
+      {detail && shareable && (
         <>
           <Btn
             label="Compartir por WhatsApp"

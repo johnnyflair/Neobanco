@@ -371,5 +371,5 @@ const st = StyleSheet.create({
   quickItem: { width: '24%', alignItems: 'center', gap: 7 },
   quickIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   quickText: { fontSize: 12.5, lineHeight: 16, fontWeight: '600', textAlign: 'center', color: colors.ink },
-  amount: { fontSize: 32, fontWeight: '700', textAlign: 'center', color: colors.ink, marginTop: 12, marginBottom: 6 },
+  amount: { fontSize: 32, fontWeight: '700', textAlign: 'center', color: colors.amount, marginTop: 12, marginBottom: 6 },
 });

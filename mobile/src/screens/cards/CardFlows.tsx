@@ -307,7 +307,7 @@ const st = StyleSheet.create({
   lim: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 12, marginTop: 12 },
   limHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 4 },
   limTitle: { fontSize: 15, fontWeight: '700', color: colors.ink },
-  amt: { fontSize: 14, fontWeight: '600', color: colors.ink, fontVariant: ['tabular-nums'] },
+  amt: { fontSize: 14, fontWeight: '600', color: colors.amount, fontVariant: ['tabular-nums'] },
   hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: 16, marginTop: 14 },
   ht: { fontSize: 16, fontWeight: '700', color: colors.white },
   hd: { fontSize: 12, color: colors.heroSub, marginTop: 2, marginBottom: 8 },

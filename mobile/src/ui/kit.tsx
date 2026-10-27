@@ -428,6 +428,35 @@ export function Steps({ steps, current }: { steps: { t: string; s?: string }[]; 
   );
 }
 
+/** Fila de botones de acción con el mismo formato del inicio: cuadro menta, ícono verde oscuro y
+ *  texto en dos renglones. Se usa debajo de las tarjetas. */
+export function ActionButtons({
+  items,
+}: {
+  items: { label: string; icon: IconName; onPress: () => void; disabled?: boolean; on?: boolean }[];
+}) {
+  return (
+    <View style={s.actions}>
+      {items.map((a) => (
+        <Pressable
+          key={a.label}
+          onPress={a.onPress}
+          disabled={a.disabled}
+          style={({ pressed }) => [s.action, (pressed || a.disabled) && { opacity: a.disabled ? 0.4 : 0.7 }]}
+          accessibilityRole="button"
+          accessibilityLabel={a.label.replace('\n', ' ')}
+          accessibilityState={{ disabled: !!a.disabled, selected: !!a.on }}
+        >
+          <View style={[s.actionIcon, a.on && { backgroundColor: colors.emeraldDark }]}>
+            <Icon name={a.icon} size={25} color={a.on ? colors.white : colors.emeraldDark} />
+          </View>
+          <Text style={s.actionText}>{a.label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 /** Aviso en verde menta (buenas noticias, confirmaciones). */
 export const Note = ({ children }: { children: ReactNode }) => (
   <View style={s.note}>
@@ -444,6 +473,10 @@ export function Loading() {
 }
 
 export const s = StyleSheet.create({
+  actions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, marginBottom: 6 },
+  action: { width: '24%', alignItems: 'center', gap: 7 },
+  actionIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
+  actionText: { fontSize: 12.5, lineHeight: 16, fontWeight: '600', textAlign: 'center', color: colors.ink },
   step: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingBottom: 18 },
   dot: {
     width: 28,
@@ -539,7 +572,7 @@ export const s = StyleSheet.create({
   optOn: { borderColor: colors.emerald, borderWidth: 2, backgroundColor: colors.optOn },
   optHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   optTitle: { fontSize: 14, fontWeight: '700', color: colors.ink, flexShrink: 1 },
-  amt: { fontSize: 14, fontWeight: '600', color: colors.ink, fontVariant: ['tabular-nums'] },
+  amt: { fontSize: 14, fontWeight: '600', color: colors.amount, fontVariant: ['tabular-nums'] },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   chip: {
     borderWidth: 1.5,
@@ -573,7 +606,7 @@ export const s = StyleSheet.create({
     fontSize: 36,
     fontWeight: '700',
     textAlign: 'center',
-    color: colors.ink,
+    color: colors.amount,
     marginTop: 14,
     marginBottom: 2,
     paddingVertical: 6,

@@ -174,7 +174,8 @@ export function CardLogo({ kind }: { kind: 'debit' | 'credit' }) {
   return <KooaLogo height={26} color={colors.white} browColor={colors.lime} shadowColor={kind === 'debit' ? colors.shadowOnTeal : colors.shadowOnNavy} />;
 }
 
-/** Cara de la tarjeta Kooa: teal (débito) o navy (crédito), con los ojos de marca de agua. */
+/** Cara de la tarjeta Kooa: teal (débito) o navy (crédito), con los ojos grandes de marca de agua
+ *  en la parte de arriba, tono sobre tono y sin sombra (opción C), lejos del número. */
 export function KooaCardFace({
   kind,
   style,
@@ -193,11 +194,11 @@ export function KooaCardFace({
       accessibilityLabel={accessibilityLabel}
     >
       <KooaEyes
-        size={250}
-        color={debit ? colors.tealWatermark : colors.navyWatermark}
-        browColor={debit ? colors.tealWatermark : colors.navyWatermark}
-        shadowColor={debit ? colors.shadowOnTeal : colors.shadowOnNavy}
-        style={{ position: 'absolute', right: -58, bottom: -40 }}
+        size={220}
+        color={debit ? '#125A54' : '#16244F'}
+        browColor={debit ? '#125A54' : '#16244F'}
+        shadowColor={null}
+        style={{ position: 'absolute', right: -30, top: -40 }}
       />
       {children}
     </View>

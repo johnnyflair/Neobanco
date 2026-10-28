@@ -341,7 +341,6 @@ const st = StyleSheet.create({
     padding: 18,
     justifyContent: 'space-between',
     overflow: 'hidden',
-    backgroundColor: colors.navy,
   },
   locked: { opacity: 0.55 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },

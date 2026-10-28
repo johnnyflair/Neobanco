@@ -323,3 +323,53 @@ class AuditEvent(TimestampMixin, Base):
     ip_hash: Mapped[str | None] = mapped_column(String(64))
     request_id: Mapped[str | None] = mapped_column(String(40))
     detail: Mapped[dict | None] = mapped_column(JSON)
+
+
+# ---------- Panel de administración (equipo de la cooperativa) ----------
+
+
+class StaffRole(enum.StrEnum):
+    admin = "admin"  # todo, incluido el equipo
+    operaciones = "operaciones"  # atiende la bandeja y hace acciones sobre asociados
+    lectura = "lectura"  # solo mira, con datos personales enmascarados
+
+
+class StaffUser(TimestampMixin, Base):
+    """Personas de la cooperativa que entran al panel. Nada que ver con los asociados."""
+
+    __tablename__ = "staff_users"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(160), unique=True)
+    full_name: Mapped[str] = mapped_column(String(120))
+    role: Mapped[StaffRole] = mapped_column(Enum(StaffRole, name="staff_role"))
+    password_hash: Mapped[str] = mapped_column(String(200))
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class StaffNote(TimestampMixin, Base):
+    """Notas internas sobre un asociado. El asociado no las ve."""
+
+    __tablename__ = "staff_notes"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    member_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    staff_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("staff_users.id"))
+    text: Mapped[str] = mapped_column(String(1000))
+
+
+class StaffAction(TimestampMixin, Base):
+    """Bitácora del panel: quién hizo qué, sobre quién y cuándo. Solo se agregan filas."""
+
+    __tablename__ = "staff_actions"
+    __table_args__ = (Index("ix_staff_actions_created", "created_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    staff_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("staff_users.id"))
+    action: Mapped[str] = mapped_column(String(60))
+    member_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("members.id"))
+    detail: Mapped[dict | None] = mapped_column(JSON)
+    ip_hash: Mapped[str | None] = mapped_column(String(64))

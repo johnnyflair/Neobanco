@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api import admin
 from app.api.v1 import router as v1
 from app.core.config import get_settings
 from app.core.errors import ApiError, install_error_handlers
@@ -38,6 +39,8 @@ def create_app() -> FastAPI:
                            allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Request-ID"])
     install_error_handlers(app)
     app.include_router(v1)
+    app.include_router(admin.router)
+    app.include_router(admin.pages)
 
     @app.get("/health/live", tags=["Salud"], include_in_schema=False)
     async def live():

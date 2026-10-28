@@ -74,6 +74,25 @@ Conectar una cooperativa = implementar esas clases contra sus sistemas y elegirl
 - **Despliegue:** GitHub entra a AWS por OIDC (sin llaves guardadas). Cada merge a `main` despliega a dev; staging y prod se lanzan a mano y prod exige aprobación. Orden: imagen → migraciones como tarea aparte → despliegue sin caída → prueba de humo.
 - **Dependabot** actualiza dependencias de Python, npm, Docker, Actions y Terraform cada semana.
 
+## Panel de la cooperativa (`/admin`)
+
+Panel web para el equipo de la cooperativa, servido por la misma API (por ejemplo `https://api-dev.ariatechcr.co/admin`).
+
+- **Resumen:** números del negocio, «Para hoy» con lo pendiente y su antigüedad, cuentas nuevas por día, uso de la App, recompensas y estado de los sistemas.
+- **Bandeja:** una sola cola (fraude primero, luego lo más antiguo) con verificaciones de identidad en revisión, casos de fraude y solicitudes de préstamo; cada uno se resuelve ahí mismo, con nota interna.
+- **Asociados:** búsqueda por nombre, cédula, celular o IBAN y ficha 360° (saldos, línea de tiempo, seguridad, ley 8204, tarjetas, préstamos, casos y notas internas), con bloquear tarjetas y cerrar sesiones.
+- **Bitácora:** todo lo que hace el equipo, solo se agregan filas.
+
+Roles: `admin`, `operaciones` (actúa) y `lectura` (solo mira, con cédula, celular y correo enmascarados). Sesión de 60 minutos; 5 contraseñas incorrectas bloquean 15 minutos.
+
+Crear o cambiar una persona del equipo (pide la contraseña sin mostrarla):
+
+```bash
+python -m app.staff_cli correo@coop.cr "Nombre Apellido" operaciones
+```
+
+En local, dev y test el sembrado crea `diana@demo.coop` (operaciones), `johnny@demo.coop` (admin) y `lectura@demo.coop` (solo lectura), con la contraseña `Panel-Demo-2026`, y algunos pendientes de ejemplo para la bandeja.
+
 ## Poner AWS en marcha por primera vez
 
 1. Entrá a la consola de AWS con un usuario administrador, en la región donde va a vivir todo (la del proyecto, por ejemplo `us-east-2`), y abrí **CloudShell** (ícono `>_` arriba). El script usa esa región.

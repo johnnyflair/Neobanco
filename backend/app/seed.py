@@ -4,6 +4,8 @@
     python -m app.seed --reset    # borra y vuelve a sembrar (solo local, dev y test)
 
 Asociada de demostración: celular 88112030, cédula 1-1234-0567, clave 482915.
+Panel (/admin), solo en local, dev y test: diana@demo.coop (operaciones), johnny@demo.coop (admin) y
+lectura@demo.coop (solo lectura), todos con la contraseña Panel-Demo-2026.
 """
 
 import asyncio
@@ -13,12 +15,14 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.security import hash_secret, new_opaque_token
 from app.db.models import (
     Account,
     AccountType,
+    AuditEvent,
     Base,
     BillProvider,
     Card,
@@ -28,9 +32,13 @@ from app.db.models import (
     KycStatus,
     LinkedExternalAccount,
     LinkedMode,
+    LoanApplication,
     Member,
     RewardEntry,
     SavedBill,
+    StaffRole,
+    StaffUser,
+    SupportCase,
     Transaction,
     Transfer,
     TransferKind,
@@ -88,6 +96,7 @@ async def seed(reset: bool = False) -> None:
     async with sessionmaker()() as s:
         if await s.scalar(select(Member.id).limit(1)):
             print("La base ya tiene datos; usá --reset para volver a sembrar.")
+            await demo_panel(s)
             return
         for cat, (label, names) in CATALOG.items():
             prefix = "recarga-" if cat == "Recargas" else "marchamo-" if cat == "Marchamo y RTV" else ""
@@ -236,7 +245,52 @@ async def seed(reset: bool = False) -> None:
                        RewardEntry(member_id=m.id, points=186, reason="Compras con tarjeta en octubre"),
                        RewardEntry(member_id=m.id, points=20, reason="Recibo AyA automático")])
         await s.commit()
+        await demo_panel(s)
     print(f"Listo: {len(DEMO_MEMBERS)} asociados de prueba. Clave de todos: {DEMO_PIN}")
+
+
+# Solo datos de demostración (local, dev y test).
+DEMO_PANEL_PASSWORD = "Panel-Demo-2026"  # nosec B105
+DEMO_STAFF = [("diana@demo.coop", "Diana M.", StaffRole.operaciones),
+              ("johnny@demo.coop", "Johnny S.", StaffRole.admin),
+              ("lectura@demo.coop", "Consulta", StaffRole.lectura)]
+DEMO_REVIEW = [("María Fernanda Solís", "1-1745-0980", "87014455", "mf.solis@correo.com", "Heredia", "Barva",
+                {"occupation": "asalariado", "monthly_volume": "500k_1500k", "source_of_funds": "salario"}, 3),
+               ("Jimena Vargas Mora", "1-1602-0770", "60123399", "jime.vargas@correo.com", "San José", "Moravia",
+                {"occupation": "negocio_propio", "monthly_volume": "lt_500k", "source_of_funds": "ventas"}, 2)]
+
+
+async def demo_panel(s: AsyncSession) -> None:
+    """Equipo y pendientes de ejemplo para el panel. Solo en local, dev y test; no duplica nada."""
+    if get_settings().env not in ("local", "dev", "test"):
+        return
+    now = datetime.now(UTC)
+    if not await s.scalar(select(StaffUser.id).limit(1)):
+        pwd = hash_secret(DEMO_PANEL_PASSWORD)
+        for email, name, role in DEMO_STAFF:
+            s.add(StaffUser(email=email, full_name=name, role=role, password_hash=pwd, active=True, failed_attempts=0))
+    if not await s.scalar(select(Member.id).where(Member.kyc_status == KycStatus.in_review).limit(1)):
+        for name, ced, phone, email, prov, canton, kyc, hours in DEMO_REVIEW:
+            if await s.scalar(select(Member.id).where(Member.phone == phone)):
+                continue
+            m = Member(cedula=ced, phone=phone, full_name=name, email=email, province=prov, canton=canton,
+                       kyc_status=KycStatus.in_review, pin_hash=hash_secret(DEMO_PIN),
+                       created_at=now - timedelta(hours=hours))
+            s.add(m)
+            await s.flush()
+            s.add(AuditEvent(member_id=m.id, action="register", outcome="in_review", detail={"kyc": kyc},
+                             created_at=m.created_at))
+    members = list(await s.scalars(select(Member).where(Member.phone.in_([d[2] for d in DEMO_MEMBERS]))))
+    by_phone = {m.phone: m for m in members}
+    carlos, lucia = by_phone.get(DEMO_MEMBERS[1][2]), by_phone.get(DEMO_MEMBERS[2][2])
+    if carlos and not await s.scalar(select(LoanApplication.id).where(LoanApplication.status == "received").limit(1)):
+        s.add(LoanApplication(member_id=carlos.id, amount=Decimal("3500000"), term_months=48, income_type="asalariado",
+                              monthly_income=Decimal("920000"), status="received", created_at=now - timedelta(hours=1)))
+    if lucia and not await s.scalar(select(SupportCase.id).where(SupportCase.status == "open").limit(1)):
+        s.add(SupportCase(member_id=lucia.id, number=f"{random.SystemRandom().randint(100000, 999999)}", kind="fraud",
+                          reason="unknown_charge", status="open", cards_locked=0,
+                          created_at=now - timedelta(minutes=20)))
+    await s.commit()
 
 
 if __name__ == "__main__":

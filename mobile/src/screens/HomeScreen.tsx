@@ -1,18 +1,18 @@
-// Pantalla de inicio aprobada (opción A): encabezado amplio con perfil y recompensas, "Mis cuentas"
-// con colones, dólares y capital social a la vista y "Ver todas" que despliega el resto, ojo para
-// ocultar saldos, botones rápidos y movimientos de la cuenta en colones.
+// Inicio con la marca Kooa (opción C aprobada): saludo con los ojos, aviso de Kooa cuando entra un
+// SINPE, "Mis cuentas" con borde fino, accesos rápidos (SINPE destacado), franja de puntos A1 y
+// movimientos.
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError, api } from '../api/client';
 import type { Account, Me, Transaction } from '../api/types';
-import { money } from '../format';
+import { money, shortDate } from '../format';
 import { secureStore } from '../secureStore';
 import { AccountSheet } from './AccountSheet';
-import { accountsGlow, colors, radius, type } from '../theme';
+import { colors, radius, type } from '../theme';
+import { Highlight, KooaEyes } from '../ui/Brand';
 import { MoveList, MoveSheet } from '../ui/Moves';
 import { Icon, type IconName } from '../ui/Icon';
 import { Band } from '../ui/kit';
@@ -67,12 +67,13 @@ export function HomeScreen() {
 
   const mask = (v: string) => (hidden ? '••••••' : v);
   // Punto lima en SINPE Móvil: te entró un SINPE en las últimas 24 horas.
-  const newSinpe = moves.some(
+  const lastIn = moves.find(
     (t) => t.category === 'sinpe' && Number(t.amount) > 0 && Date.now() - new Date(t.created_at).getTime() < 86_400_000,
   );
+  const newSinpe = !!lastIn;
   // Accesos rápidos (opción C aprobada): texto en dos renglones; el préstamo destacado en naranja.
-  const QUICK: { label: string; icon: IconName; go: () => void; accent?: boolean; badge?: boolean }[] = [
-    { label: 'SINPE\nMóvil', icon: 'phone', go: () => nav.navigate('SinpeNumber'), badge: newSinpe },
+  const QUICK: { label: string; icon: IconName; go: () => void; accent?: boolean; badge?: boolean; main?: boolean }[] = [
+    { label: 'SINPE\nMóvil', icon: 'phone', go: () => nav.navigate('SinpeNumber'), badge: newSinpe, main: true },
     { label: 'Transferir\ndinero', icon: 'swap', go: () => nav.navigate('TransferHub') },
     { label: 'Pagar\nrecibos', icon: 'receipt', go: () => nav.navigate('Bills') },
     { label: 'Pedí un\npréstamo', icon: 'cash', go: () => nav.navigate('LoanSim'), accent: true },
@@ -87,24 +88,37 @@ export function HomeScreen() {
   return (
     <ScrollView style={s.screen} contentContainerStyle={[s.content, { paddingTop: insets.top + 12 }]} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
       <View style={s.header}>
-        <View>
-          <Text style={type.itemSub}>Hola,</Text>
-          <Text style={s.name}>{me?.full_name.split(' ').slice(0, 2).join(' ')}</Text>
+        <View style={s.hello}>
+          <KooaEyes size={44} />
+          <Text style={s.name}>Hola, {me?.full_name.split(' ')[0]}</Text>
         </View>
-        <View style={s.headerRight}>
-          <Pressable style={s.pill} onPress={() => nav.navigate('Rewards')} accessibilityLabel={`${me?.points ?? 0} puntos de recompensas`}>
-            <Icon name="star" size={15} color={colors.primaryInk} />
-            <Text style={s.pillText}>{me?.points.toLocaleString('en-US')}</Text>
-          </Pressable>
-          <Pressable style={s.avatar} onPress={() => nav.navigate('Profile')} accessibilityLabel="Mi perfil">
-            <Text style={s.avatarText}>{me?.full_name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</Text>
-          </Pressable>
-        </View>
+        <Pressable style={s.avatar} onPress={() => nav.navigate('Profile')} accessibilityLabel="Mi perfil">
+          <Text style={s.avatarText}>{me?.full_name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</Text>
+        </Pressable>
       </View>
 
       {error && <Text style={s.error}>{error}</Text>}
 
-      <LinearGradient colors={accountsGlow} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.glow}>
+      {/* Aviso de Kooa: solo cuando hay algo nuevo (un SINPE recibido en las últimas 24 horas). */}
+      {lastIn && !hidden && (
+        <Pressable style={({ pressed }) => [s.notice, pressed && { opacity: 0.7 }]} onPress={() => setMove(lastIn)} accessibilityRole="button">
+          <KooaEyes size={42} expression="guau" />
+          <View style={{ flex: 1 }}>
+            <View style={s.noticeRow}>
+              <Text style={s.noticeT}>Recibiste </Text>
+              <Highlight style={s.noticeT} align="flex-start">
+                {money(lastIn.amount)}
+              </Highlight>
+            </View>
+            <Text style={type.itemSub}>
+              {lastIn.counterparty ?? lastIn.description} · {shortDate(lastIn.created_at)}
+            </Text>
+          </View>
+          <Icon name="chev" size={16} color={colors.muted} />
+        </Pressable>
+      )}
+
+      <View style={s.glow}>
         <View style={s.card}>
           <View style={s.cardHead}>
             <Text style={s.cardTitle}>Mis cuentas</Text>
@@ -147,7 +161,7 @@ export function HomeScreen() {
             </Pressable>
           )}
         </View>
-      </LinearGradient>
+      </View>
 
       <Band style={{ marginTop: 0 }} />
       <View style={s.quick}>
@@ -159,14 +173,29 @@ export function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel={q.label.replace('\n', ' ') + (q.badge ? ', tenés un SINPE nuevo' : '')}
           >
-            <View style={[s.quickIcon, q.accent && { backgroundColor: colors.orangeSoft }]}>
-              <Icon name={q.icon} size={25} color={q.accent ? colors.orangeInk : colors.emeraldDark} />
+            <View style={[s.quickIcon, q.accent && { backgroundColor: colors.orangeSoft }, q.main && { backgroundColor: colors.teal }]}>
+              <Icon name={q.icon} size={25} color={q.accent ? colors.orangeInk : q.main ? colors.lime : colors.emeraldDark} />
               {q.badge && <View style={s.badge} />}
             </View>
             <Text style={s.quickText}>{q.label}</Text>
           </Pressable>
         ))}
       </View>
+
+      {/* Franja de puntos (opción A1): una línea, con borde como "Mis cuentas". */}
+      <Pressable
+        style={({ pressed }) => [s.points, pressed && { opacity: 0.7 }]}
+        onPress={() => nav.navigate('Rewards')}
+        accessibilityRole="button"
+        accessibilityLabel={`${me?.points ?? 0} puntos de recompensas`}
+      >
+        <Icon name="star" size={17} color={colors.orange} />
+        <Text style={s.pointsT}>{me?.points.toLocaleString('en-US')} puntos</Text>
+        {/* Hoy 1 punto = ₡1 (igual que /rewards); cuando el valor se configure en el panel, viene de la API. */}
+        <Text style={s.pointsSub}>· valen {money(me?.points ?? 0)}</Text>
+        <View style={{ flex: 1 }} />
+        <Icon name="chev" size={16} color={colors.muted} />
+      </Pressable>
 
       <Band style={{ marginTop: 0 }} />
       <View style={s.sectionRow}>
@@ -196,32 +225,37 @@ const s = StyleSheet.create({
   link: { fontSize: 14, fontWeight: '600', color: colors.primary },
   screen: { flex: 1, backgroundColor: colors.white },
   content: { padding: 18, paddingBottom: 40 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, marginBottom: 26 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, marginBottom: 18 },
+  hello: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   name: { ...type.title, fontSize: 21 },
-  pill: {
+  notice: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.primarySoft,
-    borderRadius: 999,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
+    gap: 12,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    padding: 12,
+    marginBottom: 14,
   },
-  pillText: { color: colors.primaryInk, fontWeight: '700', fontSize: 14 },
+  noticeRow: { flexDirection: 'row', alignItems: 'center' },
+  noticeT: { fontSize: 15, fontWeight: '600', color: colors.ink },
+  points: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  pointsT: { fontSize: 14, fontWeight: '600', color: colors.ink },
+  pointsSub: { fontSize: 14, color: colors.muted },
   avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: colors.white, fontWeight: '700', fontSize: 15 },
   error: { color: colors.danger, marginBottom: 8 },
-  glow: {
-    marginBottom: 20,
-    borderRadius: radius.lg,
-    padding: 1.5,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.22,
-    shadowRadius: 11,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 3,
-  },
+  glow: { marginBottom: 20, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.line },
   card: { backgroundColor: colors.white, borderRadius: radius.lg - 1.5, paddingHorizontal: 14, paddingBottom: 4 },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
   cardTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },

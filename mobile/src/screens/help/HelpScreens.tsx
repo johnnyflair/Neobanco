@@ -10,6 +10,7 @@ import type { FraudReason } from '../../api/types';
 import { shortDate } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
+import { KooaEyes } from '../../ui/Brand';
 import { Icon } from '../../ui/Icon';
 import { Btn, ErrorText, Note, Opt, Row, Screen, Sect, Small, Steps } from '../../ui/kit';
 import { Text } from '../../ui/typography';
@@ -23,7 +24,7 @@ export const FRAUD_REASONS: { id: FraudReason; t: string }[] = [
   { id: 'stolen_phone', t: 'Perdí o me robaron el celular' },
   { id: 'lost_card', t: 'Perdí o me robaron la tarjeta' },
   { id: 'unknown_charge', t: 'No reconozco un movimiento' },
-  { id: 'suspicious_contact', t: 'Me llamaron haciéndose pasar por la cooperativa' },
+  { id: 'suspicious_contact', t: 'Me llamaron haciéndose pasar por Kooa' },
 ];
 const reasonText = (r: FraudReason) => FRAUD_REASONS.find((x) => x.id === r)?.t ?? 'Reporte de fraude';
 
@@ -31,7 +32,7 @@ type Msg = { me: boolean; text: string; action?: 'fraud' | 'whatsapp' };
 const CHIPS: { q: string; a: Msg }[] = [
   {
     q: 'No reconozco un cobro',
-    a: { me: false, text: 'Lo primero es proteger tu plata: bloqueemos tus tarjetas y abramos el reclamo.', action: 'fraud' },
+    a: { me: false, text: 'Lo primero es proteger tu dinero: bloqueemos tus tarjetas y abramos el reclamo.', action: 'fraud' },
   },
   {
     q: 'No me llegó un SINPE',
@@ -50,7 +51,7 @@ export function HelpScreen() {
   const nav = useNavigation();
   const cases = useLoad(api.supportCases);
   const [chat, setChat] = useState<Msg[]>([
-    { me: false, text: 'Hola. Puedo ayudarte a pagar, transferir, bloquear tu tarjeta o conectarte con una persona.' },
+    { me: false, text: 'Hola. Soy Kooa. Puedo ayudarte a pagar, transferir, bloquear tu tarjeta o conectarte con una persona.' },
   ]);
   const open = cases.data?.filter((c) => c.status === 'open') ?? [];
 
@@ -58,9 +59,19 @@ export function HelpScreen() {
     <Screen title="¿En qué te ayudo?" back={false}>
       {chat.map((m, i) => (
         <View key={i}>
-          <View style={[st.bubble, m.me ? st.me : st.bot]}>
-            <Text style={[st.bubbleText, m.me && { color: colors.white }]}>{m.text}</Text>
-          </View>
+          {m.me ? (
+            <View style={[st.bubble, st.me]}>
+              <Text style={[st.bubbleText, { color: colors.white }]}>{m.text}</Text>
+            </View>
+          ) : (
+            // Kooa conversa: sus ojos son la foto de perfil; se pone firme cuando el tema es fraude.
+            <View style={st.botRow}>
+              <KooaEyes size={38} expression={m.action === 'fraud' ? 'firme' : 'contenta'} browColor={m.action === 'fraud' ? colors.navy : colors.primary} />
+              <View style={[st.bubble, st.bot, { flexShrink: 1 }]}>
+                <Text style={st.bubbleText}>{m.text}</Text>
+              </View>
+            </View>
+          )}
           {m.action === 'fraud' && <Btn label="Bloquear y reportar" variant="do" icon="lock" onPress={() => nav.navigate('Fraud', { reason: 'unknown_charge' })} />}
           {m.action === 'whatsapp' && <Btn label="Escribir por WhatsApp" variant="o" onPress={openWhatsApp} />}
         </View>
@@ -132,9 +143,10 @@ export function FraudScreen({ route }: RootProps<'Fraud'>) {
 
   return (
     <Screen
-      title="Protejamos tu plata"
+      title="Protejamos tu dinero"
       footer={<Btn label="Bloquear todo ahora" variant="do" icon="lock" onPress={go} loading={busy} />}
     >
+      <KooaEyes size={84} expression="firme" browColor={colors.navy} style={{ alignSelf: 'center', marginBottom: 14 }} />
       <Small style={{ marginBottom: 10 }}>Elegí lo que pasó</Small>
       {FRAUD_REASONS.map((r) => (
         <Opt key={r.id} selected={r.id === sel} onPress={() => setSel(r.id)} title={r.t} />
@@ -175,6 +187,7 @@ export function CaseScreen({ route }: RootProps<'Case'>) {
 const st = StyleSheet.create({
   bubble: { maxWidth: '85%', borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 8 },
   bot: { backgroundColor: colors.card, alignSelf: 'flex-start', borderBottomLeftRadius: 6 },
+  botRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '92%' },
   me: { backgroundColor: colors.primary, alignSelf: 'flex-end', borderBottomRightRadius: 6 },
   bubbleText: { fontSize: 15, lineHeight: 21, color: colors.ink },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6, marginBottom: 14 },

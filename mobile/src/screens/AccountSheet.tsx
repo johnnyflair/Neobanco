@@ -171,7 +171,7 @@ export function AccountSheet({ account, sinpePhone, onClose, onMovements }: Prop
         <>
           {detail.type === 'envelope' && (
             <Btn
-              label="Meter o sacar plata"
+              label="Meter o sacar dinero"
               icon="swap"
               onPress={() => {
                 onClose();

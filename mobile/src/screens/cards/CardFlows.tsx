@@ -199,7 +199,7 @@ export function CardPayScreen({ route }: RootProps<'CardPay'>) {
           {
             name: 'TransferDone',
             params: {
-              hi: '¡Listo! Pagaste tu tarjeta',
+              hi: 'Pagaste tu tarjeta',
               amount: r.amount,
               back: 'Cards',
               rows: [
@@ -295,7 +295,7 @@ export function CardInstallmentsScreen({ route }: RootProps<'CardInstallments'>)
           {
             name: 'TransferDone',
             params: {
-              hi: `¡Listo! ${selected.merchant} quedó en ${months} cuotas`,
+              hi: `${selected.merchant} quedó en ${months} cuotas`,
               amountLabel: 'Cuota mensual',
               amount: r.monthly_payment,
               back: 'Cards',

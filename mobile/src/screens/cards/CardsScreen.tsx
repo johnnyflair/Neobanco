@@ -2,7 +2,7 @@
 // Bloquear es inmediato y sin clave (emergencia); desbloquear y ver datos piden la clave.
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
-import { Alert, Image, ImageBackground, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { api } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
@@ -10,6 +10,7 @@ import type { Card, CardSecrets } from '../../api/types';
 import { dayMonth, groupPan, money } from '../../format';
 import { colors, radius } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
+import { CardLogo, KooaCardFace } from '../../ui/Brand';
 import { Icon } from '../../ui/Icon';
 import { ActionButtons, Band, Btn, ErrorText, Loading, Row, Screen, Small, Tag, Toggle } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
@@ -56,9 +57,9 @@ function CardPicker({ value, onChange }: { value: 'debit' | 'credit'; onChange: 
             accessibilityLabel={`Tarjeta de ${o.label.toLowerCase()}`}
           >
             {o.v === 'debit' ? (
-              <Image source={require('../../../assets/card-debit.jpg')} style={st.swatch} />
+              <View style={[st.swatch, { backgroundColor: colors.teal }]} />
             ) : (
-              <Image source={require('../../../assets/card-credit.jpg')} style={st.swatch} />
+              <View style={[st.swatch, { backgroundColor: colors.navy }]} />
             )}
             <Text style={[st.pickText, on && { color: colors.navy }]}>{o.label}</Text>
           </Pressable>
@@ -177,16 +178,17 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
 
   return (
     <View>
-      <ImageBackground
-        source={require('../../../assets/card-debit.jpg')}
+      <KooaCardFace
+        kind="debit"
         style={[st.card, useCardSize(), locked && st.locked]}
-        imageStyle={[useCardSize(), { borderRadius: radius.lg }]}
-        resizeMode="cover"
         accessibilityLabel={`Tarjeta de débito terminada en ${card.last4}${locked ? ', bloqueada' : ''}`}
       >
         <View style={st.cardTop}>
-          <Text style={st.cardLabel}>Débito · {LINKED_LABEL[card.linked_mode ?? 'crc']}</Text>
-          {locked && <Text style={st.cardLabel}>Congelada</Text>}
+          <CardLogo kind="debit" />
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={st.cardKind}>Débito · {LINKED_LABEL[card.linked_mode ?? 'crc']}</Text>
+            {locked && <Text style={st.cardLabel}>Congelada</Text>}
+          </View>
         </View>
         <View>
           <Text style={st.cardNum} selectable={!!secrets}>
@@ -197,7 +199,7 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
             {secrets ? `   CVV ${secrets.cvv}` : ''}
           </Text>
         </View>
-      </ImageBackground>
+      </KooaCardFace>
       <ActionButtons
         items={[
           { label: secrets ? 'Ocultar\ndatos' : 'Ver\ndatos', icon: 'eye', onPress: reveal, disabled: locked, on: !!secrets },
@@ -241,17 +243,18 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
 
   return (
     <View>
-      {/* Mismo arte que la de débito, en grafito, plata y naranja (opción B aprobada). */}
-      <ImageBackground
-        source={require('../../../assets/card-credit.jpg')}
+      {/* Tarjeta Kooa de crédito: navy con los ojos de marca de agua. */}
+      <KooaCardFace
+        kind="credit"
         style={[st.card, useCardSize(), locked && st.locked]}
-        imageStyle={[useCardSize(), { borderRadius: radius.lg }]}
-        resizeMode="cover"
         accessibilityLabel={`Tarjeta de crédito terminada en ${card.last4}${locked ? ', congelada' : ''}`}
       >
         <View style={st.cardTop}>
-          <Text style={st.cardLabel}>Crédito · {card.product_name}</Text>
-          {locked && <Text style={st.cardLabel}>Congelada</Text>}
+          <CardLogo kind="credit" />
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={st.cardKind}>Crédito · {card.product_name}</Text>
+            {locked && <Text style={st.cardLabel}>Congelada</Text>}
+          </View>
         </View>
         <View>
           <Text style={st.cardNum} selectable={!!secrets}>
@@ -262,7 +265,7 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
             {secrets ? `   CVV ${secrets.cvv}` : ''}
           </Text>
         </View>
-      </ImageBackground>
+      </KooaCardFace>
 
       <ActionButtons
         items={[
@@ -339,7 +342,8 @@ const st = StyleSheet.create({
     backgroundColor: colors.navy,
   },
   locked: { opacity: 0.55 },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between' },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  cardKind: { color: colors.lime, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   cardLabel: { color: colors.white, fontSize: 12, textShadowColor: 'rgba(0,0,0,.45)', textShadowRadius: 3 },
   cardNum: {
     color: colors.white,

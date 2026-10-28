@@ -59,7 +59,8 @@ export function PullScreen() {
             {
               name: 'TransferDone',
               params: {
-                hi: '¡Listo! Trajiste dinero a tu cuenta',
+                hi: 'Trajiste dinero a tu cuenta',
+                face: 'guau',
                 amount: r.amount,
                 rows: [
                   ['Desde', source ? `${source.bank_name} · ${source.iban_masked}` : (r.counterparty_name ?? 'Tu otro banco')],

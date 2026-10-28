@@ -18,7 +18,7 @@ export function TransferHubScreen() {
       <Row
         icon="pull"
         title="Traer de mi cuenta en otro banco"
-        sub="Pasá plata de tu BAC, BN, BCR o Popular a esta cuenta"
+        sub="Pasá dinero de tu BAC, BN, BCR o Popular a esta cuenta"
         onPress={() => nav.navigate('Pull')}
         first
       />

@@ -66,9 +66,9 @@ export function ProfileScreen() {
       <Row icon="file" title="Estados de cuenta" sub="Pedilos por Ayuda mientras los sumamos aquí" onPress={() => nav.navigate('Tabs', { screen: 'Help' })} />
       <Row
         icon="gift"
-        title="Invitá a un amigo"
+        title="Invitá a alguien"
         sub="Ganan 500 puntos cada uno"
-        onPress={() => Share.share({ message: 'Abrí tu cuenta en la App de la cooperativa y ganamos 500 puntos cada uno.' })}
+        onPress={() => Share.share({ message: 'Abrí tu cuenta en Kooa y ganamos 500 puntos cada uno.' })}
       />
       <Btn label="Cerrar sesión" variant="do" icon="logout" onPress={confirmSignOut} />
     </Screen>

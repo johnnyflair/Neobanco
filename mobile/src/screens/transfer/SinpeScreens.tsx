@@ -308,7 +308,7 @@ export function SendAmountScreen({ route }: RootProps<'SendAmount'>) {
           {
             name: 'TransferDone',
             params: {
-              hi: `¡Listo! Le enviaste a ${firstName(who)}`,
+              hi: `Le enviaste a ${firstName(who)}`,
               amount: t.amount,
               currency: t.currency,
               points: t.points_earned,
@@ -390,7 +390,7 @@ export function SendAmountScreen({ route }: RootProps<'SendAmount'>) {
           isNew
             ? sinpe
               ? `Es la primera vez que le enviás a este número. Verificá que ${firstName(name)} sea la persona correcta.`
-              : `Verificá que ${name} sea el titular correcto de la cuenta. Una transferencia enviada no se puede reversar desde la App.`
+              : `Verificá que ${name} sea el titular correcto de la cuenta. Una transferencia enviada no se puede reversar desde Kooa.`
             : null
         }
         rows={[

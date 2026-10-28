@@ -10,6 +10,7 @@ import type { RedeemDestination, Rewards } from '../../api/types';
 import { money, shortDate } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
+import { KooaEyes } from '../../ui/Brand';
 import { Btn, ErrorText, Loading, Opt, Row, Screen, Sect, Small, Tag } from '../../ui/kit';
 import { Icon } from '../../ui/Icon';
 import { receiptDate } from '../../ui/Receipt';
@@ -39,8 +40,8 @@ export const destLabel = (d: RedeemDestination | null | undefined) =>
 
 const EARN = [
   { t: 'Comprá con tu tarjeta', s: '1 punto por cada ₡1,000 (2 con crédito)' },
-  { t: 'Enviá por SINPE desde la App', s: '5 puntos por envío, hasta 20 al mes' },
-  { t: 'Pagá recibos en la App', s: '10 puntos, 20 si es automático' },
+  { t: 'Enviá por SINPE desde Kooa', s: '5 puntos por envío, hasta 20 al mes' },
+  { t: 'Pagá recibos en Kooa', s: '10 puntos, 20 si es automático' },
   { t: 'Creá sobres y cumplí tus metas', s: '50 puntos por sobre' },
 ];
 
@@ -75,9 +76,14 @@ export function RewardsScreen() {
   return (
     <Screen title="Mis recompensas">
       <View style={st.hero}>
-        <Text style={st.heroK}>Tus puntos</Text>
-        <Text style={st.heroBig}>{n0(data.points)}</Text>
-        <Text style={st.heroUp}>{`Valen ${money(data.value_crc)}`}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={st.heroK}>Tus puntos</Text>
+            <Text style={st.heroBig}>{n0(data.points)}</Text>
+            <Text style={st.heroUp}>{`Valen ${money(data.value_crc)}`}</Text>
+          </View>
+          <KooaEyes size={78} expression="guau" browColor={colors.orange} />
+        </View>
         <View style={st.path} accessibilityLabel={`Nivel ${data.level}`}>
           <View style={st.track} />
           <View style={[st.trackFill, { width: `${pathPct * 0.84}%` }]} />
@@ -88,13 +94,13 @@ export function RewardsScreen() {
                 <View
                   style={[
                     st.medal,
-                    { backgroundColor: lv.reached ? LEVEL_COLOR[lv.name] : '#2A3A66' },
+                    { backgroundColor: lv.reached ? LEVEL_COLOR[lv.name] : colors.card },
                     current && st.medalOn,
                   ]}
                 >
                   <Icon name={lv.name === 'Oro' ? 'crown' : 'medal'} size={20} color={lv.reached ? colors.white : LEVEL_COLOR[lv.name]} />
                 </View>
-                <Text style={[st.medalT, { color: lv.reached ? colors.white : LEVEL_COLOR[lv.name] }]}>{lv.name}</Text>
+                <Text style={[st.medalT, { color: lv.reached ? colors.ink : colors.muted }]}>{lv.name}</Text>
               </View>
             );
           })}
@@ -102,7 +108,7 @@ export function RewardsScreen() {
         <Text style={st.heroNext}>
           {data.next_level_at ? (
             <>
-              Te faltan <Text style={{ color: colors.lime, fontWeight: '700' }}>{`${n0(Math.max(0, missing))} puntos`}</Text>
+              Te faltan <Text style={{ color: colors.orangeInk, fontWeight: '700' }}>{`${n0(Math.max(0, missing))} puntos`}</Text>
               {` para ${nextName}`}
             </>
           ) : (
@@ -143,7 +149,7 @@ export function RewardsScreen() {
         icon="gift"
         title="Invitá a un amigo"
         sub="500 puntos para cada uno"
-        onPress={() => Share.share({ message: 'Abrí tu cuenta en la App de la cooperativa y ganamos 500 puntos cada uno.' })}
+        onPress={() => Share.share({ message: 'Abrí tu cuenta en Kooa y ganamos 500 puntos cada uno.' })}
       />
 
       <Sect>Últimos puntos</Sect>
@@ -189,7 +195,8 @@ export function RedeemScreen() {
               : 'Donación a una causa';
       nav.dispatch(
         StackActions.replace('TransferDone', {
-          hi: dest.id === 'cause' ? '¡Gracias! Donaste tus puntos' : '¡Listo! Canjeaste tus puntos',
+          hi: dest.id === 'cause' ? 'Gracias, donaste tus puntos' : 'Canjeaste tus puntos',
+          face: 'guau',
           amount: r.value,
           rows: [
             ['Puntos usados', n0(r.points_used)],
@@ -281,18 +288,18 @@ export function AutoRuleScreen() {
 }
 
 const st = StyleSheet.create({
-  hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: 18, marginBottom: 12 },
-  heroK: { fontSize: 13, color: colors.heroSub, fontWeight: '600' },
-  heroBig: { fontSize: 34, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
-  heroUp: { fontSize: 13, color: colors.lime },
+  hero: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.line, padding: 18, marginBottom: 12 },
+  heroK: { fontSize: 13, color: colors.muted, fontWeight: '600' },
+  heroBig: { fontSize: 34, fontWeight: '700', color: colors.orangeInk, fontVariant: ['tabular-nums'] },
+  heroUp: { fontSize: 13, color: colors.muted },
   path: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginHorizontal: 4 },
-  track: { position: 'absolute', top: 20, left: '8%', right: '8%', height: 5, borderRadius: 3, backgroundColor: '#2A3A66' },
-  trackFill: { position: 'absolute', top: 20, left: '8%', height: 5, borderRadius: 3, backgroundColor: colors.lime },
+  track: { position: 'absolute', top: 20, left: '8%', right: '8%', height: 5, borderRadius: 3, backgroundColor: colors.orangeSoft },
+  trackFill: { position: 'absolute', top: 20, left: '8%', height: 5, borderRadius: 3, backgroundColor: colors.orange },
   medalBox: { alignItems: 'center', width: 64 },
   medal: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  medalOn: { borderWidth: 3, borderColor: colors.lime },
+  medalOn: { borderWidth: 3, borderColor: colors.orange },
   medalT: { fontSize: 12, fontWeight: '700', marginTop: 5 },
-  heroNext: { fontSize: 13.5, color: colors.white, textAlign: 'center', marginTop: 14 },
+  heroNext: { fontSize: 13.5, color: colors.ink, textAlign: 'center', marginTop: 14 },
   lvRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: 1, borderColor: colors.line },
   dot: { width: 12, height: 12, borderRadius: 6 },
   level: { marginTop: 4, marginBottom: 4 },

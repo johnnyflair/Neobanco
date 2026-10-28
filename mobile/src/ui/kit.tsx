@@ -340,13 +340,13 @@ export const Sect = ({ children, plain, first }: { children: string; plain?: boo
     </>
   );
 /** Franja gris entre secciones, de borde a borde. */
-/** Banda gris entre secciones, con el destello de la paleta al inicio de la sección (línea degradada). */
+/** Banda gris entre secciones, con el destello de la paleta al inicio de la sección: línea fina que se desvanece. */
 export const Band = ({ style }: { style?: ViewStyle }) => (
   <View style={[s.bandWrap, style]}>
     <View style={s.band} />
     <LinearGradient
-      colors={[colors.lime, colors.primary, colors.navy, colors.orange]}
-      locations={[0, 0.35, 0.7, 1]}
+      colors={[colors.lime, 'rgba(23,128,108,0.85)', 'rgba(13,27,69,0.35)', 'rgba(232,116,46,0)']}
+      locations={[0, 0.3, 0.62, 1]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 0 }}
       style={s.bandGlow}

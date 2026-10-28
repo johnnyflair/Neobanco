@@ -14,7 +14,7 @@ import { Text } from './typography';
 const TABS: Record<string, { label: string; icon: IconName }> = {
   Home: { label: 'Inicio', icon: 'home' },
   Cards: { label: 'Tarjeta', icon: 'card' },
-  Grow: { label: 'Invertir', icon: 'grow' },
+  Grow: { label: 'Invertir', icon: 'pig' },
   Help: { label: 'Ayuda', icon: 'chat' },
 };
 
@@ -64,7 +64,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
                   ],
                 }}
               >
-                <Icon name={tab.icon} color={color} size={23} />
+                <Icon name={tab.icon} color={color} size={29} />
               </Animated.View>
               <Text style={[st.label, { color }, focused && { fontWeight: '700' }]}>{tab.label}</Text>
             </Pressable>
@@ -87,6 +87,6 @@ const st = StyleSheet.create({
   glowLine: { height: 1.5 },
   indicator: { position: 'absolute', top: 0, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: colors.primary },
   row: { flexDirection: 'row', paddingTop: 8 },
-  item: { flex: 1, alignItems: 'center', gap: 3, paddingVertical: 2 },
-  label: { fontSize: 11, fontWeight: '500' },
+  item: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
+  label: { fontSize: 12, fontWeight: '500' },
 });

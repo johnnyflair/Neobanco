@@ -11,6 +11,7 @@ import type { Transaction } from '../api/types';
 import { formatPhone, money, shortDate } from '../format';
 import { colors, radius, type } from '../theme';
 import { BottomSheet } from './BottomSheet';
+import { KooaEyes, KooaLogo } from './Brand';
 import { Icon, type IconName } from './Icon';
 import { Btn } from './kit';
 import { Text } from './typography';
@@ -194,14 +195,20 @@ export function MoveSheet({
 
   return (
     <BottomSheet visible onClose={onClose}>
+      {/* Lo que va en la imagen: marca arriba, el comprobante y el eslogan al pie. El saldo queda fuera
+          de la imagen (se ve abajo, solo en la App), para no mostrárselo a quien recibe el comprobante. */}
       <View ref={shotRef} collapsable={false} style={st.receipt}>
+        <View style={st.brand}>
+          <KooaLogo height={26} />
+          <Text style={st.brandTag}>Comprobante</Text>
+        </View>
         <View style={st.head}>
           <Icon name={moveIcon(t)} size={30} color={incoming ? colors.emeraldDark : colors.amount} />
           <Text style={st.title}>{t.title || t.description}</Text>
           <Text style={[st.big, incoming && { color: colors.primary }]}>{signed(t, currency)}</Text>
           <Text style={st.tag}>Completado</Text>
         </View>
-        {rows.map((r) => (
+        {rows.filter((r) => r.k !== 'Saldo después').map((r) => (
           <View key={r.k} style={st.kv}>
             <Text style={st.k}>{r.k}</Text>
             <Text style={st.v} selectable numberOfLines={1}>
@@ -214,6 +221,14 @@ export function MoveSheet({
             )}
           </View>
         ))}
+        <View style={st.foot}>
+          <KooaEyes size={30} />
+          <Text style={st.footT}>Dinero con buena cara</Text>
+        </View>
+      </View>
+      <View style={[st.kv, { marginBottom: 4 }]}>
+        <Text style={st.k}>Saldo después</Text>
+        <Text style={st.v}>{money(t.balance_after, currency)}</Text>
       </View>
       <Btn label="Compartir por WhatsApp" icon="chat" onPress={() => Linking.openURL(`https://wa.me/?text=${encodeURIComponent(text)}`)} />
       <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -228,6 +243,10 @@ const st = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderColor: colors.line },
   day: { fontSize: 12.5, fontWeight: '600', color: colors.muted, paddingTop: 16, paddingBottom: 6, borderBottomWidth: 1, borderColor: '#D0D5DD' },
   receipt: { backgroundColor: colors.white, paddingBottom: 4 },
+  brand: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, marginBottom: 10, borderBottomWidth: 1, borderColor: colors.line },
+  brandTag: { fontSize: 12, color: colors.muted },
+  foot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 12, marginTop: 2, borderTopWidth: 1, borderColor: colors.line },
+  footT: { fontSize: 13, fontWeight: '600', color: colors.teal },
   head: { alignItems: 'center', gap: 4, marginBottom: 10 },
   title: { fontSize: 16, fontWeight: '600', color: colors.ink, marginTop: 4 },
   big: { fontSize: 28, fontWeight: '700', color: colors.amount, fontVariant: ['tabular-nums'] },

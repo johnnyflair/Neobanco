@@ -50,10 +50,9 @@ const LEVEL_COLOR: Record<string, string> = { Bronce: '#C07A3E', Plata: '#A8B0BA
 function perksText(lv: Rewards['levels'][number]) {
   const mult = Math.round((Number(lv.points_multiplier) - 1) * 100);
   const bonus = Number(lv.rate_bonus);
-  const from = lv.from_points ? `Desde ${n0(lv.from_points)} puntos · ` : '';
   return mult
-    ? `${from}${mult}% más puntos · +${bonus}% de interés en sobres y plazos`
-    : 'Puntos en cada compra, SINPE y recibo · canje desde 500';
+    ? `${mult}% más puntos\n+${bonus}% de interés en sobres y plazos`
+    : 'Puntos en compras, SINPE y recibos\nCanjeás desde 500 puntos';
 }
 
 async function loadRewards() {
@@ -125,7 +124,9 @@ export function RewardsScreen() {
         first
         icon="clock"
         title="Canje automático"
-        sub={data.rule ? `Activado · fin de mes, ${destLabel(data.rule)}` : 'Desactivado · movemos tus puntos cada fin de mes'}
+        tag={data.rule ? 'Activado' : 'Desactivado'}
+        tagTone={data.rule ? 'ok' : 'neutral'}
+        sub={data.rule ? `Al final de cada mes, ${destLabel(data.rule)}` : 'Movemos tus puntos al final de cada mes'}
         onPress={() => nav.navigate('AutoRule')}
       />
 
@@ -134,7 +135,10 @@ export function RewardsScreen() {
         <View key={lv.name} style={[st.lvRow, i === 0 && { borderTopWidth: 0 }]}>
           <View style={[st.dot, { backgroundColor: LEVEL_COLOR[lv.name] }]} />
           <View style={{ flex: 1 }}>
-            <Text style={st.histT}>{lv.name === data.level ? `${lv.name} · tu nivel` : lv.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={st.histT}>{lv.name}</Text>
+              {lv.name === data.level ? <Tag tone="ok">Tu nivel</Tag> : lv.from_points ? <Small>{`desde ${n0(lv.from_points)} puntos`}</Small> : null}
+            </View>
             <Small>{perksText(lv)}</Small>
           </View>
           <Icon name={lv.reached ? 'check' : 'lock'} size={18} color={lv.reached ? colors.primary : colors.muted} />

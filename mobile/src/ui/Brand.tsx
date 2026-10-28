@@ -17,8 +17,9 @@ const BROWS: Record<Expression, [string, string]> = {
   firme: ['M60,34 L88,30', 'M104,30 L132,34'],
 };
 
-// La sombra larga se arma repitiendo la figura desplazada 1 px en diagonal, seis veces.
-const SHADOW_STEPS = [1, 2, 3, 4, 5, 6];
+// La sombra larga se arma repitiendo la figura desplazada 1 px en diagonal, tres veces (opción B:
+// corta, para que la sombra de una "o" no se meta en la otra ni la de las cejas toque los aros).
+const SHADOW_STEPS = [1, 2, 3];
 
 // Área de dibujo de los ojos (incluye la sombra): 106 × 82 unidades.
 const EYES_BOX = { x: 46, y: 8, w: 106, h: 82 };
@@ -192,13 +193,32 @@ export function KooaCardFace({
       accessibilityLabel={accessibilityLabel}
     >
       <KooaEyes
-        size={200}
+        size={250}
         color={debit ? colors.tealWatermark : colors.navyWatermark}
         browColor={debit ? colors.tealWatermark : colors.navyWatermark}
         shadowColor={debit ? colors.shadowOnTeal : colors.shadowOnNavy}
-        style={{ position: 'absolute', right: -52, bottom: -44 }}
+        style={{ position: 'absolute', right: -58, bottom: -40 }}
       />
       {children}
+    </View>
+  );
+}
+
+/** Chip dorado y símbolo de pago sin contacto, como en la tarjeta aprobada. */
+export function CardChip({ kind }: { kind: 'debit' | 'credit' }) {
+  const wave = kind === 'debit' ? '#BFD9D6' : '#A9B3D1';
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} accessible={false}>
+      <View style={{ width: 40, height: 30, borderRadius: 6, backgroundColor: '#D9C27A' }} />
+      <Svg width={24} height={24} viewBox="0 0 24 24">
+        <Path
+          d="M8 7a7 7 0 0 1 0 10M12 5a10 10 0 0 1 0 14M16 3a13 13 0 0 1 0 18"
+          fill="none"
+          stroke={wave}
+          strokeWidth={2}
+          strokeLinecap="round"
+        />
+      </Svg>
     </View>
   );
 }

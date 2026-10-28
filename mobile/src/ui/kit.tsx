@@ -159,10 +159,16 @@ export function Row({
   chevron = !!onPress,
   first,
   subColor,
+  tag,
+  tagTone = 'neutral',
 }: {
   icon?: IconName;
   title: string;
+  /** Una idea por renglón: separá con "\n". */
   sub?: string;
+  /** Estado corto al lado del título ("Desactivado", "Tu nivel"). */
+  tag?: string;
+  tagTone?: 'neutral' | 'ok';
   subColor?: string;
   right?: ReactNode;
   onPress?: () => void;
@@ -173,7 +179,10 @@ export function Row({
     <>
       {icon && <Icon name={icon} size={22} color={colors.emeraldDark} />}
       <View style={{ flex: 1 }}>
-        <Text style={s.rowTitle}>{title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <Text style={s.rowTitle}>{title}</Text>
+          {tag ? <Tag tone={tagTone}>{tag}</Tag> : null}
+        </View>
         {sub ? <Text style={[s.sm, subColor ? { color: subColor } : null]}>{sub}</Text> : null}
       </View>
       {right}
@@ -362,8 +371,17 @@ export const ErrorText = ({ children }: { children: string | null }) =>
       {children}
     </Text>
   ) : null;
-export const Tag = ({ children, center }: { children: string; center?: boolean }) => (
-  <Text style={[s.tag, center && { alignSelf: 'center' }]}>{children}</Text>
+/** Etiqueta de estado. "neutral" en gris (Desactivado), "ok" en verde (Tu nivel, Activado). */
+export const Tag = ({ children, center, tone }: { children: string; center?: boolean; tone?: 'neutral' | 'ok' }) => (
+  <Text
+    style={[
+      s.tag,
+      center && { alignSelf: 'center' },
+      tone === 'neutral' && { backgroundColor: colors.card, color: colors.muted },
+    ]}
+  >
+    {children}
+  </Text>
 );
 
 /** Pantalla de confirmación: círculo lima con check, título y detalle. */
@@ -382,7 +400,22 @@ export function Done({ title, sub, extra, children }: { title: string; sub?: str
 }
 
 /** Tarjeta azul marino del prototipo: título, bajada, número grande y línea en lima. */
-export function Hero({ title, sub, big, up, center }: { title: string; sub?: string; big?: string; up?: string; center?: boolean }) {
+export function Hero({
+  title,
+  sub,
+  big,
+  up,
+  lines,
+  center,
+}: {
+  title: string;
+  sub?: string;
+  big?: string;
+  up?: string;
+  /** Desglose del total: un renglón por dato (etiqueta a la izquierda, monto a la derecha). */
+  lines?: [string, string][];
+  center?: boolean;
+}) {
   const a = center ? ({ textAlign: 'center' } as const) : undefined;
   return (
     <View style={s.hero}>
@@ -390,6 +423,12 @@ export function Hero({ title, sub, big, up, center }: { title: string; sub?: str
       {sub ? <Text style={[s.heroD, a]}>{sub}</Text> : null}
       {big ? <Text style={[s.heroBig, a]}>{big}</Text> : null}
       {up ? <Text style={[s.heroUp, a]}>{up}</Text> : null}
+      {lines?.map(([k, v], i) => (
+        <View key={k} style={[s.heroLine, i === 0 && { marginTop: 8 }]}>
+          <Text style={s.heroLineK}>{k}</Text>
+          <Text style={s.heroLineV}>{v}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -554,6 +593,9 @@ export const s = StyleSheet.create({
   heroD: { fontSize: 12, color: colors.heroSub, marginTop: 2, marginBottom: 8 },
   heroBig: { fontSize: 24, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
   heroUp: { fontSize: 12, color: colors.lime, marginTop: 2 },
+  heroLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.navyWatermark },
+  heroLineK: { fontSize: 13, color: colors.heroSub },
+  heroLineV: { fontSize: 13, fontWeight: '600', color: colors.lime, fontVariant: ['tabular-nums'] },
   tabs: { flexDirection: 'row', gap: 28, marginTop: 4, marginBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
   tab: { paddingTop: 6, paddingBottom: 10, alignItems: 'center' },
   tabText: { fontSize: 17, fontWeight: '700', color: '#98A2B3' },

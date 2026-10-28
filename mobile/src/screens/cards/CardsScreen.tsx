@@ -10,7 +10,7 @@ import type { Card, CardSecrets } from '../../api/types';
 import { dayMonth, groupPan, money } from '../../format';
 import { colors, radius } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
-import { CardLogo, KooaCardFace } from '../../ui/Brand';
+import { CardChip, CardLogo, KooaCardFace } from '../../ui/Brand';
 import { Icon } from '../../ui/Icon';
 import { ActionButtons, Band, Btn, ErrorText, Loading, Row, Screen, Small, Tag, Toggle } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
@@ -190,6 +190,7 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
             {locked && <Text style={st.cardLabel}>Congelada</Text>}
           </View>
         </View>
+        <CardChip kind="debit" />
         <View>
           <Text style={st.cardNum} selectable={!!secrets}>
             {secrets ? groupPan(secrets.pan) : `•••• •••• •••• ${card.last4}`}
@@ -256,6 +257,7 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
             {locked && <Text style={st.cardLabel}>Congelada</Text>}
           </View>
         </View>
+        <CardChip kind="credit" />
         <View>
           <Text style={st.cardNum} selectable={!!secrets}>
             {secrets ? groupPan(secrets.pan) : `•••• •••• •••• ${card.last4}`}

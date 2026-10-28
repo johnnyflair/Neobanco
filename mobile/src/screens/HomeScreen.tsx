@@ -3,7 +3,7 @@
 // movimientos.
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError, api } from '../api/client';
@@ -24,6 +24,7 @@ const MAIN_TYPES = new Set(['savings', 'capital']); // colones, dólares y capit
 export function HomeScreen() {
   const nav = useNavigation();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const [me, setMe] = useState<Me | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [moves, setMoves] = useState<Transaction[]>([]);
@@ -76,8 +77,11 @@ export function HomeScreen() {
     { label: 'SINPE\nMóvil', icon: 'phone', go: () => nav.navigate('SinpeNumber'), badge: newSinpe, main: true },
     { label: 'Transferir\ndinero', icon: 'swap', go: () => nav.navigate('TransferHub') },
     { label: 'Pagar\nrecibos', icon: 'receipt', go: () => nav.navigate('Bills') },
-    { label: 'Pedí un\npréstamo', icon: 'cash', go: () => nav.navigate('LoanSim'), accent: true },
+    { label: 'Pedí un\npréstamo', icon: 'cash', go: () => nav.navigate('LoanSim') },
+    { label: 'Mis\npuntos', icon: 'star', go: () => nav.navigate('Rewards'), accent: true },
   ];
+  // Cuatro accesos completos y el quinto asomado a la mitad, para que se note que la fila se desliza.
+  const quickW = (width - 18) / 4.5;
 
   const main = accounts.filter((a) => MAIN_TYPES.has(a.type));
 
@@ -164,11 +168,11 @@ export function HomeScreen() {
       </View>
 
       <Band style={{ marginTop: 0 }} />
-      <View style={s.quick}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.quickScroll} contentContainerStyle={s.quick}>
         {QUICK.map((q) => (
           <Pressable
             key={q.label}
-            style={({ pressed }) => [s.quickItem, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [s.quickItem, { width: quickW }, pressed && { opacity: 0.7 }]}
             onPress={q.go}
             accessibilityRole="button"
             accessibilityLabel={q.label.replace('\n', ' ') + (q.badge ? ', tenés un SINPE nuevo' : '')}
@@ -180,22 +184,8 @@ export function HomeScreen() {
             <Text style={s.quickText}>{q.label}</Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
 
-      {/* Franja de puntos (opción A1): una línea, con borde como "Mis cuentas". */}
-      <Pressable
-        style={({ pressed }) => [s.points, pressed && { opacity: 0.7 }]}
-        onPress={() => nav.navigate('Rewards')}
-        accessibilityRole="button"
-        accessibilityLabel={`${me?.points ?? 0} puntos de recompensas`}
-      >
-        <Icon name="star" size={17} color={colors.orange} />
-        <Text style={s.pointsT}>{me?.points.toLocaleString('en-US')} puntos</Text>
-        {/* Hoy 1 punto = ₡1 (igual que /rewards); cuando el valor se configure en el panel, viene de la API. */}
-        <Text style={s.pointsSub}>· valen {money(me?.points ?? 0)}</Text>
-        <View style={{ flex: 1 }} />
-        <Icon name="chev" size={16} color={colors.muted} />
-      </Pressable>
 
       <Band style={{ marginTop: 0 }} />
       <View style={s.sectionRow}>
@@ -239,19 +229,6 @@ const s = StyleSheet.create({
   },
   noticeRow: { flexDirection: 'row', alignItems: 'center' },
   noticeT: { fontSize: 15, fontWeight: '600', color: colors.ink },
-  points: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1.5,
-    borderColor: colors.line,
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
-  },
-  pointsT: { fontSize: 14, fontWeight: '600', color: colors.ink },
-  pointsSub: { fontSize: 14, color: colors.muted },
   avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: colors.white, fontWeight: '700', fontSize: 15 },
   error: { color: colors.danger, marginBottom: 8 },
@@ -266,10 +243,11 @@ const s = StyleSheet.create({
   icon: { fontSize: 20, fontWeight: '600', color: colors.primary },
   more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
   moreText: { fontSize: 14, fontWeight: '600', color: colors.primary },
-  quick: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 18, paddingBottom: 16 },
+  quickScroll: { marginHorizontal: -18 },
+  quick: { paddingLeft: 18, paddingRight: 8, paddingTop: 18, paddingBottom: 16 },
   // Franja gris de borde a borde entre secciones (cuentas · accesos · movimientos).
   sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
-  quickItem: { width: '24%', alignItems: 'center', gap: 7 },
+  quickItem: { alignItems: 'center', gap: 7 },
   quickIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   quickText: { fontSize: 12.5, lineHeight: 16, fontWeight: '600', textAlign: 'center', color: colors.ink },
   badge: {

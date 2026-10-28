@@ -3,6 +3,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View, type TextInputProps, type ViewStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius } from '../theme';
@@ -332,14 +333,26 @@ export const Sect = ({ children, plain, first }: { children: string; plain?: boo
     <Text style={s.sect}>{children}</Text>
   ) : (
     <>
-      {!first && <View style={s.band} />}
+      {!first && <Band />}
       <Text style={[s.sectTitle, first && { marginTop: 4 }]} accessibilityRole="header">
         {children}
       </Text>
     </>
   );
 /** Franja gris entre secciones, de borde a borde. */
-export const Band = () => <View style={s.band} />;
+/** Banda gris entre secciones, con el destello de la paleta al inicio de la sección (línea degradada). */
+export const Band = ({ style }: { style?: ViewStyle }) => (
+  <View style={[s.bandWrap, style]}>
+    <View style={s.band} />
+    <LinearGradient
+      colors={[colors.lime, colors.primary, colors.navy, colors.orange]}
+      locations={[0, 0.35, 0.7, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={s.bandGlow}
+    />
+  </View>
+);
 export const Small = ({ children, center, style }: { children: ReactNode; center?: boolean; style?: object }) => (
   <Text style={[s.sm, center && { textAlign: 'center' }, style]}>{children}</Text>
 );
@@ -571,7 +584,9 @@ export const s = StyleSheet.create({
   },
   h2: { fontSize: 20, fontWeight: '700', color: colors.ink, flexShrink: 1 },
   sm: { fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 16 },
-  band: { height: 10, backgroundColor: '#F2F4F7', marginHorizontal: -18, marginTop: 20 },
+  bandWrap: { marginHorizontal: -18, marginTop: 20 },
+  band: { height: 10, backgroundColor: '#F2F4F7' },
+  bandGlow: { height: 2.25 },
   sectTitle: { fontSize: 16, fontWeight: '700', color: colors.ink, marginTop: 16, marginBottom: 4 },
   sect: { fontSize: 12, color: colors.muted, marginTop: 16, marginBottom: 4, fontWeight: '600', letterSpacing: 0.2 },
   btn: {

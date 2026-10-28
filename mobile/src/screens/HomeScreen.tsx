@@ -15,6 +15,7 @@ import { AccountSheet } from './AccountSheet';
 import { accountsGlow, colors, radius, type } from '../theme';
 import { MoveList, MoveSheet } from '../ui/Moves';
 import { Icon, type IconName } from '../ui/Icon';
+import { Band } from '../ui/kit';
 import { Text } from '../ui/typography';
 
 const HIDE_KEY = 'neo.hideBalances';
@@ -148,7 +149,7 @@ export function HomeScreen() {
         </View>
       </LinearGradient>
 
-      <View style={s.band} />
+      <Band style={{ marginTop: 0 }} />
       <View style={s.quick}>
         {QUICK.map((q) => (
           <Pressable
@@ -167,7 +168,7 @@ export function HomeScreen() {
         ))}
       </View>
 
-      <View style={s.band} />
+      <Band style={{ marginTop: 0 }} />
       <View style={s.sectionRow}>
         <Text style={s.sectionTitle}>Movimientos</Text>
         <Pressable onPress={() => nav.navigate('Movements')} hitSlop={10} accessibilityRole="button">
@@ -233,7 +234,6 @@ const s = StyleSheet.create({
   moreText: { fontSize: 14, fontWeight: '600', color: colors.primary },
   quick: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 18, paddingBottom: 16 },
   // Franja gris de borde a borde entre secciones (cuentas · accesos · movimientos).
-  band: { height: 10, backgroundColor: '#F2F4F7', marginHorizontal: -18 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
   quickItem: { width: '24%', alignItems: 'center', gap: 7 },
   quickIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },

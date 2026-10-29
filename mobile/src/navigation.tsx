@@ -60,6 +60,8 @@ export type RootParams = {
     shareText?: string;
     next?: { label: string; route: 'NewEnvelope' | 'AutoRule' };
     back?: keyof TabParams;
+    /** Expresión de Kooa: "contenta" en envíos y pagos, "guau" cuando recibís (préstamo, canje). */
+    face?: 'contenta' | 'guau';
   };
   CardLinked: { cardId: string };
   CardLimits: { cardId: string };

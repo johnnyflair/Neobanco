@@ -12,6 +12,7 @@ import { money } from '../../format';
 import { usePublic, usePublicNav } from '../../publicNavigation';
 import { colors, radius, type } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
+import { Highlight, KooaEyes, KooaLogo } from '../../ui/Brand';
 import { Icon, type IconName } from '../../ui/Icon';
 import { Btn, Chips, ErrorText, Field, Hero, Opt, Row, Screen, Sect, Small } from '../../ui/kit';
 import { Text } from '../../ui/typography';
@@ -22,21 +23,23 @@ export function WelcomeScreen() {
   const nav = usePublicNav();
   const insets = useSafeAreaInsets();
   return (
-    <View style={[st.welcome, { paddingTop: insets.top + 40, paddingBottom: Math.max(insets.bottom, 16) + 8 }]}>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <View style={st.logo}>
-          <Text style={st.logoText}>App</Text>
-        </View>
-        <Text style={st.wTitle}>Tu cooperativa, en tu bolsillo</Text>
-        <Text style={st.wSub}>SINPE Móvil, préstamos y ahorro. Abrí tu cuenta en 3 minutos, solo con tu cédula.</Text>
+    <View style={[st.welcome, { paddingTop: insets.top + 14, paddingBottom: Math.max(insets.bottom, 16) + 8 }]}>
+      <View style={st.wTop}>
+        <KooaLogo height={34} />
+        <Pressable onPress={() => nav.navigate('Explore')} hitSlop={12} accessibilityRole="button" accessibilityLabel="Explorar sin cuenta">
+          <Text style={st.wLinkText}>Explorar</Text>
+        </Pressable>
       </View>
-      <Btn label="Abrir mi cuenta" onPress={() => nav.navigate('OnbPhone')} variant="lime" />
-      <Pressable style={st.wOutline} onPress={() => nav.navigate('SignIn')} accessibilityRole="button">
-        <Text style={st.wOutlineText}>Ya soy parte, ingresar</Text>
-      </Pressable>
-      <Pressable style={st.wLink} onPress={() => nav.navigate('Explore')} accessibilityRole="button">
-        <Text style={st.wLinkText}>Explorar sin cuenta</Text>
-      </Pressable>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <KooaEyes size={210} greet style={{ alignSelf: 'center', marginBottom: 44 }} />
+        <Text style={st.wTitle}>Dinero con</Text>
+        <Highlight style={st.wTitle} align="flex-start">
+          buena cara.
+        </Highlight>
+        <Text style={st.wSub}>Pagá, recibí y ahorrá al toque.</Text>
+      </View>
+      <Btn label="Abrí tu cuenta en 3 minutos" onPress={() => nav.navigate('OnbPhone')} />
+      <Btn label="Ya tengo cuenta" variant="o" onPress={() => nav.navigate('SignIn')} />
     </View>
   );
 }
@@ -67,7 +70,7 @@ export function SignInScreen() {
 
   return (
     <Screen
-      title="Hola de nuevo"
+      title=""
       footer={
         <>
           <Btn label="Ingresar" onPress={submit} loading={busy} />
@@ -75,6 +78,12 @@ export function SignInScreen() {
         </>
       }
     >
+      <View style={{ marginBottom: 18, gap: 14 }}>
+        <KooaLogo height={30} />
+        <Text style={type.title} accessibilityRole="header">
+          Hola de nuevo
+        </Text>
+      </View>
       <Field
         label="Celular o cédula"
         value={identifier}
@@ -111,7 +120,7 @@ export function RecoverScreen() {
           onPress={() =>
             Linking.openURL(
               via === 'whatsapp'
-                ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola, necesito recuperar mi clave de la App.')}`
+                ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola, necesito recuperar mi clave de Kooa.')}`
                 : `tel:${WHATSAPP.slice(-8)}`,
             )
           }
@@ -170,7 +179,7 @@ export function ExploreScreen() {
         <View style={[st.exHead, { marginTop: insets.top > 0 ? 0 : 8 }]}>
           <View style={{ flex: 1 }}>
             <Text style={st.hello}>Bienvenido</Text>
-            <Text style={st.helloSub}>Tu plata, más cerca</Text>
+            <Text style={st.helloSub}>Tu dinero, más cerca</Text>
           </View>
           <Pressable onPress={() => nav.navigate('Welcome')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Salir del modo visitante">
             <Icon name="x" size={22} color={colors.muted} />
@@ -323,31 +332,11 @@ export function GuestSaveScreen() {
 }
 
 const st = StyleSheet.create({
-  welcome: { flex: 1, backgroundColor: colors.navy, paddingHorizontal: 22 },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: colors.lime,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 26,
-  },
-  logoText: { fontSize: 20, fontWeight: '700', color: colors.navy },
-  wTitle: { fontSize: 32, lineHeight: 38, fontWeight: '700', color: colors.white, marginBottom: 12 },
-  wSub: { fontSize: 16, lineHeight: 23, color: colors.heroSub },
-  wOutline: {
-    minHeight: 52,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  wOutlineText: { color: colors.white, fontSize: 15, fontWeight: '600' },
-  wLink: { alignItems: 'center', paddingVertical: 16 },
-  wLinkText: { color: colors.heroSub, fontSize: 15, fontWeight: '600' },
+  welcome: { flex: 1, backgroundColor: colors.white, paddingHorizontal: 22 },
+  wTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  wTitle: { fontSize: 36, lineHeight: 42, fontWeight: '700', color: colors.ink },
+  wSub: { fontSize: 16, lineHeight: 23, color: colors.muted, marginTop: 12 },
+  wLinkText: { color: colors.muted, fontSize: 15, fontWeight: '600' },
   notice: { flexDirection: 'row', gap: 12, backgroundColor: colors.card, borderRadius: radius.md, padding: 14, marginTop: 14 },
   sheetIc: {
     width: 52,

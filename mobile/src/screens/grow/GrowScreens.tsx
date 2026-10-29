@@ -45,9 +45,12 @@ export function GrowScreen() {
     <Screen title="Invertir" back={false}>
       <Hero
         title="Sobres y ahorros a plazo"
-        sub="Tu plata trabajando"
+        sub="Tu dinero trabajando"
         big={money(sob + pl)}
-        up={`${money(sob)} en ${envelopes.length} sobres · ${money(pl)} a plazo`}
+        lines={[
+          [`En ${envelopes.length} ${envelopes.length === 1 ? 'sobre' : 'sobres'}`, money(sob)],
+          ['A plazo', money(pl)],
+        ]}
       />
       <Btn label="Crear ahorro" icon="plus" onPress={() => nav.navigate('NewSaving')} />
 
@@ -63,10 +66,8 @@ export function GrowScreen() {
             <View style={st.bar}>
               <View style={[st.barFill, { width: `${p}%` }]} />
             </View>
-            <Small>
-              {a.goal_amount ? `${p}% de ${money(a.goal_amount)}` : 'Sin meta'}
-              {a.savings_mode ? ` · ${a.savings_mode}` : ''}
-            </Small>
+            <Small>{a.goal_amount ? `${p}% de ${money(a.goal_amount)}` : 'Sin meta'}</Small>
+            {a.savings_mode ? <Small>{a.savings_mode}</Small> : null}
           </Pressable>
         );
       })}
@@ -79,7 +80,7 @@ export function GrowScreen() {
           first={i === 0}
           icon="lock"
           title={`Plazo ${a.term_months} meses · ${pct(a.rate ?? 0)}`}
-          sub={`Vence ${a.maturity_date ? dayMonth(a.maturity_date) : ''} · ${ON_MATURITY[a.on_maturity ?? 'renew'] ?? ''}`}
+          sub={`Vence ${a.maturity_date ? dayMonth(a.maturity_date) : ''}\n${ON_MATURITY[a.on_maturity ?? 'renew'] ?? ''}`}
           right={<Text style={st.amt}>{money(a.balance)}</Text>}
         />
       ))}
@@ -109,7 +110,7 @@ export function NewSavingScreen() {
         <Icon name="pig" size={24} color={colors.emeraldDark} />
         <View style={{ flex: 1 }}>
           <Text style={st.choiceT}>Sobre a la vista</Text>
-          <Small>Separá plata para algo. Metés y sacás cuando querás. Tasa de ejemplo 3% anual.</Small>
+          <Small>Separá dinero para algo. Metés y sacás cuando querás. Tasa de ejemplo 3% anual.</Small>
         </View>
       </Pressable>
       <Pressable style={[st.choice]} onPress={() => nav.navigate('TermDeposit', { term: 6 })} accessibilityRole="button">
@@ -154,7 +155,7 @@ export function NewEnvelopeScreen() {
           {
             name: 'TransferDone',
             params: {
-              hi: `¡Listo! Creaste tu sobre «${a.name}»`,
+              hi: `Creaste tu sobre «${a.name}»`,
               amountLabel: 'Meta',
               amount: g.toFixed(2),
               points: 50,
@@ -298,7 +299,7 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
           {
             name: 'TransferDone',
             params: {
-              hi: '¡Listo! Abriste tu ahorro a plazo',
+              hi: 'Abriste tu ahorro a plazo',
               amount: amount.toFixed(2),
               back: 'Grow',
               rows: [

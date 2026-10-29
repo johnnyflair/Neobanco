@@ -142,7 +142,8 @@ export function LoanReviewScreen({ route }: RootProps<'LoanReview'>) {
           {
             name: 'TransferDone',
             params: {
-              hi: '¡Listo! Tu préstamo ya está en tu cuenta',
+              hi: 'Tu préstamo ya está en tu cuenta',
+              face: 'guau',
               amount: r.amount,
               rows: [
                 ['Plazo', `${r.term_months} meses`],

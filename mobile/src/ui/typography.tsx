@@ -1,4 +1,4 @@
-// Tipografía de la App: Plus Jakarta Sans (aprobada). En React Native una fuente propia no
+// Tipografía de Kooa: Plus Jakarta Sans (aprobada). En React Native una fuente propia no
 // responde a fontWeight, así que estos Text y TextInput traducen el peso al archivo de la fuente
 // (400 → Regular, 500 → Medium, 600 → SemiBold, 700+ → Bold). Usalos en vez de los de react-native.
 import type { ComponentProps } from 'react';

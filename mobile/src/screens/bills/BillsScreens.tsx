@@ -61,7 +61,7 @@ function billDone(r: BillPayment, refLabel: string, ref: string) {
   return {
     name: 'TransferDone' as const,
     params: {
-      hi: `¡Listo! Pagaste ${r.provider}`,
+      hi: `Pagaste ${r.provider}`,
       amount: r.amount,
       points: r.points_earned,
       rows: [
@@ -113,7 +113,7 @@ export function BillsScreen() {
           {
             name: 'TransferDone',
             params: {
-              hi: `¡Listo! Pagaste ${toPay.length} recibos`,
+              hi: `Pagaste ${toPay.length} recibos`,
               amount: paid.toFixed(2),
               points,
               rows: [...done, ['Fecha', receiptDate()]],

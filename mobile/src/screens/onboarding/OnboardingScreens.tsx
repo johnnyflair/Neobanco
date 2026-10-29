@@ -11,6 +11,7 @@ import type { Kyc } from '../../api/types';
 import { formatPhone } from '../../format';
 import { usePublic, usePublicNav, type PublicProps } from '../../publicNavigation';
 import { colors, radius, type } from '../../theme';
+import { Highlight, KooaEyes } from '../../ui/Brand';
 import { Icon, type IconName } from '../../ui/Icon';
 import { Btn, Check, Chips, ErrorText, Field, Row, Screen, Small } from '../../ui/kit';
 import { Text } from '../../ui/typography';
@@ -22,7 +23,7 @@ function StepBar({ n }: { n: number }) {
   return (
     <View style={st.stepBar} accessibilityLabel={`Paso ${n} de ${TOTAL}`}>
       {Array.from({ length: TOTAL }, (_, i) => (
-        <View key={i} style={[st.stepSeg, i < n && { backgroundColor: colors.primary }]} />
+        <View key={i} style={[st.stepSeg, i < n - 1 && { backgroundColor: colors.teal }, i === n - 1 && { backgroundColor: n === TOTAL ? colors.teal : colors.lime }]} />
       ))}
     </View>
   );
@@ -161,8 +162,9 @@ function IdStep({ n, title, lead, icon, frame, cta, onNext }: {
     <Screen title={title} footer={<Btn label={cta} onPress={onNext} />}>
       <StepBar n={n} />
       <Lead>{lead}</Lead>
+      {icon === 'user' && <KooaEyes size={56} expression="firme" browColor={colors.navy} style={{ alignSelf: 'center', marginBottom: 10 }} />}
       <View style={[st.frame, icon === 'user' && st.frameRound]}>
-        <Icon name={icon} size={46} color={colors.heroSub} />
+        <Icon name={icon} size={46} color={colors.teal} />
         <Text style={st.frameText}>{frame}</Text>
       </View>
       <Small center>Tus fotos se usan solo para verificar tu identidad (Didit) y se guardan cifradas.</Small>
@@ -294,7 +296,7 @@ export function OnbKycScreen() {
         value={vol}
         onChange={setVol}
       />
-      <Text style={st.q}>¿De dónde viene tu plata?</Text>
+      <Text style={st.q}>¿De dónde viene tu dinero?</Text>
       <Chips
         options={[
           { value: 'salario', label: 'Salario' },
@@ -387,10 +389,9 @@ export function OnbDoneScreen({ route }: PublicProps<'OnbDone'>) {
   return (
     <Screen footer={<Btn label="Ir a mi cuenta" onPress={onSignedIn} />}>
       <StepBar n={7} />
-      <View style={st.ok}>
-        <Icon name="check" size={30} color={colors.navy} />
-      </View>
-      <Text style={[type.title, { textAlign: 'center' }]}>{`Ya sos parte, ${firstName}`}</Text>
+      <KooaEyes size={120} expression="guau" style={{ alignSelf: 'center', marginTop: 10, marginBottom: 16 }} />
+      <Text style={[type.title, { textAlign: 'center' }]}>Ya sos parte,</Text>
+      <Highlight style={[type.title, { textAlign: 'center' }]}>{firstName}</Highlight>
       <Small center>{`Tu cuenta y tu SINPE Móvil ${formatPhone(phone)} ya están activos.`}</Small>
       <View style={{ marginTop: 18 }}>
         <Row first icon="star" title="500 puntos de bienvenida" sub="Ya están en tus recompensas" />
@@ -407,20 +408,18 @@ export function OnbReviewScreen({ route }: PublicProps<'OnbReview'>) {
       footer={
         <>
           <Btn label="Escribinos por WhatsApp" onPress={() => Linking.openURL(`https://wa.me/${WHATSAPP}`)} />
-          <Btn label="Explorar la App" variant="o" onPress={() => nav.reset({ index: 0, routes: [{ name: 'Explore' }] })} />
+          <Btn label="Explorar Kooa" variant="o" onPress={() => nav.reset({ index: 0, routes: [{ name: 'Explore' }] })} />
         </>
       }
     >
-      <View style={[st.ok, { backgroundColor: colors.amberBg }]}>
-        <Icon name="clock" size={30} color={colors.amberFg} />
-      </View>
+      <KooaEyes size={110} expression="firme" browColor={colors.navy} style={{ alignSelf: 'center', marginTop: 10, marginBottom: 16 }} />
       <Text style={[type.title, { textAlign: 'center' }]}>Estamos revisando tu identidad</Text>
       <Small center>
         No pudimos confirmarla automáticamente. Pasa con cédulas gastadas o fotos con poca luz. Una persona del equipo la revisa.
       </Small>
       <View style={{ marginTop: 18 }}>
         <Row first icon="chat" title="Te avisamos por WhatsApp" sub={`Al ${formatPhone(route.params.phone)} cuando tu cuenta esté lista`} />
-        <Row icon="grow" title="Mientras tanto podés explorar" sub="Simuladores, tasas y servicios de la App" />
+        <Row icon="grow" title="Mientras tanto podés explorar" sub="Simuladores, tasas y servicios de Kooa" />
       </View>
     </Screen>
   );

@@ -1,13 +1,11 @@
-// Barra del menú principal (aprobada): rayita verde arriba que se desliza hasta la pestaña
-// activa, ícono activo en verde que sube un poco, y el destello de marca de "Mis cuentas"
-// a la mitad (línea degradada al 25 % y halo verde leve).
+// Barra del menú principal (marca Kooa): rayita lima arriba que se desliza hasta la pestaña
+// activa, ícono activo en verde que sube un poco, y una línea gris fina de separación.
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, tabBarGlow } from '../theme';
+import { colors } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { Text } from './typography';
 
@@ -34,7 +32,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View style={[st.bar, { paddingBottom: Math.max(insets.bottom, 8) }]} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
-      <LinearGradient colors={tabBarGlow} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.glowLine} />
+      <View style={st.glowLine} />
       {width > 0 && (
         <Animated.View style={[st.indicator, { width: tabW * 0.5, left: tabW * 0.25, transform: [{ translateX: x }] }]} />
       )}
@@ -84,8 +82,8 @@ const st = StyleSheet.create({
     shadowOffset: { width: 0, height: -6 },
     elevation: 6,
   },
-  glowLine: { height: 1.5 },
-  indicator: { position: 'absolute', top: 0, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: colors.primary },
+  glowLine: { height: 1, backgroundColor: colors.line },
+  indicator: { position: 'absolute', top: 0, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: colors.lime },
   row: { flexDirection: 'row', paddingTop: 8 },
   item: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
   label: { fontSize: 12, fontWeight: '500' },

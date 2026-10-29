@@ -1,12 +1,17 @@
-// Tokens de diseño aprobados en el prototipo (paleta "Sustainable / eco-friendly").
+// Tokens de diseño de Kooa (marca aprobada: logo con ojos, "Dinero con buena cara").
+// Reglas: fondo blanco siempre; el lima es solo acento (cejas, puntos, subrayados); el naranja
+// solo para puntos y préstamos; los botones principales van en esmeralda.
 export const colors = {
   navy: '#0D1B45',
+  teal: '#0B4F4A', // color de la marca: logo, ojos, tarjeta de débito
   emerald: '#3FA592',
   primary: '#17806C', // botones: esmeralda oscuro (contraste AA con texto blanco)
   primaryPress: '#0F6E56',
   primarySoft: '#E1F5EE',
   primaryInk: '#085041',
-  lime: '#00E676', // solo acentos, nunca con texto blanco encima
+  lime: '#C6F432', // acento de marca: nunca con texto blanco encima, nunca como fondo de pantalla
+  limeSoft: '#F1FBD6',
+  limeInk: '#3D4D06',
   orange: '#E8742E',
   ink: '#0D1B45',
   muted: '#667085',
@@ -26,6 +31,12 @@ export const colors = {
   orangeSoft: '#FCEFE6', // fondo del acceso a préstamos (naranja de la paleta)
   orangeInk: '#B85A1F',
   amount: '#475467', // todos los montos: gris oscuro legible, para leerse como dinero y no como texto
+  // Sombra larga de los ojos y el logo: siempre un tono del mismo fondo.
+  shadowOnWhite: '#D3EFE6',
+  shadowOnTeal: '#073A36',
+  shadowOnNavy: '#070F2B',
+  tealWatermark: '#17655F',
+  navyWatermark: '#1E2C5A',
 };
 
 export const radius = { sm: 10, md: 14, lg: 18, xl: 24 };
@@ -36,8 +47,3 @@ export const type = {
   itemSub: { fontSize: 12, color: colors.muted },
   amount: { fontSize: 14, fontWeight: '600' as const, color: colors.amount, fontVariant: ['tabular-nums' as const] },
 };
-
-// Borde con destello de la tarjeta "Mis cuentas" (al 50 % de intensidad, como se aprobó).
-export const accountsGlow = ['rgba(0,230,118,0.5)', 'rgba(23,128,108,0.5)', 'rgba(13,27,69,0.5)', 'rgba(232,116,46,0.5)'] as const;
-// Destello de la barra del menú: el mismo degradado a la mitad de intensidad (25 %).
-export const tabBarGlow = ['rgba(0,230,118,0.25)', 'rgba(23,128,108,0.25)', 'rgba(13,27,69,0.25)', 'rgba(232,116,46,0.25)'] as const;

@@ -7,7 +7,25 @@
     "preview": {
       "channel": "preview",
       "distribution": "internal",
-      "env": { "EXPO_PUBLIC_API_URL": "https://api-dev.ariatechcr.co" }
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-dev.ariatechcr.co"
+      }
+    },
+    "testflight": {
+      "channel": "preview",
+      "distribution": "store",
+      "autoIncrement": true,
+      "ios": {
+        "resourceClass": "default"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-dev.ariatechcr.co"
+      }
+    }
+  },
+  "submit": {
+    "testflight": {
+      "ios": {}
     }
   }
 }

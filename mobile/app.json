@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "App",
+    "name": "Kooa",
     "slug": "neobanco",
     "owner": "jschmidtr",
     "version": "1.0.0",
@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "cr.neobanco.app",
+      "bundleIdentifier": "cr.ariatech.kooa",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Usamos Face ID para que ingreses a tu cuenta de forma segura.",
         "ITSAppUsesNonExemptEncryption": false
@@ -17,19 +17,19 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B4F4A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "cr.neobanco.app",
+      "package": "cr.ariatech.kooa",
       "allowBackup": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "neobanco",
+    "scheme": "kooa",
     "plugins": [
       "expo-secure-store",
       [
@@ -39,6 +39,14 @@
         }
       ]
     ],
-    "runtimeVersion": "exposdk:58.0.0"
+    "runtimeVersion": "exposdk:58.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/f8736c4b-3156-4706-88f8-ed0a02180b15"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f8736c4b-3156-4706-88f8-ed0a02180b15"
+      }
+    }
   }
 }

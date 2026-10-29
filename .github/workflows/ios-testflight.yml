@@ -1,0 +1,41 @@
+# Compila Kooa para iPhone en EAS y la sube a TestFlight. Se corre a mano (Actions → Run workflow).
+# La primera versión se hace desde una computadora (ver README → TestFlight), porque Apple pide
+# iniciar sesión con doble factor para crear el certificado y el perfil de distribución; después
+# EAS los guarda y este workflow alcanza con el secreto EXPO_TOKEN.
+name: iOS · TestFlight
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Compilar y enviar a TestFlight
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      - name: Compilar en EAS y enviar a TestFlight al terminar
+        run: |
+          eas build --platform ios --profile testflight --non-interactive --no-wait --auto-submit --json > /tmp/build.json
+          cat /tmp/build.json
+          URL=$(node -p "const b=require('/tmp/build.json'); (Array.isArray(b)?b[0]:b).buildDetailsPageUrl || ''")
+          echo "::notice title=Build de iOS::$URL"

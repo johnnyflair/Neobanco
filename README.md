@@ -93,6 +93,22 @@ python -m app.staff_cli correo@coop.cr "Nombre Apellido" operaciones
 
 En local, dev y test el sembrado crea `diana@demo.coop` (operaciones), `johnny@demo.coop` (admin) y `lectura@demo.coop` (solo lectura), con la contraseña `Panel-Demo-2026`, y algunos pendientes de ejemplo para la bandeja.
 
+## TestFlight (iPhone)
+
+La app se llama **Kooa** (`cr.ariatech.kooa`, cuenta de Apple de Aria Tech). Se compila en los servidores de Expo (no hace falta Mac) con el perfil `testflight` de `mobile/eas.json`, que apunta a la API de dev y usa el canal `preview`: las actualizaciones que se publican para Expo Go también le llegan a la versión de TestFlight al reabrirla, mientras no cambien módulos nativos.
+
+**Primera versión (una sola vez, desde una computadora con Node.js 22):**
+
+```bash
+cd mobile
+npm install
+npx eas-cli@latest build --platform ios --profile testflight --auto-submit
+```
+
+Pide entrar a Expo y a Apple (con el código de doble factor), crea el certificado y el perfil de distribución, compila (unos 20 minutos) y sube el build a App Store Connect, creando la app si no existe. Cuando pregunte, dejá que genere y guarde la llave de App Store Connect.
+
+**Siguientes versiones:** GitHub → Actions → **iOS · TestFlight** → Run workflow (usa el secreto `EXPO_TOKEN`). Para que el envío corra sin preguntas, agregá en `eas.json` → `submit.testflight.ios.ascAppId` el número de la app en App Store Connect (App Information → Apple ID).
+
 ## Poner AWS en marcha por primera vez
 
 1. Entrá a la consola de AWS con un usuario administrador, en la región donde va a vivir todo (la del proyecto, por ejemplo `us-east-2`), y abrí **CloudShell** (ícono `>_` arriba). El script usa esa región.

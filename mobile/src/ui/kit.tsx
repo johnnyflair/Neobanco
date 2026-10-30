@@ -3,7 +3,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View, type TextInputProps, type ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius } from '../theme';
@@ -351,20 +350,9 @@ export const Sect = ({ children, plain, first }: { children: string; plain?: boo
       </View>
     </>
   );
-/** Franja gris entre secciones, de borde a borde. */
-/** Banda gris entre secciones, con el destello de la paleta al inicio de la sección: línea fina que se desvanece. */
-export const Band = ({ style, thin }: { style?: ViewStyle; thin?: boolean }) => (
-  <View style={[s.bandWrap, style]}>
-    {!thin && <View style={s.band} />}
-    <LinearGradient
-      colors={[colors.lime, 'rgba(23,128,108,0.85)', 'rgba(13,27,69,0.35)', 'rgba(232,116,46,0)']}
-      locations={[0, 0.3, 0.62, 1]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={s.bandGlow}
-    />
-  </View>
-);
+/** Separación entre secciones (opción 1A sin destellos): solo aire; el resaltador lima del título
+ *  marca dónde empieza cada sección. */
+export const Band = ({ style }: { style?: ViewStyle; thin?: boolean }) => <View style={[s.bandWrap, style]} />;
 export const Small = ({ children, center, style }: { children: ReactNode; center?: boolean; style?: object }) => (
   <Text style={[s.sm, center && { textAlign: 'center' }, style]}>{children}</Text>
 );
@@ -629,9 +617,7 @@ export const s = StyleSheet.create({
   },
   h2: { fontSize: 20, fontWeight: '700', color: colors.ink, flexShrink: 1 },
   sm: { fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 16 },
-  bandWrap: { marginHorizontal: -18, marginTop: 20 },
-  band: { height: 10, backgroundColor: '#F2F4F7' },
-  bandGlow: { height: 2.25 },
+  bandWrap: { marginTop: 14 },
   sectWrap: { marginTop: 16, marginBottom: 4 },
   sectTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
   sect: { fontSize: 12, color: colors.muted, marginTop: 16, marginBottom: 4, fontWeight: '600', letterSpacing: 0.2 },

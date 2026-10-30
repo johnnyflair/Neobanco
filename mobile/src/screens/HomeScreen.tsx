@@ -148,7 +148,7 @@ export function HomeScreen() {
         </Pressable>
       )}
 
-      <Band thin style={{ marginTop: 16, marginBottom: 14 }} />
+      <Band style={{ marginTop: 22 }} />
       <View style={s.sectionRow}>
         <Highlight soft header align="flex-start" style={s.sectionTitle}>
           Mis cuentas
@@ -185,7 +185,7 @@ export function HomeScreen() {
         </Pressable>
       )}
 
-      <Band thin style={{ marginTop: 10, marginBottom: 16 }} />
+      <Band style={{ marginTop: 18 }} />
       <View style={s.quick}>
         {QUICK.map((q) => (
           <Pressable

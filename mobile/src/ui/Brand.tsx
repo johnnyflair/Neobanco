@@ -150,7 +150,7 @@ export function KooaLogo({ height, color = colors.teal, browColor = colors.prima
 
 /** Texto con el subrayado lima de marca (montos, el eslogan, el nombre al celebrar). */
 /** Resaltador lima de la marca (como en "buena cara"). `soft`: la versión leve de los títulos de
- *  sección en toda la App (franja más alta y lima translúcido, opción 1B). */
+ *  sección en toda la App (franja fina pegada a la base del texto, opción 1A). */
 export function Highlight({
   children,
   style,
@@ -172,9 +172,9 @@ export function Highlight({
           position: 'absolute',
           left: -3,
           right: -3,
-          bottom: soft ? fs * 0.08 : fs * 0.12,
-          height: soft ? fs * 0.5 : fs * 0.36,
-          backgroundColor: soft ? 'rgba(198,244,50,0.38)' : colors.lime,
+          bottom: soft ? fs * 0.06 : fs * 0.12,
+          height: soft ? fs * 0.28 : fs * 0.36,
+          backgroundColor: soft ? 'rgba(198,244,50,0.75)' : colors.lime,
           borderRadius: 3,
         }}
       />

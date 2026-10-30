@@ -61,7 +61,7 @@ function lastSent(c: SinpeContact) {
       : days === 1
         ? 'ayer'
         : days < 7
-          ? d.toLocaleDateString('es-CR', { weekday: 'short' }).replace('.', '')
+          ? d.toLocaleDateString('es-CR', { weekday: 'long' })
           : d.toLocaleDateString('es-CR', { day: 'numeric', month: 'short' }).replace('.', '');
   return `Le enviaste ${money(c.last_amount).replace(/\.00$/, '')} · ${when}`;
 }
@@ -97,17 +97,27 @@ export function SinpeNumberScreen() {
   const pick = (c: SinpeContact) => nav.navigate('SendAmount', { kind: 'sinpe', to: c.phone, name: c.name, isNew: false });
   const typedNew = digits.length === 8 && !contacts.some((c) => c.phone === digits);
 
+  // Opción B (accesible, pensada en personas mayores): "Enviar a un número nuevo" es lo primero,
+  // en un bloque menta grande con su explicación; la lista de frecuentes no se repite arriba.
   return (
-    <Screen
-      title="SINPE Móvil"
-      footer={
-        <Pressable style={st.newBtn} onPress={() => nav.navigate('SinpeDial', {})} accessibilityRole="button">
-          <Icon name="plus" size={20} color={colors.primary} />
-          <Text style={st.newTxt}>Enviar a un número nuevo</Text>
-        </Pressable>
-      }
-    >
-      <SearchField value={q} onChangeText={setQ} placeholder="Nombre o número" />
+    <Screen title="SINPE Móvil">
+      <Pressable
+        style={({ pressed }) => [st.newBlock, pressed && { opacity: 0.8 }]}
+        onPress={() => nav.navigate('SinpeDial', {})}
+        accessibilityRole="button"
+        accessibilityLabel="Enviar a un número nuevo"
+        accessibilityHint="Escribí el celular de la persona"
+      >
+        <View style={st.newPlus}>
+          <Icon name="plus" size={24} color={colors.white} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={st.newTitle}>Enviar a un número nuevo</Text>
+          <Text style={st.newSub}>Escribí el celular de la persona</Text>
+        </View>
+        <Icon name="chev" size={20} color={colors.primaryInk} />
+      </Pressable>
+      <SearchField value={q} onChangeText={setQ} placeholder="Buscá un nombre o número" />
       {typedNew && (
         <Pressable style={st.row} onPress={() => nav.navigate('SinpeDial', { phone: digits })} accessibilityRole="button">
           <View style={st.dialIcon}>
@@ -121,15 +131,9 @@ export function SinpeNumberScreen() {
         </Pressable>
       )}
       {recent.loading && <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />}
-      {!q && contacts.length > 0 && (
-        <>
-          <Text style={st.lbl}>Recientes</Text>
-          <Frequents contacts={contacts} onPick={pick} />
-        </>
-      )}
       {shown.length > 0 && (
         <>
-          <Text style={st.lbl}>{q ? 'Resultados' : 'Enviados recientemente'}</Text>
+          <Text style={st.lbl}>{q ? 'Resultados' : 'Enviaste hace poco'}</Text>
           {shown.map((c) => (
             <Pressable key={c.phone} style={st.row} onPress={() => pick(c)} accessibilityRole="button" accessibilityLabel={`Enviar a ${c.name}`}>
               <Avatar name={c.name} phone={c.phone} size={46} />
@@ -137,7 +141,7 @@ export function SinpeNumberScreen() {
                 <Text style={st.rowName}>{c.name}</Text>
                 <Text style={st.rowSub}>{lastSent(c)}</Text>
               </View>
-              <Icon name="chev" size={18} color={colors.muted} />
+              <Icon name="chev" size={20} color={colors.amount} />
             </Pressable>
           ))}
         </>
@@ -148,7 +152,7 @@ export function SinpeNumberScreen() {
             <Icon name="send" size={28} color={colors.primary} />
           </View>
           <Text style={st.emptyTitle}>Tu primer SINPE Móvil</Text>
-          <Small center>Tocá “Enviar a un número nuevo”. Las personas a las que les envíes van a aparecer aquí.</Small>
+          <Small center>Tocá “Enviar a un número nuevo”, arriba. Las personas a las que les envíes van a aparecer aquí.</Small>
         </View>
       )}
       {q !== '' && shown.length === 0 && !typedNew && <Small center>No hay nadie con ese nombre en tus envíos. Probá con el número.</Small>}
@@ -414,11 +418,15 @@ const st = StyleSheet.create({
   avs: { flexDirection: 'row', gap: 16, marginTop: 4, marginBottom: 4 },
   av: { alignItems: 'center', gap: 6, width: 62 },
   avName: { fontSize: 13, fontWeight: '600', color: colors.ink },
-  lbl: { fontSize: 12, fontWeight: '700', color: colors.muted, letterSpacing: 0.4, textTransform: 'uppercase', marginTop: 22, marginBottom: 10 },
+  lbl: { fontSize: 15, fontWeight: '600', color: colors.ink, marginTop: 22, marginBottom: 6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10 },
-  rowName: { fontSize: 15, fontWeight: '700', color: colors.ink },
-  rowSub: { fontSize: 13, color: colors.muted, marginTop: 2 },
+  rowName: { fontSize: 16, fontWeight: '700', color: colors.ink },
+  rowSub: { fontSize: 14, color: colors.amount, marginTop: 2 },
   dialIcon: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
+  newBlock: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.mint, borderRadius: 18, padding: 16, marginBottom: 14 },
+  newPlus: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  newTitle: { fontSize: 17, fontWeight: '700', color: colors.primaryInk },
+  newSub: { fontSize: 14, color: colors.emeraldDark, marginTop: 2 },
   newBtn: {
     height: 54,
     borderRadius: radius.md,

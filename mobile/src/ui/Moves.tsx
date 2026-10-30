@@ -1,6 +1,6 @@
-// Movimientos (Home X aprobado): si hay contraparte, su nombre va arriba (con avatar de iniciales
-// para personas y el ícono del tipo en un círculo para lo demás) y abajo el medio y la hora en gris.
-// Lo que entra va en verde con "+".
+// Movimientos (opción A aprobada): ícono suelto, sin círculo, según el tipo de movimiento (celular
+// para SINPE, flechas para transferencia, recibo, tarjeta, chanchito…) y del mismo color que el monto:
+// verde si entra, gris si sale. Arriba el nombre de la contraparte; abajo el medio y la hora.
 // Al tocarlo sube una hoja con todo el detalle y opciones para compartir el comprobante.
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
@@ -21,12 +21,19 @@ const isIn = (t: Transaction) => Number(t.amount) > 0;
 
 function moveIcon(t: Transaction): IconName {
   switch (t.category) {
+    case 'sinpe':
+      return 'phone';
+    case 'iban':
+      return 'swap';
+    case 'pull':
+      return 'pull';
     case 'bill':
       return 'receipt';
     case 'card':
     case 'card_payment':
       return 'card';
     case 'loan':
+    case 'salary':
       return 'cash';
     case 'envelope':
     case 'term':
@@ -72,7 +79,6 @@ export function MoveRow({
   // Agrupado por día, la fecha ya está en el separador: abajo va quién y la hora.
   const when = grouped ? timeOf(t.created_at) : shortDate(t.created_at);
   const incoming = isIn(t);
-  const person = !!t.counterparty && PERSON.has(t.category);
   const title = t.counterparty || t.title || t.description;
   const how = t.counterparty ? `${incoming ? 'Recibiste · ' : ''}${METHOD[t.category] ?? t.title}` : null;
   // En la vista combinada (Todas) cada movimiento dice de qué cuenta es.
@@ -85,12 +91,8 @@ export function MoveRow({
       accessibilityRole="button"
       accessibilityLabel={`${t.title || t.description}${t.counterparty ? `, ${t.counterparty}` : ''}, ${signed(t, currency)}`}
     >
-      <View style={[st.av, person ? (incoming ? st.avIn : st.avOut) : st.avIcon]}>
-        {person ? (
-          <Text style={[st.avText, incoming && { color: colors.primaryInk }]}>{initials(t.counterparty!)}</Text>
-        ) : (
-          <Icon name={moveIcon(t)} size={18} color={incoming ? colors.emeraldDark : colors.amount} />
-        )}
+      <View style={st.ic}>
+        <Icon name={moveIcon(t)} size={22} color={incoming ? colors.primary : colors.amount} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={type.itemTitle} numberOfLines={1}>
@@ -106,8 +108,6 @@ export function MoveRow({
   );
 }
 
-// Movimientos con una persona del otro lado (llevan avatar con sus iniciales).
-const PERSON = new Set(['sinpe', 'iban', 'pull']);
 const METHOD: Record<string, string> = {
   sinpe: 'SINPE Móvil',
   iban: 'Transferencia',
@@ -116,14 +116,6 @@ const METHOD: Record<string, string> = {
   card: 'Tarjeta',
   envelope: 'Sobre',
 };
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter((w) => /^[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(w))
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join('');
-
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
 
 function dayLabel(iso: string) {
@@ -269,11 +261,7 @@ export function MoveSheet({
 }
 
 const st = StyleSheet.create({
-  av: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  avOut: { backgroundColor: '#E7EAF3' },
-  avIn: { backgroundColor: colors.mint },
-  avIcon: { backgroundColor: colors.card },
-  avText: { fontSize: 12.5, fontWeight: '700', color: colors.navy },
+  ic: { width: 24, alignItems: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderColor: colors.line },
   day: { fontSize: 12.5, fontWeight: '600', color: colors.muted, paddingTop: 16, paddingBottom: 6, borderBottomWidth: 1, borderColor: '#D0D5DD' },
   receipt: { backgroundColor: colors.white, paddingBottom: 4 },

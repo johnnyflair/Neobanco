@@ -65,7 +65,7 @@ export function CardsScreen() {
   const replace = (c: Card) => setData((prev) => prev?.map((x) => (x.id === c.id ? c : x)) ?? null);
 
   return (
-    <Screen title="Tus tarjetas" back={false}>
+    <Screen title="Tus tarjetas">
       {credit && <CardPicker value={tab} onChange={go} />}
       <ErrorText>{error}</ErrorText>
       <Animated.View {...(hasCredit ? pan.panHandlers : {})} style={{ opacity: fade, transform: [{ translateX: slide }] }}>

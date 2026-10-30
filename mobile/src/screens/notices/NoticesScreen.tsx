@@ -31,8 +31,7 @@ export function NoticesScreen() {
 
   function open(n: Notice) {
     if ('tx' in n.go) setMove(n.go.tx);
-    else if ('route' in n.go) nav.navigate(n.go.route);
-    else nav.navigate('Tabs', { screen: n.go.tab });
+    else nav.navigate(n.go.route);
   }
 
   const list = (rows: Notice[]) =>

@@ -23,6 +23,7 @@ import { CaseScreen, FraudScreen, HelpScreen } from './screens/help/HelpScreens'
 import { HomeScreen } from './screens/HomeScreen';
 import {
   LoanApplyScreen,
+  LoanHomeScreen,
   LoanOptionsScreen,
   LoanReviewScreen,
   LoanSimScreen,
@@ -40,7 +41,7 @@ import { AutoRuleScreen, RedeemScreen, RewardsScreen } from './screens/rewards/R
 import { colors } from './theme';
 import { TabBar } from './ui/TabBar';
 
-export type TabParams = { Home: undefined; Cards: undefined; Save: undefined; Grow: undefined; Account: undefined };
+export type TabParams = { Home: undefined; Loans: undefined; Save: undefined; Grow: undefined; Account: undefined };
 
 export type RootParams = {
   Tabs: NavigatorScreenParams<TabParams>;
@@ -64,7 +65,8 @@ export type RootParams = {
     rows: [string, string][];
     shareText?: string;
     next?: { label: string; route: 'NewEnvelope' | 'AutoRule' };
-    back?: keyof TabParams;
+    /** A dónde vuelve "Listo": una pestaña o la pantalla de tarjetas. */
+    back?: keyof TabParams | 'Cards';
     /** Expresión de Kooa: "contenta" en envíos y pagos, "guau" cuando recibís (préstamo, canje). */
     face?: 'contenta' | 'guau';
   };
@@ -77,6 +79,7 @@ export type RootParams = {
   BillService: { provider: BillProvider };
   BillDetail: { bill: SavedBill };
   LoanSim: undefined;
+  Cards: undefined;
   LoanOptions: { amount: number; term: number };
   LoanReview: { amount: number; term: number; monthly: string; total: string };
   LoanApply: undefined;
@@ -112,7 +115,7 @@ function Tabs() {
   return (
     <Tab.Navigator tabBar={(props) => <TabBar {...props} />} screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Cards" component={CardsScreen} />
+      <Tab.Screen name="Loans" component={LoanHomeScreen} />
       <Tab.Screen name="Save" component={SaveScreen} />
       <Tab.Screen name="Grow" component={GrowScreen} />
       <Tab.Screen name="Account" component={ProfileScreen} />
@@ -124,6 +127,7 @@ export function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.white } }}>
       <Stack.Screen name="Tabs" component={Tabs} />
+      <Stack.Screen name="Cards" component={CardsScreen} />
       <Stack.Screen name="TransferHub" component={TransferHubScreen} />
       <Stack.Screen name="SinpeNumber" component={SinpeNumberScreen} />
       <Stack.Screen name="SinpeDial" component={SinpeDialScreen} />

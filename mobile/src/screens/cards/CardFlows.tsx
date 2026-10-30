@@ -194,9 +194,10 @@ export function CardPayScreen({ route }: RootProps<'CardPay'>) {
       const r = await api.payCard(data!.card.id, mode, crc!.id, key.current.key, mode === 'other' ? amount : undefined);
       setReview(false);
       nav.reset({
-        index: 1,
+        index: 2,
         routes: [
-          { name: 'Tabs', params: { screen: 'Cards' } },
+          { name: 'Tabs', params: { screen: 'Home' } },
+          { name: 'Cards' },
           {
             name: 'TransferDone',
             params: {
@@ -290,9 +291,10 @@ export function CardInstallmentsScreen({ route }: RootProps<'CardInstallments'>)
       const r = await api.installments(cardId, selected.id, months);
       setReview(false);
       nav.reset({
-        index: 1,
+        index: 2,
         routes: [
-          { name: 'Tabs', params: { screen: 'Cards' } },
+          { name: 'Tabs', params: { screen: 'Home' } },
+          { name: 'Cards' },
           {
             name: 'TransferDone',
             params: {

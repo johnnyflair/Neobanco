@@ -21,7 +21,7 @@ export type Notice = {
   /** Algo por pagar: va en "Por pagar" con su botón Pagar. */
   due?: boolean;
   incoming?: boolean;
-  go: { tx: Transaction } | { route: 'Bills' } | { tab: 'Cards' };
+  go: { tx: Transaction } | { route: 'Bills' | 'Cards' };
 };
 
 const HOW: Record<string, [IconName, string]> = {
@@ -99,7 +99,7 @@ export async function loadNotices(): Promise<Notice[]> {
       at: new Date(due).getTime(),
       isNew: true,
       due: true,
-      go: { tab: 'Cards' },
+      go: { route: 'Cards' },
     });
   }
 

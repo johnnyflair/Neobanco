@@ -11,7 +11,7 @@ import type { LoanSim } from '../../api/types';
 import { dayMonth, money, parseAmount, shortDate } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
-import { AmountInput, Btn, Check, Chips, ErrorText, Field, Opt, Row, Screen, Sect, Small, StepBar, Steps, Tag } from '../../ui/kit';
+import { AmountInput, Btn, Check, Chips, ErrorText, Field, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar, Steps, Tag } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
 import { receiptDate } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
@@ -19,6 +19,57 @@ import { Cents } from '../../ui/Money';
 
 const TERMS = [12, 24, 36, 48, 60];
 const MIN = 100_000;
+
+const LOAN_STATUS: Record<string, string> = {
+  received: 'Recibida',
+  analysis: 'En análisis',
+  approved: 'Aprobada',
+  rejected: 'No aprobada',
+};
+
+// Pestaña Préstamo (en el menú, en lugar de Tarjeta): cuánto tiene preaprobado, pedir uno y,
+// si hay una solicitud en curso, verla.
+export function LoanHomeScreen() {
+  const nav = useNavigation();
+  const offer = useLoad(api.loanOffer);
+  const apps = useLoad(api.loanApplications);
+  if (!offer.data && !offer.error) return <Loading />;
+  const pending = apps.data?.find((a) => a.status !== 'disbursed');
+
+  return (
+    <Screen title="Préstamo" back={false}>
+      <Small>Pedilo desde la App y te depositamos en tu cuenta.</Small>
+      {offer.data && (
+        <View style={{ marginTop: 14 }}>
+          <Hero
+            title={offer.data.preapproved ? 'Tenés preaprobado hasta' : 'Podés pedir hasta'}
+            big={money(offer.data.max_amount)}
+            up={`Tasa de ejemplo ${Number(offer.data.annual_rate)}% anual · de 12 a 60 meses`}
+          />
+        </View>
+      )}
+      <Btn label="Pedir un préstamo" icon="cash" onPress={() => nav.navigate('LoanSim')} />
+      {pending && (
+        <>
+          <Sect>Mi solicitud</Sect>
+          <Row
+            first
+            icon="file"
+            title={`${money(pending.amount)} a ${pending.term_months} meses`}
+            sub={`${LOAN_STATUS[pending.status] ?? 'En proceso'} · ${shortDate(pending.created_at)}`}
+            onPress={() => nav.navigate('LoanTrack')}
+          />
+        </>
+      )}
+      <Sect>Cómo funciona</Sect>
+      <Row first icon="check" title="Elegís cuánto y en cuánto tiempo" sub="Ves la cuota de cada plazo antes de pedirlo" />
+      <Row icon="check" title="Lo firmás en la App" sub="Con tu clave, sin papeles ni filas" />
+      <Row icon="check" title="Te lo depositamos al instante" sub="En tu cuenta en colones" />
+      <Btn label="¿Necesitás más? Pedí otro monto" variant="l" onPress={() => nav.navigate('LoanApply')} />
+      <ErrorText>{offer.error ?? null}</ErrorText>
+    </Screen>
+  );
+}
 
 // Pedí un préstamo en pasos (aprobado, igual que el ahorro a plazo): 1) cuánto, 2) en cuánto
 // tiempo, con la cuota de cada plazo a la vista, 3) revisar y firmar.

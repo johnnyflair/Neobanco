@@ -14,7 +14,6 @@ import { secureStore } from '../secureStore';
 import { AccountSheet } from './AccountSheet';
 import { colors, MAX_FONT_SCALE_TIGHT, radius, type } from '../theme';
 import { Highlight, KooaLogo } from '../ui/Brand';
-import { BottomSheet } from '../ui/BottomSheet';
 import { MoveList, MoveSheet } from '../ui/Moves';
 import { Icon, type IconName } from '../ui/Icon';
 import { Band, HelpButton, useEdgeColumns } from '../ui/kit';
@@ -34,11 +33,10 @@ export function HomeScreen() {
   const [showAll, setShowAll] = useState(false);
   const [sheet, setSheet] = useState<Account | null>(null);
   const [move, setMove] = useState<Transaction | null>(null);
-  const [more, setMore] = useState(false);
   // Cada vez que se llega al inicio, el logo saluda levantando las cejas dos veces.
   const [visits, setVisits] = useState(0);
   const [unread, setUnread] = useState(0);
-  const edge = useEdgeColumns(5, 56);
+  const edge = useEdgeColumns(4, 64);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -82,19 +80,11 @@ export function HomeScreen() {
   );
   const newSinpe = !!lastIn;
   // Cinco accesos fijos que caben completos; el último abre el resto.
-  const QUICK: { label: string; icon: IconName; go: () => void; badge?: boolean; main?: boolean; more?: boolean }[] = [
+  const QUICK: { label: string; icon: IconName; go: () => void; badge?: boolean; main?: boolean }[] = [
     { label: 'SINPE', icon: 'phone', go: () => nav.navigate('SinpeNumber'), badge: newSinpe, main: true },
     { label: 'Transferir', icon: 'swap', go: () => nav.navigate('TransferHub') },
     { label: 'Pagos', icon: 'receipt', go: () => nav.navigate('Bills') },
-    { label: 'Préstamo', icon: 'cash', go: () => nav.navigate('LoanSim') },
-    { label: 'Más', icon: 'dots', go: () => setMore(true), more: true },
-  ];
-  const MORE: { label: string; sub: string; icon: IconName; go: () => void }[] = [
-    { label: 'Mis puntos', sub: 'Canjealos por dinero', icon: 'star', go: () => nav.navigate('Rewards') },
-    { label: 'Recibir dinero', sub: 'Compartí tu número o tu IBAN', icon: 'qr', go: () => nav.navigate('Receive') },
-    { label: 'Traer de otro banco', sub: 'Pasá dinero a tu cuenta Kooa', icon: 'pull', go: () => nav.navigate('Pull') },
-    { label: 'Ahorrar', sub: 'Sobres para tus metas', icon: 'pig', go: () => nav.navigate('Tabs', { screen: 'Save' }) },
-    { label: 'Invertir', sub: 'Ahorro a plazo con mejor tasa', icon: 'grow', go: () => nav.navigate('Tabs', { screen: 'Grow' }) },
+    { label: 'Tarjeta', icon: 'card', go: () => nav.navigate('Cards') },
   ];
   const first = me?.full_name.split(' ')[0] ?? '';
 
@@ -192,10 +182,10 @@ export function HomeScreen() {
             style={({ pressed }) => [s.quickItem, { width: edge.col }, pressed && { opacity: 0.7 }]}
             onPress={q.go}
             accessibilityRole="button"
-            accessibilityLabel={(q.more ? 'Más opciones' : q.label) + (q.badge ? ', tenés un SINPE nuevo' : '')}
+            accessibilityLabel={q.label + (q.badge ? ', tenés un SINPE nuevo' : '')}
           >
-            <View style={[s.quickIcon, q.main && { backgroundColor: colors.teal }, q.more && { backgroundColor: colors.card }]}>
-              <Icon name={q.icon} size={24} color={q.main ? colors.lime : q.more ? colors.ink : colors.emeraldDark} />
+            <View style={[s.quickIcon, q.main && { backgroundColor: colors.teal }]}>
+              <Icon name={q.icon} size={24} color={q.main ? colors.lime : colors.emeraldDark} />
               {q.badge && <View style={s.badge} />}
             </View>
             <Text style={s.quickText} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>
@@ -216,29 +206,6 @@ export function HomeScreen() {
       <MoveList items={moves.slice(0, 8)} mask={mask} showAccount hideAccountName onPress={setMove} />
       <MoveSheet t={move} accountName="Cuenta colones" onClose={() => setMove(null)} />
       <Text style={s.version}>Versión {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'local').slice(0, 7)}</Text>
-      <BottomSheet visible={more} onClose={() => setMore(false)}>
-        <Text style={s.sheetTitle}>Más opciones</Text>
-        {MORE.map((m, i) => (
-          <Pressable
-            key={m.label}
-            style={({ pressed }) => [s.row, i === 0 && { borderTopWidth: 0 }, pressed && { opacity: 0.6 }]}
-            onPress={() => {
-              setMore(false);
-              m.go();
-            }}
-            accessibilityRole="button"
-          >
-            <View style={s.moreIcon}>
-              <Icon name={m.icon} size={21} color={colors.emeraldDark} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={type.itemTitle}>{m.label}</Text>
-              <Text style={type.itemSub}>{m.sub}</Text>
-            </View>
-            <Icon name="chev" size={16} color={colors.muted} />
-          </Pressable>
-        ))}
-      </BottomSheet>
       <AccountSheet
         account={sheet}
         sinpePhone={me?.sinpe_phone}
@@ -282,7 +249,7 @@ const s = StyleSheet.create({
   moreText: { fontSize: 15, fontWeight: '600', color: colors.primary },
   quick: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 4 },
   quickItem: { alignItems: 'center', gap: 7 },
-  quickIcon: { width: 56, height: 56, borderRadius: 17, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
+  quickIcon: { width: 64, height: 64, borderRadius: 19, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   quickText: { fontSize: 13.5, fontWeight: '600', textAlign: 'center', color: colors.ink },
   badge: {
     position: 'absolute',

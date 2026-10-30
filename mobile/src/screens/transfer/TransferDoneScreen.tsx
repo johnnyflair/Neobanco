@@ -54,7 +54,7 @@ export function TransferDoneScreen({ route }: RootProps<'TransferDone'>) {
         )}
         {/* Opción A (aprobada): botones justo después del detalle, no pegados al fondo. */}
         <View style={{ gap: 8, marginTop: 22 }}>
-          <Btn label="Listo" onPress={() => nav.navigate('Tabs', { screen: back })} />
+          <Btn label="Listo" onPress={() => (back === 'Cards' ? nav.navigate('Cards') : nav.navigate('Tabs', { screen: back }))} />
           {shareText ? <Btn label="Compartir comprobante" icon="share" variant="o" onPress={() => Share.share({ message: shareText })} /> : null}
           {next ? <Btn label={next.label} variant="l" onPress={() => nav.navigate(next.route)} /> : null}
         </View>

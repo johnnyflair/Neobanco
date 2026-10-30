@@ -184,7 +184,7 @@ export function CaseScreen({ route }: RootProps<'Case'>) {
           ? `Bloqueamos ${c.cards_locked === 1 ? 'tu tarjeta' : `tus ${c.cards_locked} tarjetas`}. Si fue un error, podés desbloquearlas desde Tarjetas con tu clave.`
           : 'Tus tarjetas ya estaban bloqueadas. Un asesor revisa tu caso.'}
       </Note>
-      <Btn label="Ver mis tarjetas" variant="o" onPress={() => nav.navigate('Tabs', { screen: 'Cards' })} />
+      <Btn label="Ver mis tarjetas" variant="o" onPress={() => nav.navigate('Cards')} />
       <Btn label="Ir al inicio" variant="l" onPress={() => nav.navigate('Tabs', { screen: 'Home' })} />
     </Screen>
   );

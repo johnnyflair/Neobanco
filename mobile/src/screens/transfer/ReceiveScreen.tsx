@@ -2,7 +2,7 @@
 // compartir por WhatsApp, por el menú del sistema o copiar.
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
-import { Linking, Share, StyleSheet, View } from 'react-native';
+import { Linking, Share, StyleSheet } from 'react-native';
 
 import { api } from '../../api/client';
 import { useLoad } from '../../api/hooks';
@@ -49,10 +49,8 @@ export function ReceiveScreen() {
         icon="chat"
         onPress={() => Linking.openURL(`https://wa.me/?text=${encodeURIComponent(text)}`)}
       />
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Btn label="Más opciones" icon="share" variant="o" onPress={() => Share.share({ message: text })} style={{ flex: 1 }} />
-        <Btn label={copied ? 'Copiado' : 'Copiar'} icon={copied ? 'check' : 'copy'} variant="o" onPress={copy} style={{ flex: 1 }} />
-      </View>
+      <Btn label="Compartir de otra forma" icon="share" variant="o" onPress={() => Share.share({ message: text })} />
+      <Btn label={copied ? 'Copiado' : 'Copiar mis datos'} icon={copied ? 'check' : 'copy'} variant="o" onPress={copy} />
     </Screen>
   );
 }

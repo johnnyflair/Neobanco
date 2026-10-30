@@ -25,7 +25,7 @@ export function TransferHubScreen() {
       <Row icon="qr" title="Recibir dinero" sub="Compartí tu número o IBAN" onPress={() => nav.navigate('Receive')} />
       {recent.data && recent.data.length > 0 && (
         <>
-          <Sect>Frecuentes</Sect>
+          <Sect>Enviá por SINPE Móvil a…</Sect>
           <Frequents contacts={recent.data} onPick={(c) => nav.navigate('SendAmount', { kind: 'sinpe', to: c.phone, name: c.name, isNew: false })} />
         </>
       )}

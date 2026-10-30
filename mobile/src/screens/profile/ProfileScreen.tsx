@@ -8,7 +8,8 @@ import { useLoad } from '../../api/hooks';
 import { formatPhone } from '../../format';
 import { useSession } from '../../session';
 import { colors, radius } from '../../theme';
-import { Btn, ErrorText, FieldStatic, Loading, Row, Screen, Small, Tag, HelpButton } from '../../ui/kit';
+import { Icon } from '../../ui/Icon';
+import { Btn, ErrorText, FieldStatic, HelpButton, Loading, Row, Screen, Small } from '../../ui/kit';
 import { Text } from '../../ui/typography';
 
 async function loadProfile() {
@@ -43,7 +44,10 @@ export function ProfileScreen() {
         </View>
         <Text style={st.name}>{me.full_name}</Text>
         <Small center>{`Cédula ${me.cedula_masked} · Asociado desde ${since}`}</Small>
-        <Tag center>{`Nivel ${rewards.level}`}</Tag>
+        <View style={[st.level, { backgroundColor: LEVEL_BG[rewards.level] ?? colors.card }]}>
+          <Icon name={rewards.level === 'Oro' ? 'crown' : 'medal'} size={18} color={LEVEL_INK[rewards.level] ?? colors.ink} />
+          <Text style={[st.levelText, { color: LEVEL_INK[rewards.level] ?? colors.ink }]}>{`Nivel ${rewards.level}`}</Text>
+        </View>
       </View>
 
       <Row
@@ -75,7 +79,13 @@ export function ProfileScreen() {
   );
 }
 
+// Nivel con medalla, más visible (tono oscuro de cada metal para que se lea bien).
+const LEVEL_INK: Record<string, string> = { Bronce: '#8A4F1F', Plata: '#475467', Oro: '#7A5A00' };
+const LEVEL_BG: Record<string, string> = { Bronce: '#F6E7D8', Plata: '#EEF0F3', Oro: '#FBF0CC' };
+
 const st = StyleSheet.create({
+  level: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F6E7D8', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginTop: 6 },
+  levelText: { fontSize: 15, fontWeight: '700' },
   head: { alignItems: 'center', gap: 4, marginBottom: 16 },
   avatar: {
     width: 76,

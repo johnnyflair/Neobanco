@@ -80,10 +80,26 @@ export function MoveRow({
   // Agrupado por día, la fecha ya está en el separador: abajo va quién y la hora.
   const when = grouped ? timeOf(t.created_at) : shortDate(t.created_at);
   const incoming = isIn(t);
-  const title = t.counterparty || t.title || t.description;
-  const how = t.counterparty ? `${incoming ? 'Recibiste · ' : ''}${METHOD[t.category] ?? t.title}` : null;
+  let title = t.counterparty || t.title || t.description;
+  let how = t.counterparty ? `${incoming ? 'Recibiste · ' : ''}${METHOD[t.category] ?? t.title}` : null;
+  let account = showAccount ? t.account_name : null;
+  // Sobres: el título es siempre el sobre y abajo qué pasó (metiste, sacaste, ahorro automático…),
+  // sin importar si el renglón es del lado de la cuenta o del lado del sobre.
+  if (t.category === 'envelope') {
+    const envSide = !!t.account_name && !MAIN_ACCOUNTS.has(t.account_name);
+    const into = envSide ? incoming : !incoming;
+    title = ((envSide ? t.account_name : t.counterparty) || t.title || t.description).replace(/^el sobre /, '');
+    how = /^(Cierre|Desde el sobre)/.test(t.description)
+      ? 'Eliminaste el sobre'
+      : envSide && t.counterparty && !MAIN_ACCOUNTS.has(t.counterparty)
+        ? t.counterparty
+        : into
+          ? 'Metiste al sobre'
+          : 'Sacaste del sobre';
+    if (envSide) account = null;
+  }
   // En la vista combinada (Todas) cada movimiento dice de qué cuenta es.
-  const sub = [how, showAccount ? t.account_name : null, when].filter(Boolean).join(' · ');
+  const sub = [how, account, when].filter(Boolean).join(' · ');
   currency = (t.currency as 'CRC' | 'USD' | null) ?? currency;
   return (
     <Pressable
@@ -109,6 +125,8 @@ export function MoveRow({
   );
 }
 
+// Cuentas principales: lo demás (sobres) se nombra por el sobre.
+const MAIN_ACCOUNTS = new Set(['Colones', 'Dólares']);
 const METHOD: Record<string, string> = {
   sinpe: 'SINPE Móvil',
   iban: 'Transferencia',
@@ -150,7 +168,14 @@ export function MoveList({
 }) {
   const out: ReactNode[] = [];
   let last = '';
-  for (const t of items) {
+  // En la vista combinada, un paso entre la cuenta y un sobre aparece una sola vez (del lado de la cuenta),
+  // no dos veces con montos opuestos.
+  const shown = showAccount
+    ? items.filter(
+        (t) => !(t.category === 'envelope' && t.account_name && !MAIN_ACCOUNTS.has(t.account_name) && t.counterparty && MAIN_ACCOUNTS.has(t.counterparty)),
+      )
+    : items;
+  for (const t of shown) {
     const day = new Date(t.created_at).toDateString();
     const newDay = day !== last;
     if (newDay) {

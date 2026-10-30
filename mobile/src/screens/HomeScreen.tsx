@@ -17,7 +17,7 @@ import { Highlight, KooaLogo } from '../ui/Brand';
 import { BottomSheet } from '../ui/BottomSheet';
 import { MoveList, MoveSheet } from '../ui/Moves';
 import { Icon, type IconName } from '../ui/Icon';
-import { Band, HelpButton } from '../ui/kit';
+import { Band, HelpButton, useEdgeColumns } from '../ui/kit';
 import { Text } from '../ui/typography';
 import { Cents } from '../ui/Money';
 
@@ -38,6 +38,7 @@ export function HomeScreen() {
   // Cada vez que se llega al inicio, el logo saluda levantando las cejas dos veces.
   const [visits, setVisits] = useState(0);
   const [unread, setUnread] = useState(0);
+  const edge = useEdgeColumns(5, 56);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -179,11 +180,11 @@ export function HomeScreen() {
       )}
 
       <Band style={{ marginTop: 18 }} />
-      <View style={s.quick}>
+      <View style={[s.quick, { marginHorizontal: edge.bleed }]}>
         {QUICK.map((q) => (
           <Pressable
             key={q.label}
-            style={({ pressed }) => [s.quickItem, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [s.quickItem, { width: edge.col }, pressed && { opacity: 0.7 }]}
             onPress={q.go}
             accessibilityRole="button"
             accessibilityLabel={(q.more ? 'Más opciones' : q.label) + (q.badge ? ', tenés un SINPE nuevo' : '')}
@@ -269,7 +270,7 @@ const s = StyleSheet.create({
   bellBadge: {
     position: 'absolute',
     top: -5,
-    right: -7,
+    right: 0,
     minWidth: 17,
     height: 17,
     borderRadius: 9,
@@ -292,7 +293,7 @@ const s = StyleSheet.create({
   more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 48, borderRadius: 14, borderWidth: 1.5, borderColor: colors.primary, marginTop: 6 },
   moreText: { fontSize: 15, fontWeight: '600', color: colors.primary },
   quick: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 4 },
-  quickItem: { flex: 1, alignItems: 'center', gap: 7 },
+  quickItem: { alignItems: 'center', gap: 7 },
   quickIcon: { width: 56, height: 56, borderRadius: 17, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   quickText: { fontSize: 13.5, fontWeight: '600', textAlign: 'center', color: colors.ink },
   badge: {

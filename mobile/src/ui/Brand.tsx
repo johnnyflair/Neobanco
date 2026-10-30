@@ -216,7 +216,8 @@ export function Highlight({
       <View
         style={{
           position: 'absolute',
-          left: -3,
+          // Alineación: empieza justo donde empieza el texto (no se sale del margen); a la derecha sobra un poco.
+          left: 0,
           right: -3,
           bottom: soft ? fs * 0.06 : fs * 0.12,
           height: soft ? fs * 0.28 : fs * 0.36,

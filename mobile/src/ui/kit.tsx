@@ -2,7 +2,7 @@
 // opciones seleccionables, campos, interruptores y pantalla de éxito.
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View, type TextInputProps, type ViewStyle } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, useWindowDimensions, View, type TextInputProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius } from '../theme';
@@ -30,8 +30,6 @@ export function Screen({
 }) {
   const nav = useNavigation();
   const insets = useSafeAreaInsets();
-  const keyboardOpen = useKeyboardOpen();
-  // Con el teclado abierto, el botón principal (Enviar, Continuar…) sube y queda justo encima.
   return (
     <KeyboardAvoidingView
       style={[s.screen, { paddingTop: insets.top + 8 }]}
@@ -52,26 +50,15 @@ export function Screen({
           </View>
         )}
         {children}
+        {/* Botón principal justo debajo del contenido (no pegado al fondo): queda cerca de lo que
+            se acaba de llenar, más fácil de encontrar para personas mayores. */}
+        {footer && <View style={s.footerInline}>{footer}</View>}
+        <View style={{ height: Math.max(insets.bottom, 12) }} />
       </ScrollView>
-      {footer && (
-        <View style={[s.footer, { paddingBottom: keyboardOpen ? 10 : Math.max(insets.bottom, 12) }]}>{footer}</View>
-      )}
     </KeyboardAvoidingView>
   );
 }
 
-function useKeyboardOpen() {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setOpen(true));
-    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setOpen(false));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-  return open;
-}
 
 /** "005000.507" → "5000.50": solo dígitos y un punto, máximo 2 decimales y 10 enteros. */
 export function cleanAmount(text: string): string {
@@ -538,19 +525,38 @@ export function Steps({ steps, current }: { steps: { t: string; s?: string }[]; 
 
 /** Fila de botones de acción con el mismo formato del inicio: cuadro menta, ícono verde oscuro y
  *  texto en dos renglones. Se usa debajo de las tarjetas. */
+/** Fila de accesos con íconos alineados a los bordes: el primer ícono arranca en el margen izquierdo
+ *  y el último termina en el derecho (regla de alineación de la App). Cada columna mide lo mismo y
+ *  la fila se estira hacia afuera justo lo que sobra entre la columna y el ícono. */
+export function useEdgeColumns(count: number, icon: number) {
+  // `icon`: ancho de lo que va en los extremos (el ícono, o el texto si es más ancho).
+  const { width } = useWindowDimensions();
+  const inner = Math.min(width, 520) - 36;
+  const col = (inner - icon) / (count - 1);
+  return { col, bleed: -(col - icon) / 2 };
+}
+
 export function ActionButtons({
   items,
 }: {
   items: { label: string; icon: IconName; onPress: () => void; disabled?: boolean; on?: boolean; danger?: boolean }[];
 }) {
+  // Lo más ancho de los extremos (ícono o texto) es lo que toca los márgenes.
+  const [edgeW, setEdgeW] = useState(56);
+  const edge = useEdgeColumns(items.length, edgeW);
+  const measure = (i: number) => (e: { nativeEvent: { layout: { width: number } } }) => {
+    if (i !== 0 && i !== items.length - 1) return;
+    const w = Math.ceil(e.nativeEvent.layout.width);
+    setEdgeW((prev) => (w > prev ? w : prev));
+  };
   return (
-    <View style={s.actions}>
-      {items.map((a) => (
+    <View style={[s.actions, { marginHorizontal: edge.bleed }]}>
+      {items.map((a, i) => (
         <Pressable
           key={a.label}
           onPress={a.onPress}
           disabled={a.disabled}
-          style={({ pressed }) => [s.action, (pressed || a.disabled) && { opacity: a.disabled ? 0.4 : 0.7 }]}
+          style={({ pressed }) => [s.action, { width: edge.col }, (pressed || a.disabled) && { opacity: a.disabled ? 0.4 : 0.7 }]}
           accessibilityRole="button"
           accessibilityLabel={a.label.replace('\n', ' ')}
           accessibilityState={{ disabled: !!a.disabled, selected: !!a.on }}
@@ -564,7 +570,9 @@ export function ActionButtons({
           >
             <Icon name={a.icon} size={25} color={a.on ? colors.white : a.danger ? colors.danger : colors.emeraldDark} />
           </View>
-          <Text style={s.actionText}>{a.label}</Text>
+          <Text style={s.actionText} onLayout={measure(i)}>
+            {a.label}
+          </Text>
         </Pressable>
       ))}
     </View>
@@ -598,7 +606,7 @@ export function Loading() {
 
 export const s = StyleSheet.create({
   actions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, marginBottom: 6 },
-  action: { width: '24%', alignItems: 'center', gap: 7 },
+  action: { alignItems: 'center', gap: 7 },
   actionIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   actionText: { fontSize: 13.5, lineHeight: 17, fontWeight: '600', textAlign: 'center', color: colors.ink },
   step: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingBottom: 18 },
@@ -656,6 +664,7 @@ export const s = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 15, color: colors.ink, outlineWidth: 0 },
   screen: { flex: 1, backgroundColor: colors.white },
   content: { paddingHorizontal: 18, paddingBottom: 32 },
+  footerInline: { marginTop: 22, gap: 8 },
   footer: { paddingHorizontal: 18, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.white },
   top: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4, marginBottom: 12 },
   back: {

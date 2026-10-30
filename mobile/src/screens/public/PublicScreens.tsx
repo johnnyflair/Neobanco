@@ -14,7 +14,7 @@ import { colors, radius, type } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { Highlight, KooaEyes, KooaLogo } from '../../ui/Brand';
 import { Icon, type IconName } from '../../ui/Icon';
-import { Btn, Chips, ErrorText, Field, Hero, Opt, Row, Screen, Sect, Small } from '../../ui/kit';
+import { Btn, Chips, ErrorText, Field, Hero, Opt, Row, Screen, Sect, Small, useEdgeColumns } from '../../ui/kit';
 import { Text } from '../../ui/typography';
 import { Cents } from '../../ui/Money';
 
@@ -174,6 +174,7 @@ export function ExploreScreen() {
   const nav = usePublicNav();
   const insets = useSafeAreaInsets();
   const [sheet, setSheet] = useState(false);
+  const edge = useEdgeColumns(GUEST_QUICK.length, 56);
   return (
     <View style={{ flex: 1, backgroundColor: colors.white }}>
       <Screen back={false}>
@@ -195,11 +196,11 @@ export function ExploreScreen() {
           </Pressable>
         </View>
 
-        <View style={st.quick}>
+        <View style={[st.quick, { marginHorizontal: edge.bleed }]}>
           {GUEST_QUICK.map((q) => (
             <Pressable
               key={q.label}
-              style={({ pressed }) => [st.quickItem, pressed && { opacity: 0.7 }]}
+              style={({ pressed }) => [st.quickItem, { width: edge.col }, pressed && { opacity: 0.7 }]}
               onPress={() => (q.accent ? nav.navigate('GuestLoan') : setSheet(true))}
               accessibilityRole="button"
               accessibilityLabel={q.label.replace('\n', ' ')}
@@ -358,7 +359,7 @@ const st = StyleSheet.create({
   guestLink: { alignItems: 'center', paddingTop: 12 },
   guestLinkText: { color: colors.white, fontSize: 14, fontWeight: '600' },
   quick: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginBottom: 8 },
-  quickItem: { width: '24%', alignItems: 'center', gap: 7 },
+  quickItem: { alignItems: 'center', gap: 7 },
   quickIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   quickText: { fontSize: 13.5, lineHeight: 17, fontWeight: '600', textAlign: 'center', color: colors.ink },
   amount: { fontSize: 32, fontWeight: '700', textAlign: 'center', color: colors.amount, marginTop: 12, marginBottom: 6 },

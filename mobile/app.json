@@ -37,6 +37,13 @@
         {
           "faceIDPermission": "Usamos Face ID para que ingreses a tu cuenta de forma segura."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Usamos tus fotos solo para que elijas tu foto de perfil.",
+          "cameraPermission": "Usamos la cámara solo para que te tomes la foto de perfil."
+        }
       ]
     ],
     "runtimeVersion": "exposdk:58.0.0",

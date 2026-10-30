@@ -14,7 +14,7 @@ import { colors, radius, type } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { Highlight, KooaEyes, KooaLogo } from '../../ui/Brand';
 import { Icon, type IconName } from '../../ui/Icon';
-import { Btn, Chips, ErrorText, Field, Hero, Opt, Row, Screen, Sect, Small, useEdgeColumns } from '../../ui/kit';
+import { Btn, Chips, ErrorText, Field, Hero, Loading, Opt, Row, Screen, Sect, Small, useEdgeColumns } from '../../ui/kit';
 import { Text } from '../../ui/typography';
 import { Cents } from '../../ui/Money';
 
@@ -170,7 +170,22 @@ const GUEST_QUICK: { label: string; icon: IconName; accent?: boolean }[] = [
   { label: 'Pedí un\npréstamo', icon: 'cash', accent: true },
 ];
 
+/** "Explorar" (demo opción A): entra al App real con la asociada de ejemplo. Si la demo no está
+ *  disponible (por ejemplo, sin conexión), queda la vista de visitante con simuladores. */
 export function ExploreScreen() {
+  const { onDemo } = usePublic();
+  const [fallback, setFallback] = useState(false);
+  useEffect(() => {
+    api
+      .demo()
+      .then(onDemo)
+      .catch(() => setFallback(true));
+  }, [onDemo]);
+  if (!fallback) return <Loading />;
+  return <GuestExplore />;
+}
+
+function GuestExplore() {
   const nav = usePublicNav();
   const insets = useSafeAreaInsets();
   const [sheet, setSheet] = useState(false);

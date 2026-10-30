@@ -22,6 +22,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
+    Text,
     UniqueConstraint,
     func,
 )
@@ -91,6 +92,10 @@ class Member(TimestampMixin, Base):
     points_lifetime: Mapped[int] = mapped_column(Integer, default=0)
     # Regla de canje automático: al llegar al mínimo, los puntos se aplican solos a este destino.
     auto_redeem: Mapped[str | None] = mapped_column(String(20))
+    # Foto de perfil: JPEG chico (256 px) como data URL. Va en /me para que se vea en cualquier teléfono.
+    photo: Mapped[str | None] = mapped_column(Text)
+    # Asociado de la demo para visitantes: se entra sin clave y solo puede mirar (ver current_member).
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     accounts: Mapped[list["Account"]] = relationship(back_populates="member")
 

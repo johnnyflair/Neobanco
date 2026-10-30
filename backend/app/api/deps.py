@@ -11,6 +11,8 @@ from app.db.models import Member
 from app.db.session import get_session
 
 bearer = HTTPBearer(auto_error=False)
+SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
+DEMO_ALLOWED = ("/lookup",)
 
 
 async def current_member(
@@ -30,6 +32,10 @@ async def current_member(
     if member is None:
         raise ApiError(401, "unauthorized", "Tu sesión expiró. Ingresá de nuevo.")
     request.state.member_id = member.id
+    # La demo para visitantes solo mira: nada que cambie datos o mueva plata (las consultas por POST,
+    # como buscar un recibo, sí se permiten).
+    if member.is_demo and request.method not in SAFE_METHODS and not request.url.path.endswith(DEMO_ALLOWED):
+        raise ApiError(403, "demo", "Esto es una demo. Abrí tu cuenta para hacerlo de verdad.")
     return member
 
 

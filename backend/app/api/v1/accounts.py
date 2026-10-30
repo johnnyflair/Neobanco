@@ -2,17 +2,21 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request, Response
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import current_member, mask_iban, mask_phone
+from app.core.audit import audit
 from app.core.errors import not_found
 from app.db.models import Account, AccountType, Member, Transaction
+from app.db.session import get_session
 from app.providers import Providers, get_providers
 from app.schemas import (
     AccountDetailOut,
     AccountOut,
     AccountsSummaryOut,
     MeOut,
+    PhotoIn,
     TransactionOut,
     TransactionPage,
 )
@@ -45,7 +49,30 @@ async def me(member: Member = Depends(current_member)):
     return MeOut(id=member.id, full_name=member.full_name, phone_masked=mask_phone(member.phone),
                  sinpe_phone=member.phone, cedula_masked=f"{member.cedula[:2]}••••-{member.cedula[-4:]}",
                  email=member.email, province=member.province, canton=member.canton,
-                 kyc_status=member.kyc_status.value, points=member.points, member_since=member.created_at)
+                 kyc_status=member.kyc_status.value, points=member.points, member_since=member.created_at,
+                 photo=member.photo, is_demo=member.is_demo)
+
+
+@router.put("/me/photo", status_code=204)
+async def set_photo(body: PhotoIn, request: Request, member: Member = Depends(current_member),
+                    session: AsyncSession = Depends(get_session)):
+    m = await session.get(Member, member.id)
+    assert m is not None  # nosec B101
+    m.photo = body.data
+    audit(session, request, "profile_photo", "set", m.id)
+    await session.commit()
+    return Response(status_code=204)
+
+
+@router.delete("/me/photo", status_code=204)
+async def delete_photo(request: Request, member: Member = Depends(current_member),
+                       session: AsyncSession = Depends(get_session)):
+    m = await session.get(Member, member.id)
+    assert m is not None  # nosec B101
+    m.photo = None
+    audit(session, request, "profile_photo", "removed", m.id)
+    await session.commit()
+    return Response(status_code=204)
 
 
 @router.get("/accounts", response_model=AccountsSummaryOut)

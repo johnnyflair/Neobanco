@@ -1,5 +1,12 @@
 // Sesión compartida: cualquier pantalla puede cerrar sesión sin pasar props por toda la navegación.
 import { createContext, useContext } from 'react';
 
-export const SessionContext = createContext<{ signOut: () => void }>({ signOut: () => {} });
+type Session = {
+  signOut: () => void;
+  /** Demo para visitantes (solo mirar). */
+  demo?: boolean;
+  /** Sale de la demo y lleva a abrir la cuenta. */
+  openAccount?: () => void;
+};
+export const SessionContext = createContext<Session>({ signOut: () => {} });
 export const useSession = () => useContext(SessionContext);

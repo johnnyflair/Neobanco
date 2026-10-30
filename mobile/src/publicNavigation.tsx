@@ -59,18 +59,26 @@ export type Draft = {
   kyc?: Kyc;
 };
 
-type Ctx = { draft: Draft; onSignedIn: () => void };
-const PublicContext = createContext<Ctx>({ draft: {}, onSignedIn: () => {} });
+type Ctx = { draft: Draft; onSignedIn: () => void; onDemo: () => void };
+const PublicContext = createContext<Ctx>({ draft: {}, onSignedIn: () => {}, onDemo: () => {} });
 export const usePublic = () => useContext(PublicContext);
 
 const Stack = createNativeStackNavigator<PublicParams>();
 
-export function PublicNavigator({ onSignedIn }: { onSignedIn: () => void }) {
+export function PublicNavigator({
+  onSignedIn,
+  onDemo,
+  initial = 'Welcome',
+}: {
+  onSignedIn: () => void;
+  onDemo: () => void;
+  initial?: keyof PublicParams;
+}) {
   const draft = useRef<Draft>({}).current;
-  const ctx = useMemo(() => ({ draft, onSignedIn }), [draft, onSignedIn]);
+  const ctx = useMemo(() => ({ draft, onSignedIn, onDemo }), [draft, onSignedIn, onDemo]);
   return (
     <PublicContext.Provider value={ctx}>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.white } }}>
+      <Stack.Navigator initialRouteName={initial} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.white } }}>
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="SignIn" component={SignInScreen} />
         <Stack.Screen name="Recover" component={RecoverScreen} />

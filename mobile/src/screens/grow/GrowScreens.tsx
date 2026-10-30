@@ -45,7 +45,7 @@ export function GrowScreen() {
   if (!data) return error ? <Screen title="Invertir" back={false}><ErrorText>{error}</ErrorText></Screen> : <Loading />;
   const envelopes = data.accounts.filter((a) => a.type === 'envelope');
   const terms = data.accounts.filter((a) => a.type === 'term');
-  const total = [...envelopes, ...terms].reduce((sum, a) => sum + Number(a.balance), 0);
+  const sum = (list: Account[]) => list.reduce((acc, a) => acc + Number(a.balance), 0);
 
   return (
     <Screen title="Invertir" back={false}>
@@ -60,8 +60,11 @@ export function GrowScreen() {
 
       {tab === 'mine' && (
         <>
-          <Hero title="Tenés ahorrado" sub="Tu dinero trabajando" big={money(total)} />
-          <Sect>Mis sobres</Sect>
+          {/* Opción B (aprobada): sin total general; cada sección con su total, porque sobres y
+              plazos funcionan distinto. */}
+          <Sect first sub="Sacás cuando querás" right={<Cents style={st.sectAmt}>{money(sum(envelopes))}</Cents>}>
+            Mis sobres
+          </Sect>
           {envelopes.map((a, i) => {
             const p = progress(a);
             return (
@@ -90,7 +93,9 @@ export function GrowScreen() {
           })}
           {!envelopes.length && <Empty text="Todavía no tenés sobres." onCreate={() => setTab('new')} />}
 
-          <Sect>Mis ahorros a plazo</Sect>
+          <Sect sub="Con fecha de vencimiento" right={<Cents style={st.sectAmt}>{money(sum(terms))}</Cents>}>
+            Mis ahorros a plazo
+          </Sect>
           {terms.map((a, i) => (
             <Row
               key={a.id}
@@ -633,6 +638,7 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
 }
 
 const st = StyleSheet.create({
+  sectAmt: { fontSize: 18, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'] },
   emptyLink: { fontSize: 15, fontWeight: '600', color: colors.primary, marginTop: 4 },
   ask: { fontSize: 22, fontWeight: '700', color: colors.ink, marginTop: 10, marginBottom: 8, lineHeight: 28 },
   quick: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },

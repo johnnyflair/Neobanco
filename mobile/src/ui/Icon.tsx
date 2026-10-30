@@ -7,7 +7,7 @@ export type IconName =
   | 'home' | 'card' | 'grow' | 'chat' | 'phone' | 'bank' | 'pull' | 'qr' | 'back' | 'chev' | 'check'
   | 'lock' | 'eye' | 'eyeOff' | 'share' | 'receipt' | 'file' | 'star' | 'send' | 'swap' | 'copy' | 'cash' | 'hands' | 'pig' | 'chevDown' | 'chevUp' | 'x'
   | 'bolt' | 'drop' | 'wifi' | 'search' | 'tv' | 'car' | 'school' | 'shield' | 'building' | 'gift' | 'heart' | 'calendar' | 'user' | 'logout' | 'alert' | 'clock' | 'plus' | 'minus'
-  | 'arrowUp' | 'arrowDown' | 'snowflake' | 'sliders' | 'settings' | 'medal' | 'crown' | 'backspace' | 'bell' | 'dots' | 'trash' | 'headset' | 'userCircle' | 'mail' | 'pencil';
+  | 'arrowUp' | 'arrowDown' | 'snowflake' | 'sliders' | 'settings' | 'medal' | 'crown' | 'backspace' | 'bell' | 'dots' | 'trash' | 'headset' | 'userCircle' | 'mail' | 'pencil' | 'camera' | 'image';
 
 const stroke = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
@@ -109,6 +109,10 @@ function shapes(name: IconName, c: string) {
       return <Path {...p} d="M4 14v-2a8 8 0 0 1 16 0v2M4 14a2 2 0 0 1 2-2h1v6H6a2 2 0 0 1-2-2zM20 14a2 2 0 0 0-2-2h-1v6h1a2 2 0 0 0 2-2zM18 18a4 4 0 0 1-4 3h-2" />;
     case 'userCircle':
       return <Path {...p} d="M12 21a9 9 0 1 0 0-18a9 9 0 0 0 0 18zM12 13a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM6.2 18.4a6.5 6.5 0 0 1 11.6 0" />;
+    case 'camera':
+      return <Path {...p} d="M5 7h1a2 2 0 0 0 2-2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2M9 13a3 3 0 1 0 6 0a3 3 0 0 0-6 0" />;
+    case 'image':
+      return <Path {...p} d="M15 8h.01M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3zM3 16l5-5c.9-.9 2.1-.9 3 0l5 5M14 14l1-1c.9-.9 2.1-.9 3 0l3 3" />;
     case 'trash':
       return <Path {...p} d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />;
     case 'bell':

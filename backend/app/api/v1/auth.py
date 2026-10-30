@@ -192,6 +192,18 @@ async def login(body: LoginIn, request: Request, session: AsyncSession = Depends
     return tokens
 
 
+@router.post("/demo", response_model=TokensOut, dependencies=[Depends(limiter("demo_ip", 30, 900))])
+async def demo(request: Request, session: AsyncSession = Depends(get_session)):
+    """Entrada a la demo para visitantes: sesión del asociado de demostración, que solo puede mirar."""
+    m = await session.scalar(select(Member).where(Member.is_demo.is_(True)).limit(1))
+    if m is None:
+        raise ApiError(404, "no_demo", "La demo no está disponible en este momento.")
+    tokens = await _issue_tokens(session, m, "demo")
+    audit(session, request, "demo", "ok", m.id)
+    await session.commit()
+    return tokens
+
+
 @router.post("/refresh", response_model=TokensOut, dependencies=[Depends(limiter("refresh_ip", 60, 900))])
 async def refresh(body: RefreshIn, request: Request, session: AsyncSession = Depends(get_session)):
     rt = await session.scalar(select(RefreshToken).where(RefreshToken.token_hash == sha256(body.refresh_token))

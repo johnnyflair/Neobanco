@@ -14,6 +14,8 @@ export type Me = {
   kyc_status: string;
   points: number;
   member_since: string;
+  photo?: string | null;
+  is_demo?: boolean;
 };
 
 export type AccountType = 'savings' | 'capital' | 'envelope' | 'term';

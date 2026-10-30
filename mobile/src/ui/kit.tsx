@@ -386,16 +386,28 @@ export function FieldStatic({ label, value }: { label: string; value: string }) 
 /** Sección (regla del inicio, para toda la App): franja gris de borde a borde y título.
  *  `plain` es para etiquetas de una pregunta dentro de un formulario (sin franja). */
 /** `sub`: subtítulo en gris debajo del título (sin resaltador). */
-export const Sect = ({ children, plain, first, sub }: { children: string; plain?: boolean; first?: boolean; sub?: string }) =>
+/** `right`: dato al lado del título (por ejemplo, el total de la sección). */
+export const Sect = ({ children, plain, first, sub, right }: { children: string; plain?: boolean; first?: boolean; sub?: string; right?: ReactNode }) =>
   plain ? (
     <Text style={s.sect}>{children}</Text>
   ) : (
     <>
       {!first && <Band />}
       <View style={[s.sectWrap, first && { marginTop: 4 }]}>
-        <Highlight soft header align="flex-start" style={s.sectTitle}>
-          {children}
-        </Highlight>
+        {right ? (
+          <View style={s.sectRow}>
+            <View style={{ flex: 1 }}>
+              <Highlight soft header align="flex-start" style={s.sectTitle}>
+                {children}
+              </Highlight>
+            </View>
+            {right}
+          </View>
+        ) : (
+          <Highlight soft header align="flex-start" style={s.sectTitle}>
+            {children}
+          </Highlight>
+        )}
         {sub ? <Text style={s.sectSub}>{sub}</Text> : null}
       </View>
     </>
@@ -741,6 +753,7 @@ export const s = StyleSheet.create({
   optTitle: { fontSize: 16, fontWeight: '700', color: colors.ink, flexShrink: 1 },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#98A2B3' },
   radioOn: { borderWidth: 7, borderColor: colors.primary },
+  sectRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   stepWrap: { marginBottom: 16 },
   stepText: { fontSize: 14, color: colors.muted, marginBottom: 6 },
   stepTrack: { height: 6, borderRadius: 3, backgroundColor: colors.line, overflow: 'hidden' },

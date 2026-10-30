@@ -61,14 +61,22 @@ export class ApiError extends Error {
 let accessToken: string | null = null;
 let refreshing: Promise<boolean> | null = null;
 let onSessionLost: () => void = () => {};
+// Demo para visitantes: la sesión vive solo en memoria (al cerrar la App, la demo se acaba).
+let demoRefresh: string | null = null;
+let onDemoBlocked: () => void = () => {};
+
+export function setDemoBlockedHandler(fn: () => void) {
+  onDemoBlocked = fn;
+}
 
 export function setSessionLostHandler(fn: () => void) {
   onSessionLost = fn;
 }
 
-async function saveTokens(t: Tokens) {
+async function saveTokens(t: Tokens, persist = true) {
   accessToken = t.access_token;
-  await secureStore.set(REFRESH_KEY, t.refresh_token);
+  if (persist) await secureStore.set(REFRESH_KEY, t.refresh_token);
+  else demoRefresh = t.refresh_token;
 }
 
 export async function hasSavedSession(): Promise<boolean> {
@@ -91,6 +99,8 @@ async function parse<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const p = body as Partial<Problem>;
+    // La demo solo mira: cualquier intento de mover plata abre la hoja "Abrí tu cuenta".
+    if (res.status === 403 && p.code === 'demo') onDemoBlocked();
     throw new ApiError(res.status, p.code ?? 'error', p.title ?? 'Algo salió mal. Intentá de nuevo.', p.request_id);
   }
   return body as T;
@@ -98,15 +108,17 @@ async function parse<T>(res: Response): Promise<T> {
 
 export async function refreshSession(): Promise<boolean> {
   refreshing ??= (async () => {
-    const rt = await secureStore.get(REFRESH_KEY);
+    const demo = demoRefresh !== null;
+    const rt = demoRefresh ?? (await secureStore.get(REFRESH_KEY));
     if (!rt) return false;
     const res = await raw('/v1/auth/refresh', { method: 'POST', body: JSON.stringify({ refresh_token: rt }) });
     if (!res.ok) {
-      await secureStore.remove(REFRESH_KEY);
+      if (demo) demoRefresh = null;
+      else await secureStore.remove(REFRESH_KEY);
       accessToken = null;
       return false;
     }
-    await saveTokens(await res.json());
+    await saveTokens(await res.json(), !demo);
     return true;
   })().finally(() => {
     refreshing = null;
@@ -161,13 +173,21 @@ export const api = {
       parse<LoanSim>(r),
     ),
   publicRates: () => raw('/v1/savings/rates').then((r) => parse<Rate[]>(r)),
+  /** Demo para visitantes: entra como la asociada de ejemplo, de solo lectura. */
+  async demo() {
+    const t = await parse<Tokens>(await raw('/v1/auth/demo', { method: 'POST' }));
+    await saveTokens(t, false);
+  },
   async logout() {
-    const rt = await secureStore.get(REFRESH_KEY);
+    const rt = demoRefresh ?? (await secureStore.get(REFRESH_KEY));
     if (rt) await raw('/v1/auth/logout', { method: 'POST', body: JSON.stringify({ refresh_token: rt }) }).catch(() => {});
-    await secureStore.remove(REFRESH_KEY);
+    if (demoRefresh === null) await secureStore.remove(REFRESH_KEY);
+    demoRefresh = null;
     accessToken = null;
   },
   me: () => request<Me>('/v1/me'),
+  setPhoto: (data: string) => request<void>('/v1/me/photo', { method: 'PUT', body: JSON.stringify({ data }) }),
+  deletePhoto: () => request<void>('/v1/me/photo', { method: 'DELETE' }),
   accounts: () => request<{ accounts: Account[] }>('/v1/accounts').then((r) => r.accounts),
   transactions: (accountId: string, before?: string) =>
     request<TransactionPage>(

@@ -132,6 +132,13 @@ class MeOut(Out):
     kyc_status: str
     points: int
     member_since: datetime
+    photo: str | None = None
+    is_demo: bool = False
+
+
+class PhotoIn(BaseModel):
+    data: Annotated[str, Field(max_length=400_000, pattern=r"^data:image/(jpeg|png);base64,[A-Za-z0-9+/=]+$",
+                               description="Foto como data URL (JPEG o PNG), ya recortada y achicada en el teléfono")]
 
 
 # ---------- Cuentas ----------

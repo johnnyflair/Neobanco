@@ -16,6 +16,7 @@ import { Btn, Check, Chips, ErrorText, Field, Hero, Opt, Row, Screen, Sect, Smal
 import { usePin } from '../../ui/PinSheet';
 import { receiptDate } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
+import { Cents } from '../../ui/Money';
 
 const TERMS = [12, 24, 36, 48, 60];
 const MIN = 100_000;
@@ -45,7 +46,7 @@ export function LoanSimScreen() {
       }
     >
       <Small>{offer.data ? `Preaprobado hasta ${money(offer.data.max_amount)}` : 'Simulación sin compromiso'}</Small>
-      <Text style={st.amount}>{money(amount)}</Text>
+      <Cents style={st.amount}>{money(amount)}</Cents>
       <Slider
         value={amount}
         minimumValue={MIN}
@@ -167,10 +168,10 @@ export function LoanReviewScreen({ route }: RootProps<'LoanReview'>) {
 
   return (
     <Screen title="Revisá y firmá" footer={<Btn label="Firmar con mi clave" icon="lock" onPress={sign} loading={busy} />}>
-      <Row first title="Monto" right={<Text style={st.amt}>{money(amount)}</Text>} />
-      <Row title="Cuota" right={<Text style={st.amt}>{money(monthly)}</Text>} />
+      <Row first title="Monto" right={<Cents style={st.amt}>{money(amount)}</Cents>} />
+      <Row title="Cuota" right={<Cents style={st.amt}>{money(monthly)}</Cents>} />
       <Row title="Plazo" right={<Text style={st.amt}>{term} meses</Text>} />
-      <Row title="Total a pagar" right={<Text style={st.amt}>{money(total)}</Text>} />
+      <Row title="Total a pagar" right={<Cents style={st.amt}>{money(total)}</Cents>} />
       <Row title="Depósito en" right={<Small>Cuenta colones</Small>} />
       <Row title="Pago automático" right={<Text style={[st.amt, { color: colors.emeraldDark }]}>Día 15</Text>} />
       <Check checked={ok} onChange={setOk} label="Leí el contrato y las condiciones" />

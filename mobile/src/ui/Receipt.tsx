@@ -9,6 +9,7 @@ import { Icon } from './Icon';
 import { ErrorText } from './kit';
 import { SlideToConfirm } from './SlideToConfirm';
 import { Text } from './typography';
+import { Cents } from './Money';
 
 export type ReceiptRow = [label: string, value: string];
 
@@ -16,9 +17,9 @@ export function Kv({ k, v, green, last }: { k: string; v: string; green?: boolea
   return (
     <View style={[st.kv, last && { borderBottomWidth: 0 }]}>
       <Text style={st.kvK}>{k}</Text>
-      <Text style={[st.kvV, green && { color: colors.primary }]} numberOfLines={2}>
+      <Cents style={[st.kvV, green && { color: colors.primary }]} numberOfLines={2}>
         {v}
-      </Text>
+      </Cents>
     </View>
   );
 }

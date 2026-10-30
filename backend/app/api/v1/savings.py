@@ -107,8 +107,8 @@ async def close_envelope(envelope_id: uuid.UUID, body: CloseEnvelopeIn, request:
     ref = None
     if returned > 0:
         ref = new_reference("SB")
-        await p.core.post(env.id, -returned, f"Cierre del sobre {env.name}", "envelope", ref)
-        await p.core.post(dest.id, returned, f"Desde el sobre {env.name}", "envelope", ref)
+        await p.core.post(env.id, -returned, f"Cierre del sobre {env.name}", "envelope", ref, counterparty=dest.name)
+        await p.core.post(dest.id, returned, f"Cierre del sobre {env.name}", "envelope", ref, counterparty=env.name)
     await p.core.close_account(env)
     resp = {"reference": ref, "returned": str(returned), "account_balance": str(dest.balance)}
     remember(session, member.id, key, h, resp)

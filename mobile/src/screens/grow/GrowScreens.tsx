@@ -17,6 +17,7 @@ import { Icon } from '../../ui/Icon';
 import { AmountInput, Btn, Chips, ErrorText, Field, Hero, Loading, Opt, Row, Screen, Sect, Small } from '../../ui/kit';
 import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
+import { Cents } from '../../ui/Money';
 
 const pct = (r: string | number) => `${Number(r).toLocaleString('en-US', { maximumFractionDigits: 2 })}% anual`;
 const ON_MATURITY: Record<string, string> = { renew: 'se renueva', to_account: 'pasa a tu cuenta', to_envelope: 'pasa a un sobre' };
@@ -61,7 +62,7 @@ export function GrowScreen() {
           <Pressable key={a.id} style={st.goal} onPress={() => nav.navigate('Envelope', { account: a })} accessibilityRole="button">
             <View style={st.goalHead}>
               <Text style={st.goalName}>{a.name}</Text>
-              <Text style={st.amt}>{money(a.balance)}</Text>
+              <Cents style={st.amt}>{money(a.balance)}</Cents>
             </View>
             <View style={st.bar}>
               <View style={[st.barFill, { width: `${p}%` }]} />
@@ -81,7 +82,7 @@ export function GrowScreen() {
           icon="lock"
           title={`Plazo ${a.term_months} meses · ${pct(a.rate ?? 0)}`}
           sub={`Vence ${a.maturity_date ? dayMonth(a.maturity_date) : ''}\n${ON_MATURITY[a.on_maturity ?? 'renew'] ?? ''}`}
-          right={<Text style={st.amt}>{money(a.balance)}</Text>}
+          right={<Cents style={st.amt}>{money(a.balance)}</Cents>}
         />
       ))}
       {!terms.length && <Small>Todavía no tenés ahorros a plazo.</Small>}
@@ -408,7 +409,7 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
       }
     >
       <Small>¿Cuánto querés invertir?</Small>
-      <Text style={st.big}>{money(amount)}</Text>
+      <Cents style={st.big}>{money(amount)}</Cents>
       <Slider
         value={Math.min(amount, max)}
         minimumValue={50_000}

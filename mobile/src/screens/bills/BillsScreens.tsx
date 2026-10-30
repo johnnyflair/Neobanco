@@ -16,6 +16,7 @@ import { Icon, type IconName } from '../../ui/Icon';
 import { Btn, ErrorText, Field, Hero, Loading, Row, Screen, SearchField, Sect, Small, Tabs, Toggle } from '../../ui/kit';
 import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
+import { Cents } from '../../ui/Money';
 
 export function categoryIcon(category: string): IconName {
   const c = category.toLowerCase();
@@ -164,7 +165,7 @@ export function BillsScreen() {
                     subColor={due.urgent ? colors.danger : undefined}
                     right={
                       b.pending_amount ? (
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.amount }}>{money(b.pending_amount)}</Text>
+                        <Cents style={{ fontSize: 14, fontWeight: '600', color: colors.amount }}>{money(b.pending_amount)}</Cents>
                       ) : (
                         <Icon name="check" size={18} color={colors.emeraldDark} />
                       )

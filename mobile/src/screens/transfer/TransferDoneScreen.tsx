@@ -14,6 +14,7 @@ import { Highlight, KooaEyes } from '../../ui/Brand';
 import { Btn } from '../../ui/kit';
 import { Rows } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
+import { Cents } from '../../ui/Money';
 
 export function TransferDoneScreen({ route }: RootProps<'TransferDone'>) {
   const nav = useNavigation();
@@ -35,7 +36,9 @@ export function TransferDoneScreen({ route }: RootProps<'TransferDone'>) {
           {amount ? (
             <>
               {amountLabel ? <Text style={st.label}>{amountLabel}</Text> : null}
-              <Highlight style={st.amount}>{money(amount, currency)}</Highlight>
+              <Highlight style={st.amount}>
+                <Cents style={st.amount}>{money(amount, currency)}</Cents>
+              </Highlight>
             </>
           ) : null}
           {points ? (

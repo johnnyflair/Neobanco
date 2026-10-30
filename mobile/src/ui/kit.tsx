@@ -9,6 +9,7 @@ import { colors, radius } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { Highlight } from './Brand';
 import { Text, TextInput } from './typography';
+import { Cents } from './Money';
 
 export function Screen({
   title,
@@ -234,7 +235,7 @@ export function Opt({
     >
       <View style={s.optHead}>
         <Text style={s.optTitle}>{title}</Text>
-        {typeof right === 'string' ? <Text style={s.amt}>{right}</Text> : right}
+        {typeof right === 'string' ? <Cents style={s.amt}>{right}</Cents> : right}
       </View>
       {sub ? <Text style={s.sm}>{sub}</Text> : null}
     </Pressable>
@@ -412,12 +413,12 @@ export function Hero({
     <View style={s.hero}>
       <Text style={[s.heroT, a]}>{title}</Text>
       {sub ? <Text style={[s.heroD, a]}>{sub}</Text> : null}
-      {big ? <Text style={[s.heroBig, a]}>{big}</Text> : null}
+      {big ? <Cents style={[s.heroBig, a]}>{big}</Cents> : null}
       {up ? <Text style={[s.heroUp, a]}>{up}</Text> : null}
       {lines?.map(([k, v], i) => (
         <View key={k} style={[s.heroLine, i === 0 && { marginTop: 8 }]}>
           <Text style={s.heroLineK}>{k}</Text>
-          <Text style={s.heroLineV}>{v}</Text>
+          <Cents style={s.heroLineV}>{v}</Cents>
         </View>
       ))}
     </View>

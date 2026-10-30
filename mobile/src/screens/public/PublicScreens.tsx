@@ -16,6 +16,7 @@ import { Highlight, KooaEyes, KooaLogo } from '../../ui/Brand';
 import { Icon, type IconName } from '../../ui/Icon';
 import { Btn, Chips, ErrorText, Field, Hero, Opt, Row, Screen, Sect, Small } from '../../ui/kit';
 import { Text } from '../../ui/typography';
+import { Cents } from '../../ui/Money';
 
 const WHATSAPP = process.env.EXPO_PUBLIC_SUPPORT_WHATSAPP ?? '50688000000';
 
@@ -250,7 +251,7 @@ export function GuestLoanScreen() {
     <View style={{ flex: 1 }}>
       <Screen title="¿Cuánto me prestan?" footer={<Btn label="Pedir este préstamo" onPress={() => setSheet(true)} />}>
         <Small>Simulación sin compromiso</Small>
-        <Text style={st.amount}>{money(amount)}</Text>
+        <Cents style={st.amount}>{money(amount)}</Cents>
         <Slider
           value={amount}
           minimumValue={100_000}
@@ -300,7 +301,7 @@ export function GuestSaveScreen() {
     <View style={{ flex: 1 }}>
       <Screen title="¿Cuánto gano ahorrando?" footer={<Btn label="Abrir este ahorro" onPress={() => setSheet(true)} />}>
         <Small>Ahorro a plazo desde ₡50,000</Small>
-        <Text style={st.amount}>{money(amount)}</Text>
+        <Cents style={st.amount}>{money(amount)}</Cents>
         <Slider
           value={amount}
           minimumValue={50_000}

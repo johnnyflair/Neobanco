@@ -14,6 +14,7 @@ import { Btn, Chips, ErrorText, Field, Loading, Opt, Row, Screen, Sect, Small, T
 import { usePin } from '../../ui/PinSheet';
 import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
+import { Cents } from '../../ui/Money';
 
 async function cardAndAccounts(cardId: string) {
   const [card, accounts] = await Promise.all([api.card(cardId), api.accounts()]);
@@ -341,7 +342,7 @@ export function CardInstallmentsScreen({ route }: RootProps<'CardInstallments'>)
         <View style={st.hero}>
           <Text style={st.ht}>Cuota mensual</Text>
           <Text style={st.hd}>Tasa de ejemplo 1.5% mensual</Text>
-          <Text style={st.big}>{money(q)}</Text>
+          <Cents style={st.big}>{money(q)}</Cents>
           <Text style={st.up}>Total {money(q * months)}</Text>
         </View>
       )}

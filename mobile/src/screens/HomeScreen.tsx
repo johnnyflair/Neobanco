@@ -18,6 +18,7 @@ import { MoveList, MoveSheet } from '../ui/Moves';
 import { Icon, type IconName } from '../ui/Icon';
 import { Band } from '../ui/kit';
 import { Text } from '../ui/typography';
+import { Cents } from '../ui/Money';
 
 const HIDE_KEY = 'neo.hideBalances';
 const MAIN_TYPES = new Set(['savings', 'capital']); // colones, dólares y capital social
@@ -177,7 +178,7 @@ export function HomeScreen() {
             )}
           </View>
           <Text style={[type.itemTitle, { flex: 1 }]}>{a.name}</Text>
-          <Amount value={money(a.balance, a.currency)} hidden={hidden} />
+          <Cents style={[type.amount, s.amt]}>{mask(money(a.balance, a.currency))}</Cents>
           <Icon name="chev" size={16} color={colors.muted} />
         </Pressable>
       ))}
@@ -266,18 +267,6 @@ function today() {
   return d.charAt(0).toUpperCase() + d.slice(1).replace(',', '');
 }
 
-/** Monto con los céntimos más pequeños, para que el número se lea rápido. */
-function Amount({ value, hidden }: { value: string; hidden: boolean }) {
-  if (hidden) return <Text style={type.amount}>••••••</Text>;
-  const dot = value.lastIndexOf('.');
-  return (
-    <Text style={[type.amount, s.amt]}>
-      {dot > 0 ? value.slice(0, dot) : value}
-      {dot > 0 && <Text style={s.cents}>{value.slice(dot)}</Text>}
-    </Text>
-  );
-}
-
 const s = StyleSheet.create({
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
@@ -321,7 +310,6 @@ const s = StyleSheet.create({
   iconBox: { width: 22, alignItems: 'center' },
   icon: { fontSize: 20, fontWeight: '600', color: colors.primary },
   amt: { fontSize: 15 },
-  cents: { fontSize: 10.5 },
   more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
   moreText: { fontSize: 14, fontWeight: '600', color: colors.primary },
   quick: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 4 },

@@ -16,6 +16,7 @@ import { KooaEyes, KooaLogo } from './Brand';
 import { Icon, type IconName } from './Icon';
 import { Btn } from './kit';
 import { Text } from './typography';
+import { Cents } from './Money';
 
 const isIn = (t: Transaction) => Number(t.amount) > 0;
 
@@ -102,7 +103,7 @@ export function MoveRow({
           {sub}
         </Text>
       </View>
-      <Text style={[type.amount, incoming && { color: colors.primary }]}>{mask(signed(t, currency))}</Text>
+      <Cents style={[type.amount, incoming && { color: colors.primary }]}>{mask(signed(t, currency))}</Cents>
       <Icon name="chev" size={14} color={colors.muted} />
     </Pressable>
   );
@@ -226,7 +227,7 @@ export function MoveSheet({
         <View style={st.head}>
           <Icon name={moveIcon(t)} size={30} color={incoming ? colors.emeraldDark : colors.amount} />
           <Text style={st.title}>{t.title || t.description}</Text>
-          <Text style={[st.big, incoming && { color: colors.primary }]}>{signed(t, currency)}</Text>
+          <Cents style={[st.big, incoming && { color: colors.primary }]}>{signed(t, currency)}</Cents>
           <Text style={st.tag}>Completado</Text>
         </View>
         {rows.filter((r) => r.k !== 'Saldo después').map((r) => (
@@ -249,7 +250,7 @@ export function MoveSheet({
       </View>
       <View style={[st.kv, { marginBottom: 4 }]}>
         <Text style={st.k}>Saldo después</Text>
-        <Text style={st.v}>{money(t.balance_after, currency)}</Text>
+        <Cents style={st.v}>{money(t.balance_after, currency)}</Cents>
       </View>
       <Btn label="Compartir por WhatsApp" icon="chat" onPress={() => Linking.openURL(`https://wa.me/?text=${encodeURIComponent(text)}`)} />
       <View style={{ flexDirection: 'row', gap: 8 }}>

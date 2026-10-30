@@ -15,6 +15,7 @@ import { Icon } from '../../ui/Icon';
 import { ActionButtons, Band, Btn, ErrorText, Loading, Row, Screen, Small, Tag, Toggle } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
 import { Text } from '../../ui/typography';
+import { Cents } from '../../ui/Money';
 
 export const LINKED_LABEL = { crc: 'Colones', usd: 'Dólares', auto: 'Automática' } as const;
 const REVEAL_SECONDS = 30;
@@ -280,7 +281,7 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
 
       <View style={{ marginTop: 14 }}>
         <Small>Saldo actual</Small>
-        <Text style={st.ccBig}>{money(c.balance)}</Text>
+        <Cents style={st.ccBig}>{money(c.balance)}</Cents>
         <View style={st.bar}>
           <View style={[st.barFill, { width: `${used}%` }]} />
         </View>
@@ -290,11 +291,11 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
         <View style={st.kpi}>
           <View style={st.kpiBox}>
             <Small>Pago de contado</Small>
-            <Text style={st.kpiVal}>{money(c.full_payment)}</Text>
+            <Cents style={st.kpiVal}>{money(c.full_payment)}</Cents>
           </View>
           <View style={st.kpiBox}>
             <Small>Pago mínimo</Small>
-            <Text style={st.kpiVal}>{money(c.minimum_payment)}</Text>
+            <Cents style={st.kpiVal}>{money(c.minimum_payment)}</Cents>
           </View>
         </View>
         {c.due_date && (

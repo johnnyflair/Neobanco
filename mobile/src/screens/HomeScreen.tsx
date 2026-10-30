@@ -173,7 +173,7 @@ export function HomeScreen() {
       ))}
       {accounts.length > main.length && (
         <Pressable style={s.more} onPress={() => setShowAll((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: showAll }}>
-          <Text style={s.moreText}>{showAll ? 'Ver menos' : `Ver todas (${accounts.length})`}</Text>
+          <Text style={s.moreText}>{showAll ? 'Ver menos cuentas' : `Ver todas mis cuentas (${accounts.length})`}</Text>
           <Icon name={showAll ? 'chevUp' : 'chevDown'} size={16} color={colors.primary} />
         </Pressable>
       )}
@@ -207,7 +207,7 @@ export function HomeScreen() {
           <Text style={s.link}>Ver todos</Text>
         </Pressable>
       </View>
-      <MoveList items={moves.slice(0, 8)} mask={mask} showAccount onPress={setMove} />
+      <MoveList items={moves.slice(0, 8)} mask={mask} showAccount hideAccountName onPress={setMove} />
       <MoveSheet t={move} accountName="Cuenta colones" onClose={() => setMove(null)} />
       <Text style={s.version}>Versión {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'local').slice(0, 7)}</Text>
       <BottomSheet visible={more} onClose={() => setMore(false)}>
@@ -288,8 +288,9 @@ const s = StyleSheet.create({
   iconBox: { width: 22, alignItems: 'center' },
   icon: { fontSize: 20, fontWeight: '600', color: colors.primary },
   amt: { fontSize: 16 },
-  more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
-  moreText: { fontSize: 14, fontWeight: '600', color: colors.primary },
+  // "Ver todas" como botón con borde (opción A): se nota que se toca.
+  more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 48, borderRadius: 14, borderWidth: 1.5, borderColor: colors.primary, marginTop: 6 },
+  moreText: { fontSize: 15, fontWeight: '600', color: colors.primary },
   quick: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 4 },
   quickItem: { flex: 1, alignItems: 'center', gap: 7 },
   quickIcon: { width: 56, height: 56, borderRadius: 17, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },

@@ -158,10 +158,13 @@ export function MoveList({
   currency = 'CRC',
   mask,
   showAccount,
+  hideAccountName,
   onPress,
 }: {
   items: Transaction[];
   showAccount?: boolean;
+  /** Inicio: lista combinada pero sin repetir el nombre de la cuenta en cada fila. */
+  hideAccountName?: boolean;
   currency?: 'CRC' | 'USD';
   mask?: (s: string) => string;
   onPress: (t: Transaction) => void;
@@ -186,7 +189,7 @@ export function MoveList({
       );
       last = day;
     }
-    out.push(<MoveRow key={t.id} t={t} currency={currency} mask={mask} first={newDay} grouped showAccount={showAccount} onPress={() => onPress(t)} />);
+    out.push(<MoveRow key={t.id} t={t} currency={currency} mask={mask} first={newDay} grouped showAccount={showAccount && !hideAccountName} onPress={() => onPress(t)} />);
   }
   return <View>{out}</View>;
 }

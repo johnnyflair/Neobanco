@@ -13,7 +13,7 @@ import { dayMonth, money, parseAmount } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
 import { Icon } from '../../ui/Icon';
-import { AmountInput, Btn, ErrorText, Field, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar } from '../../ui/kit';
+import { AmountInput, Btn, ErrorText, Field, FieldStacked, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar } from '../../ui/kit';
 import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
 import { Cents } from '../../ui/Money';
@@ -118,27 +118,94 @@ export function GrowScreen() {
   );
 }
 
+/** Tasa corta para la píldora: "3%" / "7.5%". */
+const pctShort = (r: number) => `${r.toLocaleString('en-US', { maximumFractionDigits: 2 })}%`;
+
+/** Bullet con check esmeralda (opción 1A). */
+const Bullet = ({ children }: { children: string }) => (
+  <View style={st.bullet}>
+    <Icon name="check" size={16} color={colors.primary} />
+    <Text style={st.bulletT}>{children}</Text>
+  </View>
+);
+
+// Opción 1A (aprobada): tasa en píldora junto al título, bullets con check y el ahorro a plazo
+// destacado con borde esmeralda. Tasas y plazos salen del panel (api.rates), no del código.
 export function NewSavingScreen() {
   const nav = useNavigation();
+  const { data: rates } = useLoad(api.rates);
+  const vista = rates?.find((r) => r.product === 'envelope');
+  const terms = (rates ?? []).filter((r) => r.product === 'term' && r.term_months);
+  const months = terms.map((r) => r.term_months as number);
+  const minM = months.length ? Math.min(...months) : 3;
+  const maxM = months.length ? Math.max(...months) : 36;
+  const best = terms.length ? Math.max(...terms.map((r) => Number(r.annual_rate))) : null;
+  const firstTerm = months.includes(6) ? 6 : (months[0] ?? 6);
+
   return (
     <Screen title="¿Qué querés crear?">
-      <Pressable style={[st.choice]} onPress={() => nav.navigate('NewEnvelope')} accessibilityRole="button">
-        <Icon name="mail" size={24} color={colors.emeraldDark} />
-        <View style={{ flex: 1 }}>
-          <Text style={st.choiceT}>Sobre a la vista</Text>
-          <Small>Separá dinero para algo. Agregás y retirás cuando querás. Tasa de ejemplo 3% anual.</Small>
+      <Small>Elegí cómo querés guardar tu dinero</Small>
+
+      <Pressable
+        style={({ pressed }) => [st.choice, pressed && { opacity: 0.7 }]}
+        onPress={() => nav.navigate('NewEnvelope')}
+        accessibilityRole="button"
+        accessibilityLabel={`Sobre a la vista${vista ? `, ${pct(vista.annual_rate)}` : ''}`}
+      >
+        <View style={st.choiceHead}>
+          <View style={[st.choiceIcon, { backgroundColor: colors.mint }]}>
+            <Icon name="mail" size={22} color={colors.emeraldDark} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={st.choiceT}>Sobre a la vista</Text>
+            <Text style={st.choiceSub}>Para metas del día a día</Text>
+          </View>
+          {vista && (
+            <View style={[st.pill, { backgroundColor: colors.mint }]}>
+              <Text style={[st.pillT, { color: colors.primaryInk }]}>{pct(vista.annual_rate)}</Text>
+            </View>
+          )}
+        </View>
+        <View style={st.bullets}>
+          <Bullet>Agregás y retirás cuando querás</Bullet>
+          <Bullet>Ahorro automático o por redondeo</Bullet>
+          <Bullet>Ideal para marchamo, aguinaldo, viajes</Bullet>
         </View>
       </Pressable>
-      <Pressable style={[st.choice]} onPress={() => nav.navigate('TermDeposit', { term: 6 })} accessibilityRole="button">
-        <Icon name="lock" size={24} color={colors.emeraldDark} />
-        <View style={{ flex: 1 }}>
-          <Text style={st.choiceT}>Ahorro a plazo</Text>
-          <Small>De 3 a 36 meses. Más plazo, mejor tasa: hasta 7.5% anual de ejemplo.</Small>
+
+      <Pressable
+        style={({ pressed }) => [st.choice, st.choiceOn, pressed && { opacity: 0.7 }]}
+        onPress={() => nav.navigate('TermDeposit', { term: firstTerm })}
+        accessibilityRole="button"
+        accessibilityLabel={`Ahorro a plazo${best != null ? `, hasta ${pctShort(best)} anual` : ''}`}
+      >
+        <View style={st.choiceHead}>
+          <View style={[st.choiceIcon, { backgroundColor: colors.limeSoft }]}>
+            <Icon name="lock" size={22} color={colors.limeInk} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={st.choiceT}>Ahorro a plazo</Text>
+            <Text style={st.choiceSub}>Para hacer crecer tu dinero</Text>
+          </View>
+          {best != null && (
+            <View style={[st.pill, { backgroundColor: colors.lime }]}>
+              <Text style={[st.pillT, { color: colors.limeInk }]}>hasta {pctShort(best)}</Text>
+            </View>
+          )}
+        </View>
+        <View style={st.bullets}>
+          <Bullet>{`Plazos de ${minM} a ${maxM} meses`}</Bullet>
+          <Bullet>Más plazo, mejor tasa</Bullet>
+          <Bullet>Tasa fija garantizada</Bullet>
         </View>
       </Pressable>
+
+      <Small style={{ marginTop: 10, fontSize: 13 }}>Tasas de ejemplo. Sujetas a cambio.</Small>
     </Screen>
   );
 }
+
+const ENVELOPE_IDEAS = ['Marchamo', 'Aguinaldo', 'Vacaciones', 'Emergencias'];
 
 const MODES = [
   { value: 'fixed', title: 'Monto fijo', sub: 'Cada pago de salario' },
@@ -150,7 +217,7 @@ export function NewEnvelopeScreen() {
   const nav = useNavigation();
   const [name, setName] = useState('');
   const [goal, setGoal] = useState('');
-  const [months, setMonths] = useState('12');
+  const [months, setMonths] = useState('');
   const [mode, setMode] = useState<(typeof MODES)[number]['value']>('fixed');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -160,6 +227,7 @@ export function NewEnvelopeScreen() {
   async function create() {
     if (name.trim().length < 2) return setError('Ponele un nombre al sobre.');
     if (!g) return setError('Poné una meta para el sobre.');
+    if (!Number(months)) return setError('Decinos en cuántos meses querés llegar a la meta.');
     setBusy(true);
     setError(null);
     try {
@@ -195,11 +263,35 @@ export function NewEnvelopeScreen() {
 
   return (
     <Screen title="Nuevo sobre" footer={<Btn label="Crear sobre" onPress={create} loading={busy} />}>
-      <Small>Plata separada que podés usar cuando querás</Small>
-      <Field label="Nombre" value={name} onChangeText={setName} placeholder="Marchamo 2027" autoFocus />
-      <Field label="Meta (₡)" value={goal} onChangeText={setGoal} keyboardType="decimal-pad" placeholder="250,000" />
-      <Field label="¿En cuántos meses?" value={months} onChangeText={(v) => setMonths(v.replace(/\D/g, '').slice(0, 2))} keyboardType="number-pad" />
-      {g > 0 && mode === 'fixed' && (
+      <Small>Dinero separado que podés usar cuando querás</Small>
+      {/* Opción 2A (aprobada): etiqueta arriba y ejemplo en gris con "Ej:", para que el campo
+          vacío nunca parezca lleno. Sugerencias rápidas para quien no sabe qué nombre poner. */}
+      <FieldStacked label="¿Para qué es este sobre?" value={name} onChangeText={setName} placeholder="Ej: Marchamo 2027" autoFocus />
+      <View style={st.ideas}>
+        {ENVELOPE_IDEAS.map((idea) => {
+          const on = name.trim() === idea;
+          return (
+            <Pressable
+              key={idea}
+              style={({ pressed }) => [st.idea, on && st.ideaOn, pressed && { opacity: 0.7 }]}
+              onPress={() => setName(idea)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+            >
+              <Text style={[st.ideaT, on && { color: colors.primaryInk }]}>{idea}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <FieldStacked label="Meta (₡)" value={goal} onChangeText={setGoal} keyboardType="decimal-pad" placeholder="Ej: 250,000" />
+      <FieldStacked
+        label="¿En cuántos meses?"
+        value={months}
+        onChangeText={(v) => setMonths(v.replace(/\D/g, '').slice(0, 2))}
+        keyboardType="number-pad"
+        placeholder="Ej: 12"
+      />
+      {g > 0 && Number(months) > 0 && mode === 'fixed' && (
         <View style={st.mint}>
           <Text style={{ color: colors.primaryInk, fontSize: 14 }}>Son {money(g / (m * 2))} por quincena</Text>
         </View>
@@ -537,17 +629,21 @@ const st = StyleSheet.create({
   goalBody: { paddingLeft: 28, paddingRight: 23 },
   bar: { height: 5, backgroundColor: colors.card, borderRadius: 3, marginTop: 8, marginBottom: 5 },
   barFill: { height: 5, backgroundColor: colors.primary, borderRadius: 3 },
-  choice: {
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.line,
-    borderRadius: radius.md,
-    padding: 14,
-    marginTop: 8,
-  },
-  choiceT: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  choice: { borderWidth: 1.5, borderColor: colors.line, borderRadius: radius.lg, padding: 16, marginTop: 14 },
+  choiceOn: { borderWidth: 2, borderColor: colors.emerald },
+  choiceHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  choiceIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  choiceT: { fontSize: 17, fontWeight: '700', color: colors.ink },
+  choiceSub: { fontSize: 14, color: colors.muted, marginTop: 1 },
+  pill: { borderRadius: 20, paddingVertical: 4, paddingHorizontal: 10 },
+  pillT: { fontSize: 13, fontWeight: '700' },
+  bullets: { marginTop: 12, gap: 6 },
+  bullet: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  bulletT: { flex: 1, fontSize: 15, color: colors.ink, lineHeight: 20 },
+  ideas: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  idea: { borderWidth: 1.5, borderColor: colors.fieldBorder, borderRadius: 20, paddingVertical: 7, paddingHorizontal: 13 },
+  ideaOn: { borderColor: colors.primary, backgroundColor: colors.mint },
+  ideaT: { fontSize: 14, fontWeight: '600', color: colors.ink },
   mint: { backgroundColor: colors.mint, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, marginTop: 10 },
   heroBox: { marginBottom: 14 },
   heroBar: { height: 6, borderRadius: 3, backgroundColor: colors.card, marginTop: 8 },

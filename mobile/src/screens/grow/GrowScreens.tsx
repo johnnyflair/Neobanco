@@ -9,17 +9,17 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { api, newIdempotencyKey } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
 import type { Account } from '../../api/types';
-import { dayMonth, money, parseAmount } from '../../format';
+import { dayMonth, longDate, money, parseAmount } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
 import { Icon } from '../../ui/Icon';
-import { AmountInput, Btn, ErrorText, Field, FieldStacked, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar } from '../../ui/kit';
+import { AmountInput, Btn, ErrorText, Field, FieldStacked, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar, Tabs } from '../../ui/kit';
 import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
 import { Cents } from '../../ui/Money';
 
 const pct = (r: string | number) => `${Number(r).toLocaleString('en-US', { maximumFractionDigits: 2 })}% anual`;
-const ON_MATURITY: Record<string, string> = { renew: 'se renueva', to_account: 'pasa a tu cuenta', to_envelope: 'pasa a un sobre' };
+const ON_MATURITY: Record<string, string> = { renew: 'se renueva', to_account: 'a tu cuenta', to_envelope: 'a un sobre' };
 
 async function loadGrow() {
   const [accounts, rates] = await Promise.all([api.accounts(), api.rates()]);
@@ -36,85 +36,94 @@ function progress(a: Account) {
   return goal > 0 ? Math.min(100, Math.round((Number(a.balance) / goal) * 100)) : 0;
 }
 
+// Invertir (opción C aprobada): pestañas "Mis ahorros" (lo que ya tenés) y "Crear nuevo" (sobre o
+// ahorro a plazo, con las tasas de ejemplo). Así ver y crear no se mezclan.
 export function GrowScreen() {
   const nav = useNavigation();
   const { data, error } = useLoad(loadGrow);
+  const [tab, setTab] = useState<'mine' | 'new'>('mine');
   if (!data) return error ? <Screen title="Invertir" back={false}><ErrorText>{error}</ErrorText></Screen> : <Loading />;
   const envelopes = data.accounts.filter((a) => a.type === 'envelope');
   const terms = data.accounts.filter((a) => a.type === 'term');
-  const sob = envelopes.reduce((s, a) => s + Number(a.balance), 0);
-  const pl = terms.reduce((s, a) => s + Number(a.balance), 0);
-  const vista = data.rates.find((r) => r.product === 'envelope');
+  const total = [...envelopes, ...terms].reduce((sum, a) => sum + Number(a.balance), 0);
 
   return (
     <Screen title="Invertir" back={false}>
-      <Hero
-        title="Sobres y ahorros a plazo"
-        sub="Tu dinero trabajando"
-        big={money(sob + pl)}
-        lines={[
-          [`En ${envelopes.length} ${envelopes.length === 1 ? 'sobre' : 'sobres'}`, money(sob)],
-          ['A plazo', money(pl)],
+      <Tabs
+        options={[
+          { value: 'mine', label: 'Mis ahorros' },
+          { value: 'new', label: 'Crear nuevo' },
         ]}
+        value={tab}
+        onChange={setTab}
       />
-      <Btn label="Crear ahorro" icon="plus" onPress={() => nav.navigate('NewSaving')} />
 
-      <Sect sub="Sacás cuando querés">Sobres a la vista</Sect>
-      {envelopes.map((a, i) => {
-        const p = progress(a);
-        // Sobres sin recuadro (aprobado): ícono de sobre junto al nombre, línea fina entre uno y otro.
-        return (
-          <Pressable
-            key={a.id}
-            style={({ pressed }) => [st.goal, i === 0 && { borderTopWidth: 0 }, pressed && { opacity: 0.6 }]}
-            onPress={() => nav.navigate('Envelope', { account: a })}
-            accessibilityRole="button"
-          >
-            <View style={st.goalHead}>
-              <Icon name="mail" size={20} color={colors.primary} />
-              <Text style={st.goalName} numberOfLines={1}>
-                {a.name}
-              </Text>
-              <Cents style={st.amt}>{money(a.balance)}</Cents>
-              <Icon name="chev" size={15} color={colors.muted} />
-            </View>
-            <View style={st.goalBody}>
-              <View style={st.bar}>
-                <View style={[st.barFill, { width: `${p}%` }]} />
-              </View>
-              <Small>{[a.goal_amount ? `${p}% de ${moneyShort(a.goal_amount)}` : 'Sin meta', shortMode(a.savings_mode)].filter(Boolean).join(' · ')}</Small>
-            </View>
-          </Pressable>
-        );
-      })}
-      {!envelopes.length && <Small>Todavía no tenés sobres.</Small>}
+      {tab === 'mine' && (
+        <>
+          <Hero title="Tenés ahorrado" sub="Tu dinero trabajando" big={money(total)} />
+          <Sect>Mis sobres</Sect>
+          {envelopes.map((a, i) => {
+            const p = progress(a);
+            return (
+              <Pressable
+                key={a.id}
+                style={({ pressed }) => [st.goal, i === 0 && { borderTopWidth: 0 }, pressed && { opacity: 0.6 }]}
+                onPress={() => nav.navigate('Envelope', { account: a })}
+                accessibilityRole="button"
+              >
+                <View style={st.goalHead}>
+                  <Icon name="mail" size={20} color={colors.primary} />
+                  <Text style={st.goalName} numberOfLines={1}>
+                    {a.name}
+                  </Text>
+                  <Cents style={st.amt}>{money(a.balance)}</Cents>
+                  <Icon name="chev" size={15} color={colors.muted} />
+                </View>
+                <View style={st.goalBody}>
+                  <View style={st.bar}>
+                    <View style={[st.barFill, { width: `${p}%` }]} />
+                  </View>
+                  <Small>{[a.goal_amount ? `${p}% de ${moneyShort(a.goal_amount)}` : 'Sin meta', shortMode(a.savings_mode)].filter(Boolean).join(' · ')}</Small>
+                </View>
+              </Pressable>
+            );
+          })}
+          {!envelopes.length && <Empty text="Todavía no tenés sobres." onCreate={() => setTab('new')} />}
 
-      <Sect>Ahorros a plazo</Sect>
-      {terms.map((a, i) => (
-        <Row
-          key={a.id}
-          first={i === 0}
-          icon="lock"
-          title={`Plazo ${a.term_months} meses · ${Number(a.rate ?? 0)}%`}
-          sub={`Vence ${a.maturity_date ? dayMonth(a.maturity_date) : ''} · ${ON_MATURITY[a.on_maturity ?? 'renew'] ?? ''}`}
-          right={<Cents style={st.amt}>{money(a.balance)}</Cents>}
-        />
-      ))}
-      {!terms.length && <Small>Todavía no tenés ahorros a plazo.</Small>}
+          <Sect>Mis ahorros a plazo</Sect>
+          {terms.map((a, i) => (
+            <Row
+              key={a.id}
+              first={i === 0}
+              icon="lock"
+              title={`${a.term_months} meses · ${Number(a.rate ?? 0)}%`}
+              sub={`Vence el ${a.maturity_date ? longDate(a.maturity_date) : ''} · ${ON_MATURITY[a.on_maturity ?? 'renew'] ?? ''}`}
+              right={<Cents style={st.amt}>{money(a.balance)}</Cents>}
+            />
+          ))}
+          {!terms.length && <Empty text="Todavía no tenés ahorros a plazo." onCreate={() => setTab('new')} />}
+        </>
+      )}
 
-      <Sect>Tasas de ejemplo</Sect>
-      {vista && <Row first title="Sobre a la vista" right={<Text style={st.amt}>{pct(vista.annual_rate)}</Text>} />}
-      {data.rates
-        .filter((r) => r.product === 'term')
-        .map((r) => (
-          <Row
-            key={r.term_months}
-            title={`Plazo ${r.term_months} meses`}
-            right={<Text style={st.amt}>{pct(r.annual_rate)}</Text>}
-            onPress={() => nav.navigate('TermDeposit', { term: r.term_months ?? 6 })}
-          />
-        ))}
+      {tab === 'new' && (
+        <>
+          <Text style={st.ask}>¿Qué querés crear?</Text>
+          <CreateChoices />
+        </>
+      )}
     </Screen>
+  );
+}
+
+/** Lista vacía en "Mis ahorros": dice qué falta y lleva a "Crear nuevo". */
+function Empty({ text, onCreate }: { text: string; onCreate: () => void }) {
+  return (
+    <View style={{ paddingVertical: 6 }}>
+      <Small>{text}</Small>
+      <Pressable onPress={onCreate} hitSlop={8} accessibilityRole="button">
+        <Text style={st.emptyLink}>Crear uno nuevo</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -131,7 +140,9 @@ const Bullet = ({ children }: { children: string }) => (
 
 // Opción 1A (aprobada): tasa en píldora junto al título, bullets con check y el ahorro a plazo
 // destacado con borde esmeralda. Tasas y plazos salen del panel (api.rates), no del código.
-export function NewSavingScreen() {
+/** Las dos opciones para crear (opción 1A aprobada). Se usan en la pestaña «Crear nuevo» de
+ *  Invertir y en la pantalla «¿Qué querés crear?». */
+function CreateChoices() {
   const nav = useNavigation();
   const { data: rates } = useLoad(api.rates);
   const vista = rates?.find((r) => r.product === 'envelope');
@@ -143,7 +154,7 @@ export function NewSavingScreen() {
   const firstTerm = months.includes(6) ? 6 : (months[0] ?? 6);
 
   return (
-    <Screen title="¿Qué querés crear?">
+    <>
       <Small>Elegí cómo querés guardar tu dinero</Small>
 
       <Pressable
@@ -201,9 +212,18 @@ export function NewSavingScreen() {
       </Pressable>
 
       <Small style={{ marginTop: 10, fontSize: 13 }}>Tasas de ejemplo. Sujetas a cambio.</Small>
+    </>
+  );
+}
+
+export function NewSavingScreen() {
+  return (
+    <Screen title="¿Qué querés crear?">
+      <CreateChoices />
     </Screen>
   );
 }
+
 
 const ENVELOPE_IDEAS = ['Marchamo', 'Aguinaldo', 'Vacaciones', 'Emergencias'];
 
@@ -613,6 +633,7 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
 }
 
 const st = StyleSheet.create({
+  emptyLink: { fontSize: 15, fontWeight: '600', color: colors.primary, marginTop: 4 },
   ask: { fontSize: 22, fontWeight: '700', color: colors.ink, marginTop: 10, marginBottom: 8, lineHeight: 28 },
   quick: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
   quickChip: { borderWidth: 1.5, borderColor: colors.fieldBorder, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 12 },

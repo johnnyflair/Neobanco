@@ -1,7 +1,7 @@
 // Avisos (campana del inicio): se arman con lo que ya trae la App — dinero recibido, sobres
 // eliminados, recibos por vencer y el pago de la tarjeta de crédito. "Nuevos" son los que llegaron
 // después de la última vez que abriste Avisos; los recibos y la tarjeta pendientes siempre lo son.
-import { dayMonth, money } from '../format';
+import { longDate, money } from '../format';
 import { secureStore } from '../secureStore';
 import type { IconName } from '../ui/Icon';
 import { api } from './client';
@@ -18,6 +18,8 @@ export type Notice = {
   at: number; // para ordenar y para "hace 2 h"
   when?: string; // texto fijo en vez de la hora (por ejemplo, "Pendiente")
   isNew: boolean;
+  /** Algo por pagar: va en "Por pagar" con su botón Pagar. */
+  due?: boolean;
   incoming?: boolean;
   go: { tx: Transaction } | { route: 'Bills' } | { tab: 'Cards' };
 };
@@ -77,11 +79,11 @@ export async function loadNotices(): Promise<Notice[]> {
     out.push({
       id: `bill-${b.id}`,
       icon: 'receipt',
-      title: `Tu recibo de ${b.provider_name} vence el ${dayMonth(b.due_date.slice(0, 10))}`,
-      sub: `${money(b.pending_amount)} · Pagalo en un toque`,
-      at: Date.now(),
-      when: 'Pendiente',
+      title: `${b.provider_name} · ${money(b.pending_amount)}`,
+      sub: `Vence el ${longDate(b.due_date)}`,
+      at: due,
       isNew: true,
+      due: true,
       go: { route: 'Bills' },
     });
   }
@@ -92,11 +94,11 @@ export async function loadNotices(): Promise<Notice[]> {
     out.push({
       id: `card-${c.id}`,
       icon: 'card',
-      title: `Pago de tu tarjeta: ${dayMonth(due.slice(0, 10))}`,
-      sub: `Pago de contado ${money(c.credit.full_payment)}`,
-      at: Date.now() - 1,
-      when: 'Pendiente',
+      title: `Tarjeta de crédito · ${money(c.credit.full_payment)}`,
+      sub: `Vence el ${longDate(due)}`,
+      at: new Date(due).getTime(),
       isNew: true,
+      due: true,
       go: { tab: 'Cards' },
     });
   }
@@ -116,5 +118,5 @@ export function ago(at: number): string {
   const h = Math.round(m / 60);
   if (h < 24) return `Hace ${h} h`;
   if (h < 48) return 'Ayer';
-  return dayMonth(new Date(at).toISOString().slice(0, 10));
+  return longDate(new Date(at).toISOString());
 }

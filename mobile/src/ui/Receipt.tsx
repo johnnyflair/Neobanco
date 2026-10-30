@@ -128,10 +128,10 @@ export function Confetti() {
   );
 }
 
-/** "27 oct · 3:20 p. m." */
+/** "27 de octubre, 3:20 p. m." (fecha completa, como en Recibos). */
 export function receiptDate(iso?: string) {
   const d = iso ? new Date(iso) : new Date();
-  return `${d.toLocaleDateString('es-CR', { day: 'numeric', month: 'short' }).replace('.', '')} · ${d.toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' })}`;
+  return `${d.toLocaleDateString('es-CR', { day: 'numeric', month: 'long' })}, ${d.toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' })}`;
 }
 
 const st = StyleSheet.create({
@@ -139,7 +139,7 @@ const st = StyleSheet.create({
   sheetTitle: { fontSize: 20, fontWeight: '700', color: colors.ink, marginBottom: 10 },
   warn: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: colors.amberBg, borderRadius: radius.md, padding: 12, marginBottom: 6 },
   warnTxt: { flex: 1, fontSize: 13, lineHeight: 18, color: colors.amberFg },
-  kv: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
-  kvK: { fontSize: 15, color: colors.muted },
-  kvV: { fontSize: 15, fontWeight: '600', color: colors.ink, flexShrink: 1, textAlign: 'right' },
+  kv: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
+  kvK: { fontSize: 14, color: colors.muted },
+  kvV: { fontSize: 16, fontWeight: '600', color: colors.ink, flexShrink: 1, textAlign: 'right' },
 });

@@ -52,8 +52,9 @@ export function SaveScreen() {
       <View style={{ marginTop: 14 }}>
         <Hero title="Tenés en sobres" big={money(total)} />
       </View>
-      <Btn label="Crear un sobre" icon="plus" onPress={() => nav.navigate('NewEnvelope')} />
-      <Sect>Mis sobres</Sect>
+      {/* Sin sobres, el botón va arriba; con sobres, debajo de la lista. */}
+      {!envelopes.length && <Btn label="Crear un sobre" icon="plus" onPress={() => nav.navigate('NewEnvelope')} />}
+      {envelopes.length > 0 && <Sect>Mis sobres</Sect>}
       {envelopes.map((a, i) => {
         const p = progress(a);
         return (
@@ -72,15 +73,18 @@ export function SaveScreen() {
               <Icon name="chev" size={15} color={colors.muted} />
             </View>
             <View style={st.goalBody}>
-              <View style={st.bar}>
-                <View style={[st.barFill, { width: `${p}%` }]} />
-              </View>
+              {a.goal_amount ? (
+                <View style={st.bar}>
+                  <View style={[st.barFill, { width: `${p}%` }]} />
+                </View>
+              ) : null}
               <Small>{[a.goal_amount ? `${p}% de ${moneyShort(a.goal_amount)}` : 'Sin meta', shortMode(a.savings_mode)].filter(Boolean).join(' · ')}</Small>
             </View>
           </Pressable>
         );
       })}
-      {!envelopes.length && <Small>Todavía no tenés sobres. Creá uno para tu próxima meta.</Small>}
+      {!envelopes.length && <Small style={{ marginTop: 10 }}>Todavía no tenés sobres. Creá uno para tu próxima meta.</Small>}
+      {envelopes.length > 0 && <Btn label="Crear otro sobre" icon="plus" variant="o" onPress={() => nav.navigate('NewEnvelope')} />}
     </Screen>
   );
 }
@@ -101,8 +105,8 @@ export function GrowScreen() {
       <View style={{ marginTop: 14 }}>
         <Hero title="Tenés invertido" big={money(total)} />
       </View>
-      <Btn label="Nuevo ahorro a plazo" icon="plus" onPress={() => nav.navigate('TermDeposit', { term: firstTerm })} />
-      <Sect>Mis ahorros a plazo</Sect>
+      {!terms.length && <Btn label="Nuevo ahorro a plazo" icon="plus" onPress={() => nav.navigate('TermDeposit', { term: firstTerm })} />}
+      {terms.length > 0 && <Sect>Mis ahorros a plazo</Sect>}
       {terms.map((a, i) => (
         <Row
           key={a.id}
@@ -113,7 +117,8 @@ export function GrowScreen() {
           right={<Cents style={st.amt}>{money(a.balance)}</Cents>}
         />
       ))}
-      {!terms.length && <Small>Todavía no tenés ahorros a plazo. Abrí uno desde ₡50,000.</Small>}
+      {!terms.length && <Small style={{ marginTop: 10 }}>Todavía no tenés ahorros a plazo. Abrí uno desde ₡50,000.</Small>}
+      {terms.length > 0 && <Btn label="Abrir otro ahorro a plazo" icon="plus" variant="o" onPress={() => nav.navigate('TermDeposit', { term: firstTerm })} />}
       {rates.length > 0 && (
         <>
           <Sect sub="Tasa fija por todo el plazo">Tasas de hoy</Sect>

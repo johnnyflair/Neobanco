@@ -357,10 +357,19 @@ class CloseEnvelopeIn(BaseModel):
 
 
 class EnvelopeIn(BaseModel):
+    """Para crear un sobre basta el nombre; la meta y el ahorro automático se configuran después."""
     name: Annotated[str, Field(min_length=2, max_length=60)]
-    goal_amount: PositiveMoney
-    months: Annotated[int, Field(ge=1, le=60)]
-    mode: Literal["fixed", "roundup", "percent"]
+    goal_amount: PositiveMoney | None = None
+    months: Annotated[int | None, Field(ge=1, le=60)] = None
+    mode: Literal["fixed", "roundup", "percent"] | None = None
+
+
+class EnvelopeSettingsIn(BaseModel):
+    """Configuración del sobre. Sin meta ni modo = sobre simple, sin ahorro automático."""
+    name: Annotated[str, Field(min_length=2, max_length=60)]
+    goal_amount: PositiveMoney | None = None
+    months: Annotated[int | None, Field(ge=1, le=60)] = None
+    mode: Literal["fixed", "roundup", "percent"] | None = None
 
 
 class MoveIn(BaseModel):

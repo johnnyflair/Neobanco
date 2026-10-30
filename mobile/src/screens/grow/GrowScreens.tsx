@@ -3,7 +3,7 @@
 // - Crear: sobre (meta, meses, forma de ahorrar) o ahorro a plazo (monto, plazo, qué hacer al vencer).
 // - Sobre: meter y sacar dinero.
 import { useNavigation } from '@react-navigation/native';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { api, newIdempotencyKey } from '../../api/client';
@@ -238,47 +238,22 @@ const MODES = [
   { value: 'percent', title: 'Porcentaje', sub: 'Un % de todo lo que entra' },
 ] as const;
 
+/** Nuevo sobre: solo el nombre (aprobado). La meta y el ahorro automático se configuran después,
+ *  dentro del sobre. */
 export function NewEnvelopeScreen() {
   const nav = useNavigation();
   const [name, setName] = useState('');
-  const [goal, setGoal] = useState('');
-  const [months, setMonths] = useState('');
-  const [mode, setMode] = useState<(typeof MODES)[number]['value']>('fixed');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const g = Number(parseAmount(goal) ?? 0);
-  const m = Math.max(1, Math.min(60, Number(months) || 1));
 
   async function create() {
     if (name.trim().length < 2) return setError('Ponele un nombre al sobre.');
-    if (!g) return setError('Poné una meta para el sobre.');
-    if (!Number(months)) return setError('Decinos en cuántos meses querés llegar a la meta.');
     setBusy(true);
     setError(null);
     try {
-      const a = await api.createEnvelope({ name: name.trim(), goal_amount: g.toFixed(2), months: m, mode });
-      nav.reset({
-        index: 1,
-        routes: [
-          { name: 'Tabs', params: { screen: 'Save' } },
-          {
-            name: 'TransferDone',
-            params: {
-              hi: `Creaste tu sobre «${a.name}»`,
-              amountLabel: 'Meta',
-              amount: g.toFixed(2),
-              points: 50,
-              back: 'Save',
-              rows: [
-                ['Sobre', a.name],
-                ['Plazo de la meta', `${m} meses`],
-                ['Forma de ahorrar', MODES.find((x) => x.value === mode)?.title ?? ''],
-                ['Fecha', receiptDate()],
-              ],
-            },
-          },
-        ],
-      });
+      const a = await api.createEnvelope({ name: name.trim() });
+      // Directo al sobre recién creado, para meterle plata o configurarlo.
+      nav.reset({ index: 1, routes: [{ name: 'Tabs', params: { screen: 'Save' } }, { name: 'Envelope', params: { account: a, created: true } }] });
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -288,10 +263,8 @@ export function NewEnvelopeScreen() {
 
   return (
     <Screen title="Nuevo sobre" footer={<Btn label="Crear sobre" onPress={create} loading={busy} />}>
-      <Small>Dinero separado que podés usar cuando querás</Small>
-      {/* Opción 2A (aprobada): etiqueta arriba y ejemplo en gris con "Ej:", para que el campo
-          vacío nunca parezca lleno. Sugerencias rápidas para quien no sabe qué nombre poner. */}
-      <FieldStacked label="¿Para qué es este sobre?" value={name} onChangeText={setName} placeholder="Ej: Marchamo 2027" autoFocus />
+      <Small>Dinero separado que podés usar cuando querás. Después le podés poner una meta.</Small>
+      <FieldStacked label="¿Para qué es este sobre?" value={name} onChangeText={setName} placeholder="Ej: Marchamo 2027" autoFocus onSubmitEditing={create} />
       <View style={st.ideas}>
         {ENVELOPE_IDEAS.map((idea) => {
           const on = name.trim() === idea;
@@ -308,9 +281,54 @@ export function NewEnvelopeScreen() {
           );
         })}
       </View>
-      <FieldStacked label="Meta (₡)" value={goal} onChangeText={setGoal} keyboardType="decimal-pad" placeholder="Ej: 250,000" />
+      <ErrorText>{error}</ErrorText>
+    </Screen>
+  );
+}
+
+type ModeValue = (typeof MODES)[number]['value'];
+const modeFrom = (text?: string | null): ModeValue | 'none' =>
+  !text ? 'none' : text.startsWith('Monto fijo') ? 'fixed' : text.startsWith('Redondeo') ? 'roundup' : 'percent';
+
+/** Configurar sobre: nombre, meta (opcional) y forma de ahorrar (o ninguna). */
+export function EnvelopeSettingsScreen({ route }: RootProps<'EnvelopeSettings'>) {
+  const nav = useNavigation();
+  const env = route.params.account;
+  const [name, setName] = useState(env.name);
+  const [goal, setGoal] = useState(env.goal_amount ? String(Math.round(Number(env.goal_amount))) : '');
+  const [months, setMonths] = useState('');
+  const [mode, setMode] = useState<ModeValue | 'none'>(modeFrom(env.savings_mode));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const g = Number(parseAmount(goal) ?? 0);
+  const m = Math.max(1, Math.min(60, Number(months) || 1));
+
+  async function save() {
+    if (name.trim().length < 2) return setError('Ponele un nombre al sobre.');
+    if (mode === 'fixed' && (!g || !Number(months))) return setError('Para ahorrar un monto fijo, poné la meta y en cuántos meses.');
+    setBusy(true);
+    setError(null);
+    try {
+      const a = await api.configureEnvelope(env.id, {
+        name: name.trim(),
+        ...(g ? { goal_amount: g.toFixed(2) } : {}),
+        ...(Number(months) ? { months: m } : {}),
+        ...(mode !== 'none' ? { mode } : {}),
+      });
+      nav.navigate('Envelope', { account: a });
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Screen title="Configurar sobre" footer={<Btn label="Guardar" onPress={save} loading={busy} />}>
+      <FieldStacked label="Nombre" value={name} onChangeText={setName} placeholder="Ej: Marchamo 2027" />
+      <FieldStacked label="Meta (₡), opcional" value={goal} onChangeText={setGoal} keyboardType="decimal-pad" placeholder="Ej: 250,000" />
       <FieldStacked
-        label="¿En cuántos meses?"
+        label="¿En cuántos meses?, opcional"
         value={months}
         onChangeText={(v) => setMonths(v.replace(/\D/g, '').slice(0, 2))}
         keyboardType="number-pad"
@@ -322,6 +340,7 @@ export function NewEnvelopeScreen() {
         </View>
       )}
       <Sect plain>¿Cómo querés ahorrar?</Sect>
+      <Opt selected={mode === 'none'} onPress={() => setMode('none')} title="Yo lo agrego cuando quiera" sub="Sin ahorro automático" />
       {MODES.map((x) => (
         <Opt key={x.value} selected={mode === x.value} onPress={() => setMode(x.value)} title={x.title} sub={x.sub} />
       ))}
@@ -333,6 +352,8 @@ export function NewEnvelopeScreen() {
 export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
   const nav = useNavigation();
   const [env, setEnv] = useState<Account>(route.params.account);
+  // Al volver de "Configurar sobre", el sobre llega actualizado en los parámetros.
+  useEffect(() => setEnv(route.params.account), [route.params.account]);
   // Eliminar sobre (opción A): link rojo al final; confirma con hoja y deslizador rojo.
   const [closing, setClosing] = useState(false);
   const [closeBusy, setCloseBusy] = useState(false);
@@ -342,7 +363,7 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
   const crc = accounts.data?.find((a) => a.type === 'savings' && a.currency === 'CRC');
   const [amount, setAmount] = useState('10000');
   const [busy, setBusy] = useState<'deposit' | 'withdraw' | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(route.params.created ? 'Listo, creaste tu sobre. Ganaste 50 puntos.' : null);
   const [error, setError] = useState<string | null>(null);
   const key = useRef({ sig: '', key: newIdempotencyKey() });
   const p = progress(env);
@@ -429,7 +450,13 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
       {msg && <Small center style={{ marginTop: 8, color: colors.emeraldDark }}>{msg}</Small>}
       <ErrorText>{error}</ErrorText>
       <View style={{ marginTop: 12 }}>
-        <Row title="Ahorro automático" sub={env.savings_mode ?? 'Sin ahorro automático'} />
+        <Row
+          first
+          icon="settings"
+          title="Meta y ahorro automático"
+          sub={[env.goal_amount ? `Meta ${moneyShort(env.goal_amount)}` : 'Sin meta', env.savings_mode ?? 'Sin ahorro automático'].join(' · ')}
+          onPress={() => nav.navigate('EnvelopeSettings', { account: env })}
+        />
         <Row title="Tasa a la vista" right={<Text style={st.amt}>{pct(env.rate ?? 3)}</Text>} />
         <Row title="Retiros" right={<Text style={[st.amt, { color: colors.emeraldDark }]}>Cuando querás, sin costo</Text>} />
       </View>

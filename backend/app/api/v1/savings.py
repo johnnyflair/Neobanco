@@ -16,12 +16,24 @@ from app.db.models import Account, AccountType, Currency, Member
 from app.db.session import get_session
 from app.providers import Providers, get_providers
 from app.providers.base import InsufficientFunds
-from app.schemas import AccountOut, CloseEnvelopeIn, EnvelopeIn, MoveIn, RateOut, TermDepositIn
+from app.schemas import AccountOut, CloseEnvelopeIn, EnvelopeIn, EnvelopeSettingsIn, MoveIn, RateOut, TermDepositIn
 from app.services import ENVELOPE_RATE, POINTS_RULES, TERM_RATES, earn, member_perks, new_reference
 
 router = APIRouter(prefix="/savings", tags=["Ahorro e inversión"])
 
 MODES = {"fixed": "Monto fijo", "roundup": "Redondeo de compras", "percent": "Porcentaje de lo que entra"}
+
+
+def _mode_text(goal: Decimal | None, months: int | None, mode: str | None) -> str | None:
+    """Texto del ahorro automático. 'Monto fijo' necesita meta y meses para calcular la quincena."""
+    if mode is None:
+        return None
+    if mode == "fixed":
+        if goal is None or months is None:
+            raise ApiError(422, "missing_goal", "Para ahorrar un monto fijo, poné la meta y en cuántos meses.")
+        per_fortnight = (goal / (months * 2)).quantize(Decimal("0.01"))
+        return f"{MODES[mode]} · ₡{per_fortnight:,.2f} por quincena"
+    return MODES[mode]
 
 
 @router.get("/rates", response_model=list[RateOut])
@@ -35,8 +47,7 @@ async def rates():
 @router.post("/envelopes", response_model=AccountOut, status_code=201)
 async def create_envelope(body: EnvelopeIn, request: Request, member: Member = Depends(current_member),
                           p: Providers = Depends(get_providers), session: AsyncSession = Depends(get_session)):
-    per_fortnight = (body.goal_amount / (body.months * 2)).quantize(Decimal("0.01"))
-    mode = f"{MODES[body.mode]} · ₡{per_fortnight:,.2f} por quincena" if body.mode == "fixed" else MODES[body.mode]
+    mode = _mode_text(body.goal_amount, body.months, body.mode)
     a = await p.core.open_account(Account(member_id=member.id, type=AccountType.envelope, currency=Currency.CRC,
                                           name=body.name, balance=Decimal("0"), goal_amount=body.goal_amount,
                                           savings_mode=mode, rate=ENVELOPE_RATE + member_perks(member)[1]))
@@ -44,6 +55,19 @@ async def create_envelope(body: EnvelopeIn, request: Request, member: Member = D
     audit(session, request, "envelope_create", member_id=member.id)
     await session.commit()
     return account_out(a)
+
+
+@router.put("/envelopes/{envelope_id}/settings", response_model=AccountOut)
+async def configure_envelope(envelope_id: uuid.UUID, body: EnvelopeSettingsIn, request: Request,
+                             member: Member = Depends(current_member), p: Providers = Depends(get_providers),
+                             session: AsyncSession = Depends(get_session)):
+    """Nombre, meta y ahorro automático del sobre (se puede dejar sin meta)."""
+    env = await _envelope(p, member, envelope_id)
+    await p.core.configure_envelope(env, name=body.name, goal_amount=body.goal_amount,
+                                    savings_mode=_mode_text(body.goal_amount, body.months, body.mode))
+    audit(session, request, "envelope_settings", member_id=member.id)
+    await session.commit()
+    return account_out(env)
 
 
 async def _envelope(p: Providers, member: Member, envelope_id: uuid.UUID) -> Account:

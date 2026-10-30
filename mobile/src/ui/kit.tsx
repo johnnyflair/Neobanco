@@ -633,7 +633,7 @@ export function HelpButton() {
       accessibilityLabel="Ayuda"
       style={({ pressed }) => [s.help, pressed && { opacity: 0.7 }]}
     >
-      <Icon name="headset" size={20} color={colors.primaryInk} />
+      <Icon name="headset" size={18} color={colors.primaryInk} />
       <Text style={s.helpT} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>
         Ayuda
       </Text>
@@ -650,7 +650,7 @@ export function Loading() {
 }
 
 export const s = StyleSheet.create({
-  help: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.mint, borderRadius: 999, paddingVertical: 6, paddingLeft: 10, paddingRight: 13 },
+  help: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, height: 36, borderRadius: 18, paddingHorizontal: 11, backgroundColor: colors.mint },
   helpT: { fontSize: 15, fontWeight: '700', color: colors.primaryInk },
   actions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, marginBottom: 6 },
   action: { alignItems: 'center', gap: 7 },

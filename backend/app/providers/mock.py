@@ -78,6 +78,11 @@ class MockCore:
         account.is_open = False
         await self.s.flush()
 
+    async def configure_envelope(self, account: Account, *, name: str, goal_amount: Decimal | None,
+                                 savings_mode: str | None) -> None:
+        account.name, account.goal_amount, account.savings_mode = name, goal_amount, savings_mode
+        await self.s.flush()
+
 
 class MockCards:
     def __init__(self, session: AsyncSession) -> None:

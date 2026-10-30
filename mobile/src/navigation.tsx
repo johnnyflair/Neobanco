@@ -15,6 +15,7 @@ import {
   GrowScreen,
   SaveScreen,
   NewEnvelopeScreen,
+  EnvelopeSettingsScreen,
   NewSavingScreen,
   TermDepositScreen,
 } from './screens/grow/GrowScreens';
@@ -82,7 +83,8 @@ export type RootParams = {
   LoanTrack: undefined;
   NewEnvelope: undefined;
   NewSaving: undefined;
-  Envelope: { account: Account };
+  Envelope: { account: Account; created?: boolean };
+  EnvelopeSettings: { account: Account };
   TermDeposit: { term: number };
   AccountDetail: { account: Account };
   Movements: undefined;
@@ -145,6 +147,7 @@ export function RootNavigator() {
       <Stack.Screen name="LoanTrack" component={LoanTrackScreen} />
       <Stack.Screen name="NewSaving" component={NewSavingScreen} />
       <Stack.Screen name="NewEnvelope" component={NewEnvelopeScreen} />
+      <Stack.Screen name="EnvelopeSettings" component={EnvelopeSettingsScreen} />
       <Stack.Screen name="Envelope" component={EnvelopeScreen} />
       <Stack.Screen name="TermDeposit" component={TermDepositScreen} />
       <Stack.Screen name="AccountDetail" component={AccountDetailScreen} />

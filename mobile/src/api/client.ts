@@ -271,8 +271,12 @@ export const api = {
 
   // Ahorro: sobres y plazos
   rates: () => request<Rate[]>('/v1/savings/rates'),
-  createEnvelope: (body: { name: string; goal_amount: string; months: number; mode: 'fixed' | 'roundup' | 'percent' }) =>
+  createEnvelope: (body: { name: string }) =>
     request<Account>('/v1/savings/envelopes', { method: 'POST', body: JSON.stringify(body) }),
+  configureEnvelope: (
+    id: string,
+    body: { name: string; goal_amount?: string; months?: number; mode?: 'fixed' | 'roundup' | 'percent' },
+  ) => request<Account>(`/v1/savings/envelopes/${id}/settings`, { method: 'PUT', body: JSON.stringify(body) }),
   envelopeClose: (envelopeId: string, accountId: string, key: string) =>
     moneyMove<{ reference: string | null; returned: string; account_balance: string }>(
       `/v1/savings/envelopes/${envelopeId}/close`,

@@ -113,26 +113,28 @@ export function HomeScreen() {
         <View style={s.headerRight}>
           {/* Píldora de puntos (opción B): muestra cuántos tenés y lleva a Mis puntos. */}
           <Pressable
-            style={({ pressed }) => [s.points, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [pill.base, pill.points, pressed && { opacity: 0.7 }]}
             onPress={() => nav.navigate('Rewards')}
             accessibilityRole="button"
             accessibilityLabel={`Mis puntos: ${(me?.points ?? 0).toLocaleString('en-US')}`}
           >
-            <Icon name="star" size={15} color={colors.orange} />
-            <Text style={s.pointsText}>{(me?.points ?? 0).toLocaleString('en-US')}</Text>
+            <Icon name="star" size={18} color={colors.orange} />
+            <Text style={[pill.text, { color: colors.orangeInk, fontVariant: ['tabular-nums'] }]} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>{(me?.points ?? 0).toLocaleString('en-US')}</Text>
           </Pressable>
           <HelpButton />
+          {/* Avisos con la misma pastilla que Puntos y Ayuda; el número de nuevos va adentro. */}
           <Pressable
             onPress={() => nav.navigate('Notices')}
-            hitSlop={8}
+            hitSlop={6}
             accessibilityRole="button"
             accessibilityLabel={unread ? `Avisos: ${unread} nuevos` : 'Avisos'}
+            style={({ pressed }) => [pill.base, unread > 0 ? pill.bellOn : pill.bell, pressed && { opacity: 0.7 }]}
           >
-            <Icon name="bell" size={25} color={colors.ink} />
+            <Icon name="bell" size={18} color={unread > 0 ? colors.white : colors.ink} />
             {unread > 0 && (
-              <View style={s.bellBadge}>
-                <Text style={s.bellBadgeText}>{unread > 9 ? '9+' : unread}</Text>
-              </View>
+              <Text style={[pill.text, { color: colors.white }]} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>
+                {unread > 9 ? '9+' : unread}
+              </Text>
             )}
           </Pressable>
         </View>
@@ -267,24 +269,7 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.white },
   content: { padding: 18, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 18 },
-  points: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.orangeSoft, borderRadius: 16, paddingVertical: 5, paddingLeft: 9, paddingRight: 11 },
-  pointsText: { fontSize: 13.5, fontWeight: '700', color: colors.orangeInk, fontVariant: ['tabular-nums'] },
-  bellBadge: {
-    position: 'absolute',
-    top: -5,
-    right: 0,
-    minWidth: 17,
-    height: 17,
-    borderRadius: 9,
-    paddingHorizontal: 4,
-    backgroundColor: colors.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.white,
-  },
-  bellBadgeText: { color: colors.white, fontSize: 9.5, fontWeight: '700' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   hello: { fontSize: 19, fontWeight: '700', color: colors.ink, marginTop: 20 },
   date: { fontSize: 14, color: colors.muted, marginTop: 2 },
   error: { color: colors.danger, marginTop: 8 },
@@ -313,4 +298,13 @@ const s = StyleSheet.create({
   sheetTitle: { fontSize: 18, fontWeight: '700', color: colors.ink, marginBottom: 6 },
   moreIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   version: { fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 18 },
+});
+
+// Pastillas del encabezado (Puntos, Ayuda y Avisos): misma altura, forma y letra; cambia solo el color.
+export const pill = StyleSheet.create({
+  base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, height: 36, minWidth: 36, borderRadius: 18, paddingHorizontal: 11 },
+  text: { fontSize: 15, fontWeight: '700' },
+  points: { backgroundColor: colors.orangeSoft },
+  bell: { backgroundColor: '#EEF1F6' },
+  bellOn: { backgroundColor: '#C4320A' }, // naranja oscuro: el número en blanco se lee bien (contraste 5:1)
 });

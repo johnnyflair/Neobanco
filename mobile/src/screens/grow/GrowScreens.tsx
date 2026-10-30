@@ -366,7 +366,8 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
   const closeKey = useRef(newIdempotencyKey());
   const accounts = useLoad(api.accounts);
   const crc = accounts.data?.find((a) => a.type === 'savings' && a.currency === 'CRC');
-  const [amount, setAmount] = useState('10000');
+  // El monto siempre empieza vacío: la persona escribe cuánto mover.
+  const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState<'deposit' | 'withdraw' | null>(null);
   const [msg, setMsg] = useState<string | null>(route.params.created ? 'Listo, creaste tu sobre. Ganaste 50 puntos.' : null);
   const [error, setError] = useState<string | null>(null);
@@ -385,9 +386,28 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
     setMsg(null);
     try {
       const r = await api.envelopeMove(env.id, direction, amt, crc.id, key.current.key);
-      setEnv({ ...env, balance: r.envelope_balance });
-      setMsg(direction === 'deposit' ? `Agregaste ${money(amt)} a ${env.name}` : `Retiraste ${money(amt)} de ${env.name}`);
-      accounts.reload();
+      // Comprobante "¡Listo!" para cerrar el flujo; "Listo" vuelve a Ahorro.
+      nav.reset({
+        index: 1,
+        routes: [
+          { name: 'Tabs', params: { screen: 'Save' } },
+          {
+            name: 'TransferDone',
+            params: {
+              hi: direction === 'deposit' ? `Agregaste dinero a «${env.name}»` : `Retiraste dinero de «${env.name}»`,
+              amount: amt,
+              back: 'Save',
+              rows: [
+                ['Sobre', env.name],
+                [direction === 'deposit' ? 'Desde' : 'Hacia', 'Cuenta colones'],
+                ['Saldo del sobre', money(r.envelope_balance)],
+                ...(r.reference ? ([['Comprobante', r.reference]] as [string, string][]) : []),
+                ['Fecha', receiptDate()],
+              ],
+            },
+          },
+        ],
+      });
     } catch (e) {
       setError(errorMessage(e));
     } finally {

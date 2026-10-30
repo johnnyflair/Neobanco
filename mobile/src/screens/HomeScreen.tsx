@@ -108,7 +108,7 @@ export function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel={`Mis puntos: ${(me?.points ?? 0).toLocaleString('en-US')}`}
           >
-            <Icon name="star" size={18} color={colors.orange} />
+            <Icon name="star" size={15} color={colors.orange} />
             <Text style={[pill.text, { color: colors.orangeInk, fontVariant: ['tabular-nums'] }]} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>{(me?.points ?? 0).toLocaleString('en-US')}</Text>
           </Pressable>
           <HelpButton />
@@ -120,7 +120,7 @@ export function HomeScreen() {
             accessibilityLabel={unread ? `Avisos: ${unread} nuevos` : 'Avisos'}
             style={({ pressed }) => [pill.base, unread > 0 ? pill.bellOn : pill.bell, pressed && { opacity: 0.7 }]}
           >
-            <Icon name="bell" size={18} color={unread > 0 ? BELL_INK : colors.ink} />
+            <Icon name="bell" size={15} color={unread > 0 ? BELL_INK : colors.ink} />
             {unread > 0 && (
               <Text style={[pill.text, { color: BELL_INK }]} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>
                 {unread > 9 ? '9+' : unread}
@@ -130,13 +130,11 @@ export function HomeScreen() {
         </View>
       </View>
 
-      <Text style={s.hello}>
-        {greeting()}, {first}
-      </Text>
+      <Text style={s.hello} accessibilityRole="header">{`Hola, ${first}`}</Text>
 
       {error && <Text style={s.error}>{error}</Text>}
 
-      <Band style={{ marginTop: 22 }} />
+      <Band style={{ marginTop: 34 }} />
       <View style={s.sectionRow}>
         <Highlight soft header align="flex-start" style={s.sectionTitle}>
           Mis cuentas
@@ -218,11 +216,6 @@ export function HomeScreen() {
   );
 }
 
-function greeting() {
-  const h = new Date().getHours();
-  return h >= 5 && h < 12 ? 'Buenos días' : h >= 12 && h < 19 ? 'Buenas tardes' : 'Buenas noches';
-}
-
 const s = StyleSheet.create({
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.ink },
@@ -230,8 +223,8 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.white },
   content: { padding: 18, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  hello: { fontSize: 19, fontWeight: '700', color: colors.ink, marginTop: 20 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  hello: { fontSize: 28, fontWeight: '700', color: colors.ink, marginTop: 26 },
   error: { color: colors.danger, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
   iconBox: { width: 22, alignItems: 'center' },
@@ -264,8 +257,8 @@ const BELL_INK = '#4A3300'; // café oscuro sobre amarillo (contraste alto)
 
 // Pastillas del encabezado (Puntos, Ayuda y Avisos): misma altura, forma y letra; cambia solo el color.
 export const pill = StyleSheet.create({
-  base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, height: 36, minWidth: 36, borderRadius: 18, paddingHorizontal: 11 },
-  text: { fontSize: 15, fontWeight: '700' },
+  base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, height: 30, minWidth: 30, borderRadius: 15, paddingHorizontal: 9 },
+  text: { fontSize: 14, fontWeight: '700' },
   points: { backgroundColor: colors.orangeSoft },
   bell: { backgroundColor: '#EEF1F6' },
   bellOn: { backgroundColor: '#F6C343' }, // amarillo: con texto oscuro (no blanco) para que se lea bien

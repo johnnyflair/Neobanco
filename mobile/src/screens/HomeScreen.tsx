@@ -9,11 +9,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError, api } from '../api/client';
 import { loadNotices } from '../api/notices';
 import type { Account, Me, Transaction } from '../api/types';
-import { money, shortDate } from '../format';
+import { money } from '../format';
 import { secureStore } from '../secureStore';
 import { AccountSheet } from './AccountSheet';
 import { colors, radius, type } from '../theme';
-import { Highlight, KooaEyes, KooaLogo } from '../ui/Brand';
+import { Highlight, KooaLogo } from '../ui/Brand';
 import { BottomSheet } from '../ui/BottomSheet';
 import { MoveList, MoveSheet } from '../ui/Moves';
 import { Icon, type IconName } from '../ui/Icon';
@@ -130,25 +130,6 @@ export function HomeScreen() {
       <Text style={s.date}>{today()}</Text>
 
       {error && <Text style={s.error}>{error}</Text>}
-
-      {/* Aviso de Kooa: solo cuando hay algo nuevo (un SINPE recibido en las últimas 24 horas). */}
-      {lastIn && !hidden && (
-        <Pressable style={({ pressed }) => [s.notice, pressed && { opacity: 0.7 }]} onPress={() => setMove(lastIn)} accessibilityRole="button">
-          <KooaEyes size={42} expression="guau" />
-          <View style={{ flex: 1 }}>
-            <View style={s.noticeRow}>
-              <Text style={s.noticeT}>Recibiste </Text>
-              <Highlight style={s.noticeT} align="flex-start">
-                {money(lastIn.amount)}
-              </Highlight>
-            </View>
-            <Text style={type.itemSub}>
-              {lastIn.counterparty ?? lastIn.description} · {shortDate(lastIn.created_at)}
-            </Text>
-          </View>
-          <Icon name="chev" size={16} color={colors.muted} />
-        </Pressable>
-      )}
 
       <Band style={{ marginTop: 22 }} />
       <View style={s.sectionRow}>
@@ -290,17 +271,6 @@ const s = StyleSheet.create({
   bellBadgeText: { color: colors.white, fontSize: 9.5, fontWeight: '700' },
   hello: { fontSize: 19, fontWeight: '700', color: colors.ink, marginTop: 20 },
   date: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  notice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    padding: 12,
-    marginTop: 14,
-  },
-  noticeRow: { flexDirection: 'row', alignItems: 'center' },
-  noticeT: { fontSize: 15, fontWeight: '600', color: colors.ink },
   error: { color: colors.danger, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
   iconBox: { width: 22, alignItems: 'center' },

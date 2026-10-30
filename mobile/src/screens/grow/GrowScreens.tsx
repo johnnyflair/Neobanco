@@ -13,7 +13,7 @@ import { dayMonth, longDate, money, parseAmount } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
 import { Icon } from '../../ui/Icon';
-import { AmountInput, Btn, ErrorText, Field, FieldStacked, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar } from '../../ui/kit';
+import { AmountInput, Btn, ErrorText, Field, FieldStacked, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar, Tabs } from '../../ui/kit';
 import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
 import { Cents } from '../../ui/Money';
@@ -369,6 +369,7 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
   // El monto siempre empieza vacío: la persona escribe cuánto mover.
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState<'deposit' | 'withdraw' | null>(null);
+  const [dir, setDir] = useState<'deposit' | 'withdraw'>('deposit');
   const [msg, setMsg] = useState<string | null>(route.params.created ? 'Listo, creaste tu sobre. Ganaste 50 puntos.' : null);
   const [error, setError] = useState<string | null>(null);
   const key = useRef({ sig: '', key: newIdempotencyKey() });
@@ -454,12 +455,13 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
 
   return (
     <Screen title={env.name}>
-      <View style={st.heroBox}>
+      {/* Opción B (aprobada): saldo arriba; se elige Agregar o Retirar, se escribe el monto y un
+          solo botón que dice exactamente qué va a pasar. */}
+      <View style={[st.heroBox, { marginBottom: 18 }]}>
         <Hero
-          title="Sobre a la vista"
-          sub="Sacás cuando querés"
+          title="Tenés en este sobre"
           big={money(env.balance)}
-          up={env.goal_amount ? `Meta ${money(env.goal_amount)} · ${p}%` : 'Sin meta'}
+          up={[env.goal_amount ? `Meta ${moneyShort(env.goal_amount)} · ${p}%` : 'Sin meta', `${pctShort(Number(env.rate ?? 3))} anual`, 'sacás cuando querás'].join(' · ')}
         />
         {env.goal_amount ? (
           <View style={st.heroBar}>
@@ -467,17 +469,33 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
           </View>
         ) : null}
       </View>
-      <Text style={st.moveLabel}>¿Cuánto querés mover?</Text>
-      <AmountInput value={amount} onChange={setAmount} autoFocus={false} label="Monto a mover" boxed />
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        {/* Retirar a la izquierda y Agregar (acción principal) a la derecha. */}
-        <Btn label="Retirar" icon="minus" variant="o" onPress={() => move('withdraw')} loading={busy === 'withdraw'} style={{ flex: 1 }} />
-        <Btn label="Agregar al sobre" icon="plus" onPress={() => move('deposit')} loading={busy === 'deposit'} style={{ flex: 1 }} />
-      </View>
-      <Small center>{`Se mueve desde y hacia tu cuenta colones (${crc ? money(crc.balance) : '…'})`}</Small>
-      {msg && <Small center style={{ marginTop: 8, color: colors.emeraldDark }}>{msg}</Small>}
+      {msg && <Small style={{ marginBottom: 10, color: colors.emeraldDark }}>{msg}</Small>}
+      <Tabs
+        options={[
+          { value: 'deposit', label: 'Agregar' },
+          { value: 'withdraw', label: 'Retirar' },
+        ]}
+        value={dir}
+        onChange={(v) => {
+          setDir(v);
+          setError(null);
+        }}
+      />
+      <Text style={st.moveLabel}>{dir === 'deposit' ? '¿Cuánto querés agregar?' : '¿Cuánto querés retirar?'}</Text>
+      <AmountInput value={amount} onChange={setAmount} autoFocus={false} label="Monto" boxed />
+      <Small>
+        {dir === 'deposit'
+          ? `Desde tu cuenta colones · disponible ${crc ? money(crc.balance) : '…'}`
+          : `Hacia tu cuenta colones · en el sobre ${money(env.balance)}`}
+      </Small>
       <ErrorText>{error}</ErrorText>
-      <View style={{ marginTop: 12 }}>
+      <Btn
+        label={dir === 'deposit' ? 'Agregar al sobre' : 'Retirar del sobre'}
+        onPress={() => move(dir)}
+        loading={busy !== null}
+        style={{ marginTop: 14 }}
+      />
+      <View style={{ marginTop: 16 }}>
         <Row
           first
           icon="settings"
@@ -485,8 +503,6 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
           sub={[env.goal_amount ? `Meta ${moneyShort(env.goal_amount)}` : 'Sin meta', env.savings_mode ?? 'Sin ahorro automático'].join(' · ')}
           onPress={() => nav.navigate('EnvelopeSettings', { account: env })}
         />
-        <Row title="Tasa a la vista" right={<Text style={st.amt}>{pct(env.rate ?? 3)}</Text>} />
-        <Row title="Retiros" right={<Text style={[st.amt, { color: colors.emeraldDark }]}>Cuando querás, sin costo</Text>} />
       </View>
       <Pressable
         style={({ pressed }) => [st.delete, pressed && { opacity: 0.6 }]}

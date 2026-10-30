@@ -87,7 +87,9 @@ export function BillsScreen() {
   const keys = useRef<Record<string, string>>({});
 
   const bills = data.data?.bills ?? [];
-  const toPay = bills.filter((b) => b.pending_amount && !b.autopay);
+  // "Pagar todo" incluye también los automáticos: si se pagan antes, ya no se cobran solos (el
+  // pendiente queda en cero), así que nunca se cobra dos veces.
+  const toPay = bills.filter((b) => b.pending_amount);
   const total = toPay.reduce((sum, b) => sum + Number(b.pending_amount), 0);
 
   async function payAll() {

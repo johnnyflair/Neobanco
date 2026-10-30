@@ -428,5 +428,5 @@ const st = StyleSheet.create({
     marginTop: 16,
   },
   stolenT: { fontSize: 15, fontWeight: '700', color: colors.danger },
-  stolenS: { fontSize: 13, color: colors.danger },
+  stolenS: { fontSize: 13, color: colors.muted },
 });

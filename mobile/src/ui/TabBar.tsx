@@ -13,7 +13,8 @@ import { Text } from './typography';
 const TABS: Record<string, { label: string; icon: IconName }> = {
   Home: { label: 'Inicio', icon: 'home' },
   Cards: { label: 'Tarjeta', icon: 'card' },
-  Grow: { label: 'Invertir', icon: 'pig' },
+  Save: { label: 'Ahorro', icon: 'pig' },
+  Grow: { label: 'Invertir', icon: 'grow' },
   Account: { label: 'Cuenta', icon: 'userCircle' },
 };
 

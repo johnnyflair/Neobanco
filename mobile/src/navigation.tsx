@@ -13,6 +13,7 @@ import { BillCategoryScreen, BillDetailScreen, BillServiceScreen, BillsScreen } 
 import {
   EnvelopeScreen,
   GrowScreen,
+  SaveScreen,
   NewEnvelopeScreen,
   NewSavingScreen,
   TermDepositScreen,
@@ -38,7 +39,7 @@ import { AutoRuleScreen, RedeemScreen, RewardsScreen } from './screens/rewards/R
 import { colors } from './theme';
 import { TabBar } from './ui/TabBar';
 
-export type TabParams = { Home: undefined; Cards: undefined; Grow: undefined; Account: undefined };
+export type TabParams = { Home: undefined; Cards: undefined; Save: undefined; Grow: undefined; Account: undefined };
 
 export type RootParams = {
   Tabs: NavigatorScreenParams<TabParams>;
@@ -110,6 +111,7 @@ function Tabs() {
     <Tab.Navigator tabBar={(props) => <TabBar {...props} />} screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Cards" component={CardsScreen} />
+      <Tab.Screen name="Save" component={SaveScreen} />
       <Tab.Screen name="Grow" component={GrowScreen} />
       <Tab.Screen name="Account" component={ProfileScreen} />
     </Tab.Navigator>

@@ -1,5 +1,5 @@
-// Invertir (según el prototipo aprobado): sobres a la vista y ahorros a plazo.
-// - Pestaña Invertir: total, sobres con su meta, plazos con vencimiento, tasas.
+// Ahorro (sobres a la vista) e Invertir (ahorros a plazo), cada uno en su pestaña.
+// - Ahorro: total en sobres y cada sobre con su meta. Invertir: total, plazos y tasas de hoy.
 // - Crear: sobre (meta, meses, forma de ahorrar) o ahorro a plazo (monto, plazo, qué hacer al vencer).
 // - Sobre: meter y sacar dinero.
 import { useNavigation } from '@react-navigation/native';
@@ -13,7 +13,7 @@ import { dayMonth, longDate, money, parseAmount } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
 import { Icon } from '../../ui/Icon';
-import { AmountInput, Btn, ErrorText, Field, FieldStacked, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar, Tabs } from '../../ui/kit';
+import { AmountInput, Btn, ErrorText, Field, FieldStacked, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar } from '../../ui/kit';
 import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
 import { Cents } from '../../ui/Money';
@@ -36,99 +36,99 @@ function progress(a: Account) {
   return goal > 0 ? Math.min(100, Math.round((Number(a.balance) / goal) * 100)) : 0;
 }
 
-// Invertir (opción C aprobada): pestañas "Mis ahorros" (lo que ya tenés) y "Crear nuevo" (sobre o
-// ahorro a plazo, con las tasas de ejemplo). Así ver y crear no se mezclan.
-export function GrowScreen() {
+// Ahorro e Invertir separados en el menú (aprobado): "Ahorro" son los sobres (se saca cuando
+// se quiere) e "Invertir" los ahorros a plazo (ganan más, con fecha). Cada uno con su total y su
+// botón de crear arriba.
+export function SaveScreen() {
   const nav = useNavigation();
   const { data, error } = useLoad(loadGrow);
-  const [tab, setTab] = useState<'mine' | 'new'>('mine');
-  if (!data) return error ? <Screen title="Invertir" back={false}><ErrorText>{error}</ErrorText></Screen> : <Loading />;
+  if (!data) return error ? <Screen title="Ahorro" back={false}><ErrorText>{error}</ErrorText></Screen> : <Loading />;
   const envelopes = data.accounts.filter((a) => a.type === 'envelope');
-  const terms = data.accounts.filter((a) => a.type === 'term');
-  const sum = (list: Account[]) => list.reduce((acc, a) => acc + Number(a.balance), 0);
+  const total = envelopes.reduce((acc, a) => acc + Number(a.balance), 0);
 
   return (
-    <Screen title="Invertir" back={false}>
-      <Tabs
-        options={[
-          { value: 'mine', label: 'Mis ahorros' },
-          { value: 'new', label: 'Crear nuevo' },
-        ]}
-        value={tab}
-        onChange={setTab}
-      />
-
-      {tab === 'mine' && (
-        <>
-          {/* Opción B (aprobada): sin total general; cada sección con su total, porque sobres y
-              plazos funcionan distinto. */}
-          <Sect first sub="Sacás cuando querás" right={<Cents style={st.sectAmt}>{money(sum(envelopes))}</Cents>}>
-            Mis sobres
-          </Sect>
-          {envelopes.map((a, i) => {
-            const p = progress(a);
-            return (
-              <Pressable
-                key={a.id}
-                style={({ pressed }) => [st.goal, i === 0 && { borderTopWidth: 0 }, pressed && { opacity: 0.6 }]}
-                onPress={() => nav.navigate('Envelope', { account: a })}
-                accessibilityRole="button"
-              >
-                <View style={st.goalHead}>
-                  <Icon name="mail" size={20} color={colors.primary} />
-                  <Text style={st.goalName} numberOfLines={1}>
-                    {a.name}
-                  </Text>
-                  <Cents style={st.amt}>{money(a.balance)}</Cents>
-                  <Icon name="chev" size={15} color={colors.muted} />
-                </View>
-                <View style={st.goalBody}>
-                  <View style={st.bar}>
-                    <View style={[st.barFill, { width: `${p}%` }]} />
-                  </View>
-                  <Small>{[a.goal_amount ? `${p}% de ${moneyShort(a.goal_amount)}` : 'Sin meta', shortMode(a.savings_mode)].filter(Boolean).join(' · ')}</Small>
-                </View>
-              </Pressable>
-            );
-          })}
-          {!envelopes.length && <Empty text="Todavía no tenés sobres." onCreate={() => setTab('new')} />}
-
-          <Sect sub="Con fecha de vencimiento" right={<Cents style={st.sectAmt}>{money(sum(terms))}</Cents>}>
-            Mis ahorros a plazo
-          </Sect>
-          {terms.map((a, i) => (
-            <Row
-              key={a.id}
-              first={i === 0}
-              icon="lock"
-              title={`${a.term_months} meses · ${Number(a.rate ?? 0)}%`}
-              sub={`Vence el ${a.maturity_date ? longDate(a.maturity_date) : ''} · ${ON_MATURITY[a.on_maturity ?? 'renew'] ?? ''}`}
-              right={<Cents style={st.amt}>{money(a.balance)}</Cents>}
-            />
-          ))}
-          {!terms.length && <Empty text="Todavía no tenés ahorros a plazo." onCreate={() => setTab('new')} />}
-        </>
-      )}
-
-      {tab === 'new' && (
-        <>
-          <Text style={st.ask}>¿Qué querés crear?</Text>
-          <CreateChoices />
-        </>
-      )}
+    <Screen title="Ahorro" back={false}>
+      <Small>Sacás cuando querás</Small>
+      <View style={{ marginTop: 14 }}>
+        <Hero title="Tenés en sobres" big={money(total)} />
+      </View>
+      <Btn label="Crear un sobre" icon="plus" onPress={() => nav.navigate('NewEnvelope')} />
+      <Sect>Mis sobres</Sect>
+      {envelopes.map((a, i) => {
+        const p = progress(a);
+        return (
+          <Pressable
+            key={a.id}
+            style={({ pressed }) => [st.goal, i === 0 && { borderTopWidth: 0 }, pressed && { opacity: 0.6 }]}
+            onPress={() => nav.navigate('Envelope', { account: a })}
+            accessibilityRole="button"
+          >
+            <View style={st.goalHead}>
+              <Icon name="mail" size={20} color={colors.primary} />
+              <Text style={st.goalName} numberOfLines={1}>
+                {a.name}
+              </Text>
+              <Cents style={st.amt}>{money(a.balance)}</Cents>
+              <Icon name="chev" size={15} color={colors.muted} />
+            </View>
+            <View style={st.goalBody}>
+              <View style={st.bar}>
+                <View style={[st.barFill, { width: `${p}%` }]} />
+              </View>
+              <Small>{[a.goal_amount ? `${p}% de ${moneyShort(a.goal_amount)}` : 'Sin meta', shortMode(a.savings_mode)].filter(Boolean).join(' · ')}</Small>
+            </View>
+          </Pressable>
+        );
+      })}
+      {!envelopes.length && <Small>Todavía no tenés sobres. Creá uno para tu próxima meta.</Small>}
     </Screen>
   );
 }
 
-/** Lista vacía en "Mis ahorros": dice qué falta y lleva a "Crear nuevo". */
-function Empty({ text, onCreate }: { text: string; onCreate: () => void }) {
+export function GrowScreen() {
+  const nav = useNavigation();
+  const { data, error } = useLoad(loadGrow);
+  if (!data) return error ? <Screen title="Invertir" back={false}><ErrorText>{error}</ErrorText></Screen> : <Loading />;
+  const terms = data.accounts.filter((a) => a.type === 'term');
+  const total = terms.reduce((acc, a) => acc + Number(a.balance), 0);
+  const rates = data.rates.filter((r) => r.product === 'term' && r.term_months);
+  const months = rates.map((r) => r.term_months as number);
+  const firstTerm = months.includes(6) ? 6 : (months[0] ?? 6);
+
   return (
-    <View style={{ paddingVertical: 6 }}>
-      <Small>{text}</Small>
-      <Pressable onPress={onCreate} hitSlop={8} accessibilityRole="button">
-        <Text style={st.emptyLink}>Crear uno nuevo</Text>
-      </Pressable>
-    </View>
+    <Screen title="Invertir" back={false}>
+      <Small>Ganan más, con fecha de vencimiento</Small>
+      <View style={{ marginTop: 14 }}>
+        <Hero title="Tenés invertido" big={money(total)} />
+      </View>
+      <Btn label="Nuevo ahorro a plazo" icon="plus" onPress={() => nav.navigate('TermDeposit', { term: firstTerm })} />
+      <Sect>Mis ahorros a plazo</Sect>
+      {terms.map((a, i) => (
+        <Row
+          key={a.id}
+          first={i === 0}
+          icon="lock"
+          title={`${a.term_months} meses · ${Number(a.rate ?? 0)}%`}
+          sub={`Vence el ${a.maturity_date ? longDate(a.maturity_date) : ''} · ${ON_MATURITY[a.on_maturity ?? 'renew'] ?? ''}`}
+          right={<Cents style={st.amt}>{money(a.balance)}</Cents>}
+        />
+      ))}
+      {!terms.length && <Small>Todavía no tenés ahorros a plazo. Abrí uno desde ₡50,000.</Small>}
+      {rates.length > 0 && (
+        <>
+          <Sect sub="Tasa fija por todo el plazo">Tasas de hoy</Sect>
+          {rates.map((r, i) => (
+            <Row
+              key={r.term_months}
+              first={i === 0}
+              title={`${r.term_months} meses`}
+              right={<Text style={st.amt}>{pctShort(Number(r.annual_rate))}</Text>}
+              onPress={() => nav.navigate('TermDeposit', { term: r.term_months as number })}
+            />
+          ))}
+        </>
+      )}
+    </Screen>
   );
 }
 
@@ -260,7 +260,7 @@ export function NewEnvelopeScreen() {
       nav.reset({
         index: 1,
         routes: [
-          { name: 'Tabs', params: { screen: 'Grow' } },
+          { name: 'Tabs', params: { screen: 'Save' } },
           {
             name: 'TransferDone',
             params: {
@@ -268,7 +268,7 @@ export function NewEnvelopeScreen() {
               amountLabel: 'Meta',
               amount: g.toFixed(2),
               points: 50,
-              back: 'Grow',
+              back: 'Save',
               rows: [
                 ['Sobre', a.name],
                 ['Plazo de la meta', `${m} meses`],
@@ -380,14 +380,14 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
       nav.reset({
         index: 1,
         routes: [
-          { name: 'Tabs', params: { screen: 'Grow' } },
+          { name: 'Tabs', params: { screen: 'Save' } },
           {
             name: 'TransferDone',
             params: {
               hi: `Eliminaste el sobre «${env.name}»`,
               amountLabel: Number(r.returned) > 0 ? 'Volvió a tu cuenta' : undefined,
               amount: Number(r.returned) > 0 ? r.returned : undefined,
-              back: 'Grow',
+              back: 'Save',
               rows: [
                 ['Sobre', env.name],
                 ['Volvió a', 'Cuenta colones'],
@@ -639,7 +639,6 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
 
 const st = StyleSheet.create({
   sectAmt: { fontSize: 18, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'] },
-  emptyLink: { fontSize: 15, fontWeight: '600', color: colors.primary, marginTop: 4 },
   ask: { fontSize: 22, fontWeight: '700', color: colors.ink, marginTop: 10, marginBottom: 8, lineHeight: 28 },
   quick: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
   quickChip: { borderWidth: 1.5, borderColor: colors.fieldBorder, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 12 },

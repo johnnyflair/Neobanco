@@ -93,11 +93,14 @@ export function HomeScreen() {
     { label: 'Mis puntos', sub: 'Canjealos por dinero', icon: 'star', go: () => nav.navigate('Rewards') },
     { label: 'Recibir dinero', sub: 'Compartí tu número o tu IBAN', icon: 'qr', go: () => nav.navigate('Receive') },
     { label: 'Traer de otro banco', sub: 'Pasá dinero a tu cuenta Kooa', icon: 'pull', go: () => nav.navigate('Pull') },
-    { label: 'Ahorrar e invertir', sub: 'Sobres y ahorro a plazo', icon: 'pig', go: () => nav.navigate('Tabs', { screen: 'Grow' }) },
+    { label: 'Ahorrar', sub: 'Sobres para tus metas', icon: 'pig', go: () => nav.navigate('Tabs', { screen: 'Save' }) },
+    { label: 'Invertir', sub: 'Ahorro a plazo con mejor tasa', icon: 'grow', go: () => nav.navigate('Tabs', { screen: 'Grow' }) },
   ];
   const first = me?.full_name.split(' ')[0] ?? '';
 
-  const main = accounts.filter((a) => MAIN_TYPES.has(a.type));
+  // Sobres y plazos viven en sus pestañas (Ahorro e Invertir); el inicio muestra solo las cuentas.
+  const listed = accounts.filter((a) => a.type !== 'envelope' && a.type !== 'term');
+  const main = listed.filter((a) => MAIN_TYPES.has(a.type));
 
   if (loading) {
     return <ActivityIndicator style={{ flex: 1 }} color={colors.primary} />;
@@ -151,7 +154,7 @@ export function HomeScreen() {
           <Icon name={hidden ? 'eyeOff' : 'eye'} size={21} color={colors.muted} />
         </Pressable>
       </View>
-      {(showAll ? accounts : main).map((a, i) => (
+      {(showAll ? listed : main).map((a, i) => (
         // Toda cuenta se toca: abre la hoja con sus datos (y para compartir, si recibe dinero).
         <Pressable
           key={a.id}
@@ -172,9 +175,9 @@ export function HomeScreen() {
           <Icon name="chev" size={16} color={colors.muted} />
         </Pressable>
       ))}
-      {accounts.length > main.length && (
+      {listed.length > main.length && (
         <Pressable style={s.more} onPress={() => setShowAll((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: showAll }}>
-          <Text style={s.moreText}>{showAll ? 'Ver menos cuentas' : `Ver todas mis cuentas (${accounts.length})`}</Text>
+          <Text style={s.moreText}>{showAll ? 'Ver menos cuentas' : `Ver todas mis cuentas (${listed.length})`}</Text>
           <Icon name={showAll ? 'chevUp' : 'chevDown'} size={16} color={colors.primary} />
         </Pressable>
       )}

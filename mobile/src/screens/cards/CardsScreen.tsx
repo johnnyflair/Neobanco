@@ -1,13 +1,13 @@
 // Tarjetas: débito y crédito en pestañas, como en el prototipo aprobado.
 // Bloquear es inmediato y sin clave (emergencia); desbloquear y ver datos piden la clave.
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Easing, PanResponder, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { api } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
 import type { Card, CardSecrets } from '../../api/types';
-import { dayMonth, groupPan, money } from '../../format';
+import { groupPan, money } from '../../format';
 import { colors, radius } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { CardChip, CardLogo, KooaCardFace } from '../../ui/Brand';
@@ -17,12 +17,48 @@ import { usePin } from '../../ui/PinSheet';
 import { Text } from '../../ui/typography';
 import { Cents } from '../../ui/Money';
 
+/** "2026-11-10" → "10 de noviembre" (escrito completo, más fácil de leer). */
+function longDate(iso: string) {
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('es-CR', { day: 'numeric', month: 'long' });
+}
+
 export const LINKED_LABEL = { crc: 'Colones', usd: 'Dólares', auto: 'Automática' } as const;
 const REVEAL_SECONDS = 30;
 
 export function CardsScreen() {
   const { data, setData, error, loading } = useLoad(api.cards);
   const [tab, setTab] = useState<'debit' | 'credit'>('debit');
+  const { width } = useWindowDimensions();
+  // Deslizar entre tarjetas (además de los botones): hacia la izquierda va a Crédito, hacia la derecha a Débito.
+  const slide = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(1)).current;
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  const hasCredit = !!data?.some((c) => c.kind === 'credit');
+  const go = (to: 'debit' | 'credit') => {
+    if (to === tabRef.current) return;
+    setTab(to);
+    slide.setValue((to === 'credit' ? 1 : -1) * width * 0.25);
+    fade.setValue(0.2);
+    Animated.parallel([
+      Animated.timing(slide, { toValue: 0, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 1, duration: 240, useNativeDriver: true }),
+    ]).start();
+  };
+  const goRef = useRef(go);
+  goRef.current = go;
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 24 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -50) goRef.current('credit');
+        else if (g.dx > 50) goRef.current('debit');
+      },
+    }),
+  ).current;
+
   if (loading && !data) return <Loading />;
   const debit = data?.find((c) => c.kind === 'debit');
   const credit = data?.find((c) => c.kind === 'credit');
@@ -30,10 +66,12 @@ export function CardsScreen() {
 
   return (
     <Screen title="Tus tarjetas" back={false}>
-      {credit && <CardPicker value={tab} onChange={setTab} />}
+      {credit && <CardPicker value={tab} onChange={go} />}
       <ErrorText>{error}</ErrorText>
-      {tab === 'debit' && debit && <DebitCard card={debit} onChange={replace} />}
-      {tab === 'credit' && credit && <CreditCard card={credit} onChange={replace} />}
+      <Animated.View {...(hasCredit ? pan.panHandlers : {})} style={{ opacity: fade, transform: [{ translateX: slide }] }}>
+        {tab === 'debit' && debit && <DebitCard card={debit} onChange={replace} />}
+        {tab === 'credit' && credit && <CreditCard card={credit} onChange={replace} />}
+      </Animated.View>
     </Screen>
   );
 }
@@ -204,10 +242,10 @@ function DebitCard({ card, onChange }: { card: Card; onChange: (c: Card) => void
       </KooaCardFace>
       <ActionButtons
         items={[
-          { label: secrets ? 'Ocultar\ndatos' : 'Ver\ndatos', icon: 'eye', onPress: reveal, disabled: locked, on: !!secrets },
-          { label: locked ? 'Descongelar\ntarjeta' : 'Congelar\ntarjeta', icon: 'snowflake', onPress: toggleLock, on: locked, danger: true },
-          { label: 'Límites\ndiarios', icon: 'sliders', onPress: () => nav.navigate('CardLimits', { cardId: card.id }) },
-          { label: 'Configu-\nración', icon: 'settings', onPress: () => setSettings(true) },
+          { label: secrets ? 'Ocultar' : 'Ver datos', icon: 'eye', onPress: reveal, disabled: locked, on: !!secrets },
+          { label: locked ? 'Descongelar' : 'Congelar', icon: 'snowflake', onPress: toggleLock, on: locked, danger: true },
+          { label: 'Límites', icon: 'sliders', onPress: () => nav.navigate('CardLimits', { cardId: card.id }) },
+          { label: 'Ajustes', icon: 'settings', onPress: () => setSettings(true) },
         ]}
       />
       <ErrorText>{error}</ErrorText>
@@ -272,41 +310,31 @@ function CreditCard({ card, onChange }: { card: Card; onChange: (c: Card) => voi
 
       <ActionButtons
         items={[
-          { label: secrets ? 'Ocultar\ndatos' : 'Ver\ndatos', icon: 'eye', onPress: reveal, disabled: locked, on: !!secrets },
-          { label: locked ? 'Descongelar\ntarjeta' : 'Congelar\ntarjeta', icon: 'snowflake', onPress: toggleLock, on: locked, danger: true },
-          { label: 'Límites\ndiarios', icon: 'sliders', onPress: () => nav.navigate('CardLimits', { cardId: card.id }) },
-          { label: 'Configu-\nración', icon: 'settings', onPress: () => setSettings(true) },
+          { label: secrets ? 'Ocultar' : 'Ver datos', icon: 'eye', onPress: reveal, disabled: locked, on: !!secrets },
+          { label: locked ? 'Descongelar' : 'Congelar', icon: 'snowflake', onPress: toggleLock, on: locked, danger: true },
+          { label: 'Límites', icon: 'sliders', onPress: () => nav.navigate('CardLimits', { cardId: card.id }) },
+          { label: 'Ajustes', icon: 'settings', onPress: () => setSettings(true) },
         ]}
       />
 
-      <View style={{ marginTop: 14 }}>
-        <Small>Saldo actual</Small>
-        <Cents style={st.ccBig}>{money(c.balance)}</Cents>
-        <View style={st.bar}>
-          <View style={[st.barFill, { width: `${used}%` }]} />
-        </View>
-        <Small>
-          Disponible {money(c.available)} de {money(c.limit)}
-        </Small>
-        <View style={st.kpi}>
-          <View style={st.kpiBox}>
-            <Small>Pago de contado</Small>
-            <Cents style={st.kpiVal}>{money(c.full_payment)}</Cents>
+      {/* Crédito A (aprobado): lo que debés y para cuándo, grande; el detalle en renglones, sin recuadros. */}
+      <View style={{ marginTop: 16 }}>
+        <Text style={st.oweK}>{Number(c.balance) > 0 ? 'Debés' : 'No debés nada'}</Text>
+        {Number(c.balance) > 0 && <Cents style={st.ccBig}>{money(c.balance)}</Cents>}
+        {c.due_date && Number(c.balance) > 0 && (
+          <View style={st.due}>
+            <Icon name="calendar" size={16} color={colors.amberFg} />
+            <Text style={st.dueText}>Pagá antes del {longDate(c.due_date)}</Text>
           </View>
-          <View style={st.kpiBox}>
-            <Small>Pago mínimo</Small>
-            <Cents style={st.kpiVal}>{money(c.minimum_payment)}</Cents>
-          </View>
-        </View>
-        {c.due_date && (
-          <Row
-            title="Fecha de pago"
-            sub={`Corte el ${c.statement_day} de cada mes`}
-            right={<Text style={st.amt}>{dayMonth(c.due_date)}</Text>}
-          />
         )}
       </View>
       <Btn label="Pagar tarjeta" onPress={() => nav.navigate('CardPay', { cardId: card.id })} disabled={Number(c.balance) <= 0} />
+      <View style={{ marginTop: 4 }}>
+        <Row first title="Pago de contado" sub="Sin intereses" right={<Cents style={st.amt}>{money(c.full_payment)}</Cents>} />
+        <Row title="Pago mínimo" right={<Cents style={st.amt}>{money(c.minimum_payment)}</Cents>} />
+        <Row title="Disponible para compras" sub={`De un límite de ${money(c.limit)}`} right={<Cents style={st.amt}>{money(c.available)}</Cents>} />
+        <Row title="Fecha de corte" right={<Text style={st.amt}>{`El ${c.statement_day} de cada mes`}</Text>} />
+      </View>
       <ErrorText>{error}</ErrorText>
       <Band />
       <View style={{ marginTop: 8 }}>
@@ -356,13 +384,16 @@ const st = StyleSheet.create({
     textShadowRadius: 3,
   },
   cardMeta: { color: colors.white, fontSize: 12, marginTop: 4, textShadowColor: 'rgba(0,0,0,.45)', textShadowRadius: 3 },
-  ccBig: { fontSize: 26, fontWeight: '700', color: colors.amount, fontVariant: ['tabular-nums'], marginTop: 2, marginBottom: 6 },
+  oweK: { fontSize: 15, color: colors.muted },
+  ccBig: { fontSize: 32, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'], marginTop: 2 },
+  due: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: colors.amberBg, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, marginTop: 8, marginBottom: 4 },
+  dueText: { fontSize: 14, fontWeight: '600', color: colors.amberFg },
   bar: { height: 7, backgroundColor: colors.card, borderRadius: 4, marginTop: 4, marginBottom: 4 },
   barFill: { height: 7, backgroundColor: colors.emerald, borderRadius: 4 },
   kpi: { flexDirection: 'row', gap: 8, marginTop: 12, marginBottom: 6 },
   kpiBox: { flex: 1, backgroundColor: colors.card, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12 },
   kpiVal: { fontSize: 15, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'] },
-  amt: { fontSize: 14, fontWeight: '600', color: colors.amount },
+  amt: { fontSize: 16, fontWeight: '600', color: colors.amount },
   picker: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   pick: {
     flex: 1,

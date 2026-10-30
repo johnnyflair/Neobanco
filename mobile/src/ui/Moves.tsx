@@ -1,5 +1,6 @@
-// Movimientos (cambio aprobado): ícono suelto según el tipo (flecha arriba si sale, abajo si entra,
-// recibo para servicios…), dos renglones (tipo arriba; contraparte y fecha abajo, en gris) y monto.
+// Movimientos (Home X aprobado): si hay contraparte, su nombre va arriba (con avatar de iniciales
+// para personas y el ícono del tipo en un círculo para lo demás) y abajo el medio y la hora en gris.
+// Lo que entra va en verde con "+".
 // Al tocarlo sube una hoja con todo el detalle y opciones para compartir el comprobante.
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
@@ -70,30 +71,58 @@ export function MoveRow({
 }) {
   // Agrupado por día, la fecha ya está en el separador: abajo va quién y la hora.
   const when = grouped ? timeOf(t.created_at) : shortDate(t.created_at);
+  const incoming = isIn(t);
+  const person = !!t.counterparty && PERSON.has(t.category);
+  const title = t.counterparty || t.title || t.description;
+  const how = t.counterparty ? `${incoming ? 'Recibiste · ' : ''}${METHOD[t.category] ?? t.title}` : null;
   // En la vista combinada (Todas) cada movimiento dice de qué cuenta es.
-  const sub = [showAccount ? t.account_name : null, t.counterparty, when].filter(Boolean).join(' · ');
+  const sub = [how, showAccount ? t.account_name : null, when].filter(Boolean).join(' · ');
   currency = (t.currency as 'CRC' | 'USD' | null) ?? currency;
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [st.row, first && { borderTopWidth: 0 }, pressed && { opacity: 0.6 }]}
       accessibilityRole="button"
-      accessibilityLabel={`${t.title || t.description}, ${signed(t, currency)}`}
+      accessibilityLabel={`${t.title || t.description}${t.counterparty ? `, ${t.counterparty}` : ''}, ${signed(t, currency)}`}
     >
-      <Icon name={moveIcon(t)} size={22} color={isIn(t) ? colors.emeraldDark : colors.amount} />
+      <View style={[st.av, person ? (incoming ? st.avIn : st.avOut) : st.avIcon]}>
+        {person ? (
+          <Text style={[st.avText, incoming && { color: colors.primaryInk }]}>{initials(t.counterparty!)}</Text>
+        ) : (
+          <Icon name={moveIcon(t)} size={18} color={incoming ? colors.emeraldDark : colors.amount} />
+        )}
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={type.itemTitle} numberOfLines={1}>
-          {t.title || t.description}
+          {title}
         </Text>
         <Text style={type.itemSub} numberOfLines={1}>
           {sub}
         </Text>
       </View>
-      <Text style={[type.amount, isIn(t) && { color: colors.primary }]}>{mask(signed(t, currency))}</Text>
+      <Text style={[type.amount, incoming && { color: colors.primary }]}>{mask(signed(t, currency))}</Text>
       <Icon name="chev" size={14} color={colors.muted} />
     </Pressable>
   );
 }
+
+// Movimientos con una persona del otro lado (llevan avatar con sus iniciales).
+const PERSON = new Set(['sinpe', 'iban', 'pull']);
+const METHOD: Record<string, string> = {
+  sinpe: 'SINPE Móvil',
+  iban: 'Transferencia',
+  pull: 'Otro banco',
+  bill: 'Recibo',
+  card: 'Tarjeta',
+  envelope: 'Sobre',
+};
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter((w) => /^[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(w))
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
 
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
 
@@ -240,6 +269,11 @@ export function MoveSheet({
 }
 
 const st = StyleSheet.create({
+  av: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  avOut: { backgroundColor: '#E7EAF3' },
+  avIn: { backgroundColor: colors.mint },
+  avIcon: { backgroundColor: colors.card },
+  avText: { fontSize: 12.5, fontWeight: '700', color: colors.navy },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderColor: colors.line },
   day: { fontSize: 12.5, fontWeight: '600', color: colors.muted, paddingTop: 16, paddingBottom: 6, borderBottomWidth: 1, borderColor: '#D0D5DD' },
   receipt: { backgroundColor: colors.white, paddingBottom: 4 },

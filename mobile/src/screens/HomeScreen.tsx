@@ -1,9 +1,9 @@
-// Inicio con la marca Kooa (opción C aprobada): saludo con los ojos, aviso de Kooa cuando entra un
-// SINPE, "Mis cuentas" con borde fino, accesos rápidos (SINPE destacado), franja de puntos A1 y
-// movimientos.
+// Inicio (opción X aprobada): logo completo arriba con campana y perfil, saludo según la hora con la
+// fecha, "Mis cuentas" sin recuadro (con "Ver todas" debajo), cinco accesos fijos (el último abre
+// "Más"), y movimientos con el nombre de la persona. Títulos con el resaltador lima suave (1B).
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError, api } from '../api/client';
@@ -12,7 +12,8 @@ import { money, shortDate } from '../format';
 import { secureStore } from '../secureStore';
 import { AccountSheet } from './AccountSheet';
 import { colors, radius, type } from '../theme';
-import { Highlight, KooaEyes } from '../ui/Brand';
+import { Highlight, KooaEyes, KooaLogo } from '../ui/Brand';
+import { BottomSheet } from '../ui/BottomSheet';
 import { MoveList, MoveSheet } from '../ui/Moves';
 import { Icon, type IconName } from '../ui/Icon';
 import { Band } from '../ui/kit';
@@ -24,7 +25,6 @@ const MAIN_TYPES = new Set(['savings', 'capital']); // colones, dólares y capit
 export function HomeScreen() {
   const nav = useNavigation();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
   const [me, setMe] = useState<Me | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [moves, setMoves] = useState<Transaction[]>([]);
@@ -32,6 +32,7 @@ export function HomeScreen() {
   const [showAll, setShowAll] = useState(false);
   const [sheet, setSheet] = useState<Account | null>(null);
   const [move, setMove] = useState<Transaction | null>(null);
+  const [more, setMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -72,16 +73,24 @@ export function HomeScreen() {
     (t) => t.category === 'sinpe' && Number(t.amount) > 0 && Date.now() - new Date(t.created_at).getTime() < 86_400_000,
   );
   const newSinpe = !!lastIn;
-  // Accesos rápidos (opción C aprobada): texto en dos renglones; el préstamo destacado en naranja.
-  const QUICK: { label: string; icon: IconName; go: () => void; accent?: boolean; badge?: boolean; main?: boolean }[] = [
-    { label: 'SINPE\nMóvil', icon: 'phone', go: () => nav.navigate('SinpeNumber'), badge: newSinpe, main: true },
-    { label: 'Transferir\ndinero', icon: 'swap', go: () => nav.navigate('TransferHub') },
-    { label: 'Pagar\nrecibos', icon: 'receipt', go: () => nav.navigate('Bills') },
-    { label: 'Pedí un\npréstamo', icon: 'cash', go: () => nav.navigate('LoanSim') },
-    { label: 'Mis\npuntos', icon: 'star', go: () => nav.navigate('Rewards'), accent: true },
+  const received = moves.filter(
+    (t) => Number(t.amount) > 0 && t.category !== 'opening' && Date.now() - new Date(t.created_at).getTime() < 86_400_000,
+  ).length;
+  // Cinco accesos fijos que caben completos; el último abre el resto.
+  const QUICK: { label: string; icon: IconName; go: () => void; badge?: boolean; main?: boolean; more?: boolean }[] = [
+    { label: 'SINPE', icon: 'phone', go: () => nav.navigate('SinpeNumber'), badge: newSinpe, main: true },
+    { label: 'Transferir', icon: 'swap', go: () => nav.navigate('TransferHub') },
+    { label: 'Recibos', icon: 'receipt', go: () => nav.navigate('Bills') },
+    { label: 'Préstamo', icon: 'cash', go: () => nav.navigate('LoanSim') },
+    { label: 'Más', icon: 'dots', go: () => setMore(true), more: true },
   ];
-  // Cuatro accesos completos y el quinto asomado a la mitad, para que se note que la fila se desliza.
-  const quickW = (width - 18) / 4.5;
+  const MORE: { label: string; sub: string; icon: IconName; go: () => void }[] = [
+    { label: 'Mis puntos', sub: 'Canjealos por dinero', icon: 'star', go: () => nav.navigate('Rewards') },
+    { label: 'Recibir dinero', sub: 'Compartí tu número o tu IBAN', icon: 'qr', go: () => nav.navigate('Receive') },
+    { label: 'Traer de otro banco', sub: 'Pasá dinero a tu cuenta Kooa', icon: 'pull', go: () => nav.navigate('Pull') },
+    { label: 'Ahorrar e invertir', sub: 'Sobres y ahorro a plazo', icon: 'pig', go: () => nav.navigate('Tabs', { screen: 'Grow' }) },
+  ];
+  const first = me?.full_name.split(' ')[0] ?? '';
 
   const main = accounts.filter((a) => MAIN_TYPES.has(a.type));
 
@@ -92,14 +101,31 @@ export function HomeScreen() {
   return (
     <ScrollView style={s.screen} contentContainerStyle={[s.content, { paddingTop: insets.top + 12 }]} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
       <View style={s.header}>
-        <View style={s.hello}>
-          <KooaEyes size={44} />
-          <Text style={s.name}>Hola, {me?.full_name.split(' ')[0]}</Text>
+        <KooaLogo height={32} />
+        <View style={s.headerRight}>
+          <Pressable
+            onPress={() => nav.navigate('Movements')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={received ? `Avisos: ${received} nuevos` : 'Avisos'}
+          >
+            <Icon name="bell" size={25} color={colors.ink} />
+            {received > 0 && (
+              <View style={s.bellBadge}>
+                <Text style={s.bellBadgeText}>{received > 9 ? '9+' : received}</Text>
+              </View>
+            )}
+          </Pressable>
+          <Pressable style={s.avatar} onPress={() => nav.navigate('Profile')} accessibilityLabel="Mi perfil">
+            <Text style={s.avatarText}>{me?.full_name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</Text>
+          </Pressable>
         </View>
-        <Pressable style={s.avatar} onPress={() => nav.navigate('Profile')} accessibilityLabel="Mi perfil">
-          <Text style={s.avatarText}>{me?.full_name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</Text>
-        </Pressable>
       </View>
+
+      <Text style={s.hello}>
+        {greeting()}, {first}
+      </Text>
+      <Text style={s.date}>{today()}</Text>
 
       {error && <Text style={s.error}>{error}</Text>}
 
@@ -122,74 +148,68 @@ export function HomeScreen() {
         </Pressable>
       )}
 
-      <View style={s.glow}>
-        <View style={s.card}>
-          <View style={s.cardHead}>
-            <Text style={s.cardTitle}>Mis cuentas</Text>
-            <Pressable onPress={toggleHidden} style={s.eye} accessibilityLabel={hidden ? 'Mostrar saldos' : 'Ocultar saldos'}>
-              <Icon name={hidden ? 'eyeOff' : 'eye'} size={19} color={colors.muted} />
-            </Pressable>
-          </View>
-          {(showAll ? accounts : main).map((a) => {
-            // Toda cuenta se toca: abre la hoja con sus datos (y para compartir, si recibe dinero).
-            return (
-            <Pressable
-              key={a.id}
-              style={({ pressed }) => [s.row, s.acctRow, pressed && { opacity: 0.6 }]}
-              onPress={() => setSheet(a)}
-              accessibilityRole="button"
-              accessibilityHint="Muestra los datos de la cuenta"
-            >
-              <View style={s.iconBox}>
-                {a.type === 'savings' ? (
-                  <Text style={s.icon}>{a.currency === 'USD' ? '$' : '₡'}</Text>
-                ) : (
-                  <Icon name={a.type === 'capital' ? 'hands' : 'pig'} size={21} color={colors.primary} />
-                )}
-              </View>
-              <Text style={[type.itemTitle, { flex: 1 }]}>{a.name}</Text>
-              <Text style={type.amount}>{mask(money(a.balance, a.currency))}</Text>
-              <Icon name="chev" size={16} color={colors.muted} />
-            </Pressable>
-            );
-          })}
-          {accounts.length > main.length && (
-            <Pressable
-              style={s.more}
-              onPress={() => setShowAll((v) => !v)}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: showAll }}
-            >
-              <Text style={s.moreText}>{showAll ? 'Ver menos' : `Ver todas (${accounts.length})`}</Text>
-              <Icon name={showAll ? 'chevUp' : 'chevDown'} size={16} color={colors.primary} />
-            </Pressable>
-          )}
-        </View>
+      <Band thin style={{ marginTop: 16, marginBottom: 14 }} />
+      <View style={s.sectionRow}>
+        <Highlight soft header align="flex-start" style={s.sectionTitle}>
+          Mis cuentas
+        </Highlight>
+        <Pressable onPress={toggleHidden} hitSlop={10} accessibilityLabel={hidden ? 'Mostrar saldos' : 'Ocultar saldos'}>
+          <Icon name={hidden ? 'eyeOff' : 'eye'} size={21} color={colors.muted} />
+        </Pressable>
       </View>
+      {(showAll ? accounts : main).map((a, i) => (
+        // Toda cuenta se toca: abre la hoja con sus datos (y para compartir, si recibe dinero).
+        <Pressable
+          key={a.id}
+          style={({ pressed }) => [s.row, i === 0 && { borderTopWidth: 0 }, pressed && { opacity: 0.6 }]}
+          onPress={() => setSheet(a)}
+          accessibilityRole="button"
+          accessibilityHint="Muestra los datos de la cuenta"
+        >
+          <View style={s.iconBox}>
+            {a.type === 'savings' ? (
+              <Text style={s.icon}>{a.currency === 'USD' ? '$' : '₡'}</Text>
+            ) : (
+              <Icon name={a.type === 'capital' ? 'hands' : 'pig'} size={21} color={colors.primary} />
+            )}
+          </View>
+          <Text style={[type.itemTitle, { flex: 1 }]}>{a.name}</Text>
+          <Amount value={money(a.balance, a.currency)} hidden={hidden} />
+          <Icon name="chev" size={16} color={colors.muted} />
+        </Pressable>
+      ))}
+      {accounts.length > main.length && (
+        <Pressable style={s.more} onPress={() => setShowAll((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: showAll }}>
+          <Text style={s.moreText}>{showAll ? 'Ver menos' : `Ver todas (${accounts.length})`}</Text>
+          <Icon name={showAll ? 'chevUp' : 'chevDown'} size={16} color={colors.primary} />
+        </Pressable>
+      )}
 
-      <Band style={{ marginTop: 0 }} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.quickScroll} contentContainerStyle={s.quick}>
+      <Band thin style={{ marginTop: 10, marginBottom: 16 }} />
+      <View style={s.quick}>
         {QUICK.map((q) => (
           <Pressable
             key={q.label}
-            style={({ pressed }) => [s.quickItem, { width: quickW }, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [s.quickItem, pressed && { opacity: 0.7 }]}
             onPress={q.go}
             accessibilityRole="button"
-            accessibilityLabel={q.label.replace('\n', ' ') + (q.badge ? ', tenés un SINPE nuevo' : '')}
+            accessibilityLabel={(q.more ? 'Más opciones' : q.label) + (q.badge ? ', tenés un SINPE nuevo' : '')}
           >
-            <View style={[s.quickIcon, q.accent && { backgroundColor: colors.orangeSoft }, q.main && { backgroundColor: colors.teal }]}>
-              <Icon name={q.icon} size={25} color={q.accent ? colors.orangeInk : q.main ? colors.lime : colors.emeraldDark} />
+            <View style={[s.quickIcon, q.main && { backgroundColor: colors.teal }, q.more && { backgroundColor: colors.card }]}>
+              <Icon name={q.icon} size={24} color={q.main ? colors.lime : q.more ? colors.ink : colors.emeraldDark} />
               {q.badge && <View style={s.badge} />}
             </View>
-            <Text style={s.quickText}>{q.label}</Text>
+            <Text style={s.quickText} numberOfLines={1}>
+              {q.label}
+            </Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
 
-
-      <Band style={{ marginTop: 0 }} />
-      <View style={s.sectionRow}>
-        <Text style={s.sectionTitle}>Movimientos</Text>
+      <View style={[s.sectionRow, { marginTop: 22 }]}>
+        <Highlight soft header align="flex-start" style={s.sectionTitle}>
+          Movimientos
+        </Highlight>
         <Pressable onPress={() => nav.navigate('Movements')} hitSlop={10} accessibilityRole="button">
           <Text style={s.link}>Ver todos</Text>
         </Pressable>
@@ -197,6 +217,29 @@ export function HomeScreen() {
       <MoveList items={moves.slice(0, 8)} mask={mask} showAccount onPress={setMove} />
       <MoveSheet t={move} accountName="Cuenta colones" onClose={() => setMove(null)} />
       <Text style={s.version}>Versión {(process.env.EXPO_PUBLIC_APP_VERSION ?? 'local').slice(0, 7)}</Text>
+      <BottomSheet visible={more} onClose={() => setMore(false)}>
+        <Text style={s.sheetTitle}>Más opciones</Text>
+        {MORE.map((m, i) => (
+          <Pressable
+            key={m.label}
+            style={({ pressed }) => [s.row, i === 0 && { borderTopWidth: 0 }, pressed && { opacity: 0.6 }]}
+            onPress={() => {
+              setMore(false);
+              m.go();
+            }}
+            accessibilityRole="button"
+          >
+            <View style={s.moreIcon}>
+              <Icon name={m.icon} size={21} color={colors.emeraldDark} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={type.itemTitle}>{m.label}</Text>
+              <Text style={type.itemSub}>{m.sub}</Text>
+            </View>
+            <Icon name="chev" size={16} color={colors.muted} />
+          </Pressable>
+        ))}
+      </BottomSheet>
       <AccountSheet
         account={sheet}
         sinpePhone={me?.sinpe_phone}
@@ -210,14 +253,55 @@ export function HomeScreen() {
   );
 }
 
+function greeting() {
+  const h = new Date().getHours();
+  return h >= 5 && h < 12 ? 'Buenos días' : h >= 12 && h < 19 ? 'Buenas tardes' : 'Buenas noches';
+}
+
+function today() {
+  const d = new Date().toLocaleDateString('es-CR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return d.charAt(0).toUpperCase() + d.slice(1).replace(',', '');
+}
+
+/** Monto con los céntimos más pequeños, para que el número se lea rápido. */
+function Amount({ value, hidden }: { value: string; hidden: boolean }) {
+  if (hidden) return <Text style={type.amount}>••••••</Text>;
+  const dot = value.lastIndexOf('.');
+  return (
+    <Text style={[type.amount, s.amt]}>
+      {dot > 0 ? value.slice(0, dot) : value}
+      {dot > 0 && <Text style={s.cents}>{value.slice(dot)}</Text>}
+    </Text>
+  );
+}
+
 const s = StyleSheet.create({
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
   link: { fontSize: 14, fontWeight: '600', color: colors.primary },
   screen: { flex: 1, backgroundColor: colors.white },
   content: { padding: 18, paddingBottom: 40 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, marginBottom: 18 },
-  hello: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  name: { ...type.title, fontSize: 21 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  bellBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -7,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: colors.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+  bellBadgeText: { color: colors.white, fontSize: 9.5, fontWeight: '700' },
+  avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: colors.navy, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: colors.navy, fontWeight: '700', fontSize: 13 },
+  hello: { fontSize: 19, fontWeight: '700', color: colors.ink, marginTop: 20 },
+  date: { fontSize: 13, color: colors.muted, marginTop: 2 },
   notice: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -225,31 +309,22 @@ const s = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: 12,
-    marginBottom: 14,
+    marginTop: 14,
   },
   noticeRow: { flexDirection: 'row', alignItems: 'center' },
   noticeT: { fontSize: 15, fontWeight: '600', color: colors.ink },
-  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: colors.white, fontWeight: '700', fontSize: 15 },
-  error: { color: colors.danger, marginBottom: 8 },
-  glow: { marginBottom: 20, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.line },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg - 1.5, paddingHorizontal: 14, paddingBottom: 4 },
-  cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
-  eye: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
+  error: { color: colors.danger, marginTop: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
   iconBox: { width: 22, alignItems: 'center' },
-  acctRow: { gap: 8 },
   icon: { fontSize: 20, fontWeight: '600', color: colors.primary },
-  more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
+  amt: { fontSize: 15 },
+  cents: { fontSize: 10.5 },
+  more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
   moreText: { fontSize: 14, fontWeight: '600', color: colors.primary },
-  quickScroll: { marginHorizontal: -18 },
-  quick: { paddingLeft: 18, paddingRight: 8, paddingTop: 18, paddingBottom: 16 },
-  // Franja gris de borde a borde entre secciones (cuentas · accesos · movimientos).
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
-  quickItem: { alignItems: 'center', gap: 7 },
-  quickIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
-  quickText: { fontSize: 12.5, lineHeight: 16, fontWeight: '600', textAlign: 'center', color: colors.ink },
+  quick: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 4 },
+  quickItem: { flex: 1, alignItems: 'center', gap: 7 },
+  quickIcon: { width: 54, height: 54, borderRadius: 17, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
+  quickText: { fontSize: 12.5, fontWeight: '600', textAlign: 'center', color: colors.ink },
   badge: {
     position: 'absolute',
     top: -3,
@@ -261,6 +336,7 @@ const s = StyleSheet.create({
     borderWidth: 2.5,
     borderColor: colors.white,
   },
+  sheetTitle: { fontSize: 18, fontWeight: '700', color: colors.ink, marginBottom: 6 },
+  moreIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
   version: { fontSize: 11, color: colors.muted, textAlign: 'center', marginTop: 18 },
-  section: { fontSize: 12, fontWeight: '600', color: colors.muted, marginTop: 16, marginBottom: 4 },
 });

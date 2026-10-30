@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius } from '../theme';
 import { Icon, type IconName } from './Icon';
+import { Highlight } from './Brand';
 import { Text, TextInput } from './typography';
 
 export function Screen({
@@ -343,16 +344,18 @@ export const Sect = ({ children, plain, first }: { children: string; plain?: boo
   ) : (
     <>
       {!first && <Band />}
-      <Text style={[s.sectTitle, first && { marginTop: 4 }]} accessibilityRole="header">
-        {children}
-      </Text>
+      <View style={[s.sectWrap, first && { marginTop: 4 }]}>
+        <Highlight soft header align="flex-start" style={s.sectTitle}>
+          {children}
+        </Highlight>
+      </View>
     </>
   );
 /** Franja gris entre secciones, de borde a borde. */
 /** Banda gris entre secciones, con el destello de la paleta al inicio de la sección: línea fina que se desvanece. */
-export const Band = ({ style }: { style?: ViewStyle }) => (
+export const Band = ({ style, thin }: { style?: ViewStyle; thin?: boolean }) => (
   <View style={[s.bandWrap, style]}>
-    <View style={s.band} />
+    {!thin && <View style={s.band} />}
     <LinearGradient
       colors={[colors.lime, 'rgba(23,128,108,0.85)', 'rgba(13,27,69,0.35)', 'rgba(232,116,46,0)']}
       locations={[0, 0.3, 0.62, 1]}
@@ -629,7 +632,8 @@ export const s = StyleSheet.create({
   bandWrap: { marginHorizontal: -18, marginTop: 20 },
   band: { height: 10, backgroundColor: '#F2F4F7' },
   bandGlow: { height: 2.25 },
-  sectTitle: { fontSize: 16, fontWeight: '700', color: colors.ink, marginTop: 16, marginBottom: 4 },
+  sectWrap: { marginTop: 16, marginBottom: 4 },
+  sectTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
   sect: { fontSize: 12, color: colors.muted, marginTop: 16, marginBottom: 4, fontWeight: '600', letterSpacing: 0.2 },
   btn: {
     flexDirection: 'row',

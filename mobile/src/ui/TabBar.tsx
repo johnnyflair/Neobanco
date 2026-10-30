@@ -1,5 +1,6 @@
 // Barra del menú principal (marca Kooa): rayita lima arriba que se desliza hasta la pestaña
-// activa, ícono activo en verde que sube un poco, y una línea gris fina de separación.
+// activa, ícono activo en verde que sube un poco; esquinas de arriba redondeadas y sombra verde suave
+// hacia arriba para que el menú resalte sobre el contenido.
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
@@ -32,7 +33,6 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View style={[st.bar, { paddingBottom: Math.max(insets.bottom, 8) }]} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
-      <View style={st.glowLine} />
       {width > 0 && (
         <Animated.View style={[st.indicator, { width: tabW * 0.5, left: tabW * 0.25, transform: [{ translateX: x }] }]} />
       )}
@@ -76,15 +76,16 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
 const st = StyleSheet.create({
   bar: {
     backgroundColor: colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     shadowColor: colors.primary,
-    shadowOpacity: 0.11,
-    shadowRadius: 11,
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
     shadowOffset: { width: 0, height: -6 },
     elevation: 6,
   },
-  glowLine: { height: 1, backgroundColor: colors.line },
   indicator: { position: 'absolute', top: 0, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: colors.lime },
-  row: { flexDirection: 'row', paddingTop: 8 },
+  row: { flexDirection: 'row', paddingTop: 10 },
   item: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
   label: { fontSize: 12, fontWeight: '500' },
 });

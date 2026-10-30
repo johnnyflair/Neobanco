@@ -7,7 +7,7 @@ export type IconName =
   | 'home' | 'card' | 'grow' | 'chat' | 'phone' | 'bank' | 'pull' | 'qr' | 'back' | 'chev' | 'check'
   | 'lock' | 'eye' | 'eyeOff' | 'share' | 'receipt' | 'file' | 'star' | 'send' | 'swap' | 'copy' | 'cash' | 'hands' | 'pig' | 'chevDown' | 'chevUp' | 'x'
   | 'bolt' | 'drop' | 'wifi' | 'search' | 'tv' | 'car' | 'school' | 'shield' | 'building' | 'gift' | 'heart' | 'calendar' | 'user' | 'logout' | 'alert' | 'clock' | 'plus' | 'minus'
-  | 'arrowUp' | 'arrowDown' | 'snowflake' | 'sliders' | 'settings' | 'medal' | 'crown' | 'backspace';
+  | 'arrowUp' | 'arrowDown' | 'snowflake' | 'sliders' | 'settings' | 'medal' | 'crown' | 'backspace' | 'bell' | 'dots';
 
 const stroke = { fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
@@ -101,6 +101,10 @@ function shapes(name: IconName, c: string) {
       return <Path {...p} d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6" />;
     case 'file':
       return <Path {...p} d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6" />;
+    case 'bell':
+      return <Path {...p} d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3H4a4 4 0 0 0 2-3v-3a7 7 0 0 1 4-6M9 17v1a3 3 0 0 0 6 0v-1" />;
+    case 'dots':
+      return <Path {...p} d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={3.2} />;
     case 'star':
       return <Path {...p} d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />;
     case 'send':

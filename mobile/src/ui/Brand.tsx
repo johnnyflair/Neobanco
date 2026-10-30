@@ -149,7 +149,21 @@ export function KooaLogo({ height, color = colors.teal, browColor = colors.prima
 }
 
 /** Texto con el subrayado lima de marca (montos, el eslogan, el nombre al celebrar). */
-export function Highlight({ children, style, align = 'center' }: { children: ReactNode; style?: StyleProp<TextStyle>; align?: 'center' | 'flex-start' }) {
+/** Resaltador lima de la marca (como en "buena cara"). `soft`: la versión leve de los títulos de
+ *  sección en toda la App (franja más alta y lima translúcido, opción 1B). */
+export function Highlight({
+  children,
+  style,
+  align = 'center',
+  soft,
+  header,
+}: {
+  children: ReactNode;
+  style?: StyleProp<TextStyle>;
+  align?: 'center' | 'flex-start';
+  soft?: boolean;
+  header?: boolean;
+}) {
   const fs = (StyleSheet.flatten(style)?.fontSize as number | undefined) ?? 16;
   return (
     <View style={{ alignSelf: align }}>
@@ -158,13 +172,15 @@ export function Highlight({ children, style, align = 'center' }: { children: Rea
           position: 'absolute',
           left: -3,
           right: -3,
-          bottom: fs * 0.12,
-          height: fs * 0.36,
-          backgroundColor: colors.lime,
+          bottom: soft ? fs * 0.08 : fs * 0.12,
+          height: soft ? fs * 0.5 : fs * 0.36,
+          backgroundColor: soft ? 'rgba(198,244,50,0.38)' : colors.lime,
           borderRadius: 3,
         }}
       />
-      <Text style={style}>{children}</Text>
+      <Text style={style} accessibilityRole={header ? 'header' : undefined}>
+        {children}
+      </Text>
     </View>
   );
 }

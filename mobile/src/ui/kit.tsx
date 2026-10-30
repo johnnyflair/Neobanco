@@ -351,6 +351,32 @@ export function Field({ label, right, ...input }: TextInputProps & { label: stri
   );
 }
 
+/** Campo con la etiqueta arriba (opción 2A del sobre): el texto se escribe a la izquierda y el
+ *  ejemplo va en gris claro con "Ej:", para que nunca parezca que el campo ya está lleno.
+ *  El borde se pone esmeralda mientras se escribe. */
+export function FieldStacked({ label, ...input }: TextInputProps & { label: string }) {
+  const [focus, setFocus] = useState(false);
+  return (
+    <View style={s.stackWrap}>
+      <Text style={s.stackLabel}>{label}</Text>
+      <TextInput
+        {...input}
+        accessibilityLabel={input.accessibilityLabel ?? label}
+        placeholderTextColor="#98A2B3"
+        onFocus={(e) => {
+          setFocus(true);
+          input.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocus(false);
+          input.onBlur?.(e);
+        }}
+        style={[s.stackInput, focus && s.stackInputOn]}
+      />
+    </View>
+  );
+}
+
 export function FieldStatic({ label, value }: { label: string; value: string }) {
   return (
     <View style={s.field}>
@@ -754,6 +780,21 @@ export const s = StyleSheet.create({
   // outlineWidth: en la vista previa web, el borde del campo ya marca el foco.
   fieldInput: { flex: 1, fontSize: 15, color: colors.ink, textAlign: 'right', paddingVertical: 12, outlineWidth: 0 },
   fieldValue: { flex: 1, fontSize: 14, color: colors.ink, textAlign: 'right' },
+  stackWrap: { marginTop: 14 },
+  stackLabel: { fontSize: 14, fontWeight: '600', color: colors.ink, marginBottom: 6 },
+  stackInput: {
+    borderWidth: 1.5,
+    borderColor: colors.fieldBorder,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    minHeight: 50,
+    fontSize: 16,
+    color: colors.ink,
+    textAlign: 'left',
+    outlineWidth: 0,
+  },
+  stackInputOn: { borderWidth: 2, borderColor: colors.primary },
   amountInput: {
     fontSize: 36,
     fontWeight: '700',

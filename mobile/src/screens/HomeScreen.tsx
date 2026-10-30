@@ -85,7 +85,7 @@ export function HomeScreen() {
   const QUICK: { label: string; icon: IconName; go: () => void; badge?: boolean; main?: boolean; more?: boolean }[] = [
     { label: 'SINPE', icon: 'phone', go: () => nav.navigate('SinpeNumber'), badge: newSinpe, main: true },
     { label: 'Transferir', icon: 'swap', go: () => nav.navigate('TransferHub') },
-    { label: 'Recibos', icon: 'receipt', go: () => nav.navigate('Bills') },
+    { label: 'Pagos', icon: 'receipt', go: () => nav.navigate('Bills') },
     { label: 'Préstamo', icon: 'cash', go: () => nav.navigate('LoanSim') },
     { label: 'Más', icon: 'dots', go: () => setMore(true), more: true },
   ];

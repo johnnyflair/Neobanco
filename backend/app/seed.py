@@ -119,7 +119,7 @@ async def _build_member(s: AsyncSession, i: int, name: str, ced: str, phone: str
                         canton: str, pin_hash: str, now: datetime, rnd: random.Random,
                         demo: bool = False) -> None:
     """Asociado completo de ejemplo: cuentas, sobres, plazo, tarjetas, recibos, puntos y 60 días de historia."""
-    pts = 1240 if demo else max(1240 - i * 300, 110)
+    pts = DEMO_VISITOR_POINTS if demo else max(1240 - i * 300, 110)
     m = Member(full_name=name, cedula=ced, phone=phone, email=email, province=prov, canton=canton,
                kyc_status=KycStatus.verified, pin_hash=pin_hash, points=pts, points_lifetime=pts,
                created_at=now - timedelta(days=200), is_demo=demo)
@@ -261,13 +261,22 @@ async def _build_member(s: AsyncSession, i: int, name: str, ced: str, phone: str
 
 # Demo para visitantes ("Explorar" en la bienvenida): una asociada ficticia de solo lectura.
 DEMO_VISITOR = ("Ana Rojas Mora", "9-0000-0001", "80000001", "demo@kooa.cr", "San José", "Aserrí")
+DEMO_VISITOR_POINTS = 10_000  # nivel Oro: la demo muestra el programa de puntos completo
 
 
 async def demo_visitor(s: AsyncSession) -> None:
     """Crea la asociada de la demo si falta. Solo en local, dev y test."""
     if get_settings().env not in ("local", "dev", "test"):
         return
-    if await s.scalar(select(Member.id).where(Member.is_demo.is_(True)).limit(1)):
+    existing = await s.scalar(select(Member).where(Member.is_demo.is_(True)).limit(1))
+    if existing is not None:
+        # Si la demo ya existía, se le dejan los puntos de la demo (la demo no puede canjear).
+        if existing.points != DEMO_VISITOR_POINTS:
+            diff = DEMO_VISITOR_POINTS - existing.points
+            s.add(RewardEntry(member_id=existing.id, points=diff, reason="Bono de bienvenida a la demo"))
+            existing.points = DEMO_VISITOR_POINTS
+            existing.points_lifetime = max(existing.points_lifetime + max(diff, 0), DEMO_VISITOR_POINTS)
+            await s.commit()
         return
     rnd = random.Random(2031)  # nosec B311
     # Nadie entra con clave a la demo: se usa una clave aleatoria imposible de adivinar.

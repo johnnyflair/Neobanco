@@ -461,15 +461,18 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
           big={money(env.balance)}
           up={env.goal_amount ? `Meta ${money(env.goal_amount)} · ${p}%` : 'Sin meta'}
         />
-        <View style={st.heroBar}>
-          <View style={[st.heroBarFill, { width: `${p}%` }]} />
-        </View>
+        {env.goal_amount ? (
+          <View style={st.heroBar}>
+            <View style={[st.heroBarFill, { width: `${p}%` }]} />
+          </View>
+        ) : null}
       </View>
       <Text style={st.moveLabel}>¿Cuánto querés mover?</Text>
       <AmountInput value={amount} onChange={setAmount} autoFocus={false} label="Monto a mover" boxed />
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Btn label="Agregar al sobre" icon="plus" onPress={() => move('deposit')} loading={busy === 'deposit'} style={{ flex: 1 }} />
+        {/* Retirar a la izquierda y Agregar (acción principal) a la derecha. */}
         <Btn label="Retirar" icon="minus" variant="o" onPress={() => move('withdraw')} loading={busy === 'withdraw'} style={{ flex: 1 }} />
+        <Btn label="Agregar al sobre" icon="plus" onPress={() => move('deposit')} loading={busy === 'deposit'} style={{ flex: 1 }} />
       </View>
       <Small center>{`Se mueve desde y hacia tu cuenta colones (${crc ? money(crc.balance) : '…'})`}</Small>
       {msg && <Small center style={{ marginTop: 8, color: colors.emeraldDark }}>{msg}</Small>}

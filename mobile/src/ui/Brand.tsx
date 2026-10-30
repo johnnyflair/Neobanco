@@ -115,8 +115,8 @@ type LogoProps = {
   color?: string;
   browColor?: string;
   shadowColor?: string | null;
-  /** Las cejas se levantan cada pocos segundos, como saludando (inicio). */
-  greet?: boolean;
+  /** Saludo: las cejas suben dos veces cada vez que cambia este número (por ejemplo, al llegar al inicio). */
+  greet?: number;
 };
 
 function Wordmark({ color, browColor, brows = true }: { color: string; browColor: string; brows?: boolean }) {
@@ -135,27 +135,27 @@ function Wordmark({ color, browColor, brows = true }: { color: string; browColor
 }
 
 /** El logo completo "kooa". Las cejas son siempre las del logo oficial (contenta). */
-export function KooaLogo({ height, color = colors.teal, browColor = colors.primary, shadowColor = colors.shadowOnWhite, greet = false }: LogoProps) {
+export function KooaLogo({ height, color = colors.teal, browColor = colors.primary, shadowColor = colors.shadowOnWhite, greet }: LogoProps) {
   const w = (height * 210) / 100;
   const lift = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (!greet) return;
-    // Mismo gesto que los ojos de la bienvenida: cada 2 s suben las cejas y vuelven.
+    if (greet === undefined) return;
+    // Mismo gesto que los ojos de la bienvenida, dos veces seguidas, y después quieto.
     const up = (-8 * height) / 100;
-    const loop = Animated.loop(
+    lift.setValue(0);
+    const once = () =>
       Animated.sequence([
-        Animated.delay(2000),
         Animated.timing(lift, { toValue: up, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.delay(380),
-        Animated.timing(lift, { toValue: 0, duration: 260, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
+        Animated.delay(260),
+        Animated.timing(lift, { toValue: 0, duration: 240, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ]);
+    const anim = Animated.sequence([Animated.delay(450), once(), Animated.delay(180), once()]);
+    anim.start();
+    return () => anim.stop();
   }, [greet, lift, height]);
 
-  if (!greet) {
+  if (greet === undefined) {
     return (
       <Svg width={w} height={height} viewBox="0 0 210 100" accessibilityLabel="Kooa" accessibilityRole="image">
         {shadowColor &&

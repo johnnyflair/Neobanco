@@ -33,6 +33,8 @@ export function HomeScreen() {
   const [sheet, setSheet] = useState<Account | null>(null);
   const [move, setMove] = useState<Transaction | null>(null);
   const [more, setMore] = useState(false);
+  // Cada vez que se llega al inicio, el logo saluda levantando las cejas dos veces.
+  const [visits, setVisits] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,6 +60,7 @@ export function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
+      setVisits((v) => v + 1);
     }, [load]),
   );
 
@@ -101,7 +104,7 @@ export function HomeScreen() {
   return (
     <ScrollView style={s.screen} contentContainerStyle={[s.content, { paddingTop: insets.top + 12 }]} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
       <View style={s.header}>
-        <KooaLogo height={32} greet />
+        <KooaLogo height={32} greet={visits} />
         <View style={s.headerRight}>
           <Pressable
             onPress={() => nav.navigate('Movements')}

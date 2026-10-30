@@ -8,7 +8,7 @@ import { api } from '../../api/client';
 import { useLoad } from '../../api/hooks';
 import { formatIban, formatPhone } from '../../format';
 import { colors, radius } from '../../theme';
-import { Btn, ErrorText, FieldStatic, Loading, Screen, Sect } from '../../ui/kit';
+import { Btn, ErrorText, FieldStatic, Loading, Screen, Sect, Hero } from '../../ui/kit';
 import { Text } from '../../ui/typography';
 
 async function loadReceive() {
@@ -40,12 +40,7 @@ export function ReceiveScreen() {
 
   return (
     <Screen title="Recibir dinero">
-      <View style={st.hero}>
-        <Text style={st.ht}>SINPE Móvil</Text>
-        <Text style={st.hd}>Tu número para recibir</Text>
-        <Text style={st.big}>{phone}</Text>
-        <Text style={st.up}>{data.me.full_name.split(' ').slice(0, 2).join(' ')}</Text>
-      </View>
+      <Hero center title="Tu número para recibir por SINPE Móvil" big={phone} up={data.me.full_name.split(' ').slice(0, 2).join(' ')} />
       {iban && <FieldStatic label="IBAN" value={iban} />}
       <Sect plain>Así le va a llegar</Sect>
       <Text style={st.msg}>{text}</Text>

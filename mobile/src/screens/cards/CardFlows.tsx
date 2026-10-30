@@ -10,7 +10,7 @@ import type { CardLimits, LinkedMode } from '../../api/types';
 import { dayMonth, money, parseAmount, shortDate } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
-import { Btn, Chips, ErrorText, Field, Loading, Opt, Row, Screen, Sect, Small, Tag } from '../../ui/kit';
+import { Btn, Chips, ErrorText, Field, Loading, Opt, Row, Screen, Sect, Small, Tag, Hero } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
 import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
@@ -339,11 +339,8 @@ export function CardInstallmentsScreen({ route }: RootProps<'CardInstallments'>)
         onChange={setMonths}
       />
       {selected && (
-        <View style={st.hero}>
-          <Text style={st.ht}>Cuota mensual</Text>
-          <Text style={st.hd}>Tasa de ejemplo 1.5% mensual</Text>
-          <Cents style={st.big}>{money(q)}</Cents>
-          <Text style={st.up}>Total {money(q * months)}</Text>
+        <View style={{ marginTop: 14 }}>
+          <Hero title="Cuota mensual" big={money(q)} sub="Tasa de ejemplo 1.5% mensual" up={`Total ${money(q * months)}`} />
         </View>
       )}
       <ErrorText>{error}</ErrorText>

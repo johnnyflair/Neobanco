@@ -416,8 +416,8 @@ export function Hero({
   return (
     <View style={s.hero}>
       <Text style={[s.heroT, a]}>{title}</Text>
-      {sub ? <Text style={[s.heroD, a]}>{sub}</Text> : null}
       {big ? <Cents style={[s.heroBig, a]}>{big}</Cents> : null}
+      {sub ? <Text style={[s.heroD, a]}>{sub}</Text> : null}
       {up ? <Text style={[s.heroUp, a]}>{up}</Text> : null}
       {lines?.map(([k, v], i) => (
         <View key={k} style={[s.heroLine, i === 0 && { marginTop: 8 }]}>
@@ -594,14 +594,15 @@ export const s = StyleSheet.create({
     justifyContent: 'center',
   },
   checkText: { fontSize: 13.5, color: colors.ink, flex: 1 },
-  hero: { backgroundColor: colors.navy, borderRadius: radius.lg, padding: 16 },
-  heroT: { fontSize: 16, fontWeight: '700', color: colors.white },
-  heroD: { fontSize: 12, color: colors.heroSub, marginTop: 2, marginBottom: 8 },
-  heroBig: { fontSize: 24, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
-  heroUp: { fontSize: 12, color: colors.lime, marginTop: 2 },
-  heroLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.navyWatermark },
-  heroLineK: { fontSize: 13, color: colors.heroSub },
-  heroLineV: { fontSize: 13, fontWeight: '600', color: colors.lime, fontVariant: ['tabular-nums'] },
+  // Saldo abierto (opción A): sin caja de color, número grande protagonista como en el inicio.
+  hero: { paddingTop: 4, paddingBottom: 4 },
+  heroT: { fontSize: 13.5, fontWeight: '500', color: colors.muted },
+  heroD: { fontSize: 13, color: colors.primary, marginTop: 2 },
+  heroBig: { fontSize: 32, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'], marginTop: 2 },
+  heroUp: { fontSize: 13, color: colors.muted, marginTop: 2 },
+  heroLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
+  heroLineK: { fontSize: 14, color: colors.ink },
+  heroLineV: { fontSize: 14, fontWeight: '600', color: colors.amount, fontVariant: ['tabular-nums'] },
   tabs: { flexDirection: 'row', gap: 28, marginTop: 4, marginBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
   tab: { paddingTop: 6, paddingBottom: 10, alignItems: 'center' },
   tabText: { fontSize: 17, fontWeight: '700', color: '#98A2B3' },

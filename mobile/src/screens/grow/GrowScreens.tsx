@@ -80,8 +80,8 @@ export function GrowScreen() {
           key={a.id}
           first={i === 0}
           icon="lock"
-          title={`Plazo ${a.term_months} meses · ${pct(a.rate ?? 0)}`}
-          sub={`Vence ${a.maturity_date ? dayMonth(a.maturity_date) : ''}\n${ON_MATURITY[a.on_maturity ?? 'renew'] ?? ''}`}
+          title={`Plazo ${a.term_months} meses · ${Number(a.rate ?? 0)}%`}
+          sub={`Vence ${a.maturity_date ? dayMonth(a.maturity_date) : ''} · ${ON_MATURITY[a.on_maturity ?? 'renew'] ?? ''}`}
           right={<Cents style={st.amt}>{money(a.balance)}</Cents>}
         />
       ))}
@@ -474,8 +474,8 @@ const st = StyleSheet.create({
   },
   choiceT: { fontSize: 15, fontWeight: '700', color: colors.ink },
   mint: { backgroundColor: colors.mint, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, marginTop: 10 },
-  heroBox: { position: 'relative' },
-  heroBar: { position: 'absolute', left: 16, right: 16, bottom: 10, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.15)' },
-  heroBarFill: { height: 6, borderRadius: 3, backgroundColor: colors.lime },
+  heroBox: { marginBottom: 14 },
+  heroBar: { height: 6, borderRadius: 3, backgroundColor: colors.card, marginTop: 8 },
+  heroBarFill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
   big: { fontSize: 32, fontWeight: '700', textAlign: 'center', color: colors.amount, marginTop: 12, marginBottom: 6 },
 });

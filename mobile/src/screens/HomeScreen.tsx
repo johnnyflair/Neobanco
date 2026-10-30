@@ -306,5 +306,5 @@ export const pill = StyleSheet.create({
   text: { fontSize: 15, fontWeight: '700' },
   points: { backgroundColor: colors.orangeSoft },
   bell: { backgroundColor: '#EEF1F6' },
-  bellOn: { backgroundColor: '#C4320A' }, // naranja oscuro: el número en blanco se lee bien (contraste 5:1)
+  bellOn: { backgroundColor: '#DD6230' }, // naranja un poco más suave, el número en blanco y en negrita se sigue leyendo
 });

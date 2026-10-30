@@ -107,6 +107,16 @@ export function HomeScreen() {
       <View style={s.header}>
         <KooaLogo height={32} greet={visits} />
         <View style={s.headerRight}>
+          {/* Píldora de puntos (opción B): muestra cuántos tenés y lleva a Mis puntos. */}
+          <Pressable
+            style={({ pressed }) => [s.points, pressed && { opacity: 0.7 }]}
+            onPress={() => nav.navigate('Rewards')}
+            accessibilityRole="button"
+            accessibilityLabel={`Mis puntos: ${(me?.points ?? 0).toLocaleString('en-US')}`}
+          >
+            <Icon name="star" size={15} color={colors.orange} />
+            <Text style={s.pointsText}>{(me?.points ?? 0).toLocaleString('en-US')}</Text>
+          </Pressable>
           <HelpButton />
           <Pressable
             onPress={() => nav.navigate('Notices')}
@@ -253,7 +263,9 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.white },
   content: { padding: 18, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 18 },
+  points: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.orangeSoft, borderRadius: 16, paddingVertical: 5, paddingLeft: 9, paddingRight: 11 },
+  pointsText: { fontSize: 13.5, fontWeight: '700', color: colors.orangeInk, fontVariant: ['tabular-nums'] },
   bellBadge: {
     position: 'absolute',
     top: -5,

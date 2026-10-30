@@ -27,6 +27,11 @@ async function loadGrow() {
   return { accounts, rates };
 }
 
+/** "₡300,000.00" → "₡300,000" para la meta (la meta es un número redondo). */
+const moneyShort = (v: string) => money(v).replace(/\.00$/, '');
+/** "Monto fijo · ₡5,000.00 por quincena" → "Monto fijo": el detalle se ve dentro del sobre. */
+const shortMode = (m?: string | null) => (m ? m.split(' · ')[0] : null);
+
 function progress(a: Account) {
   const goal = Number(a.goal_amount ?? 0);
   return goal > 0 ? Math.min(100, Math.round((Number(a.balance) / goal) * 100)) : 0;
@@ -55,20 +60,31 @@ export function GrowScreen() {
       />
       <Btn label="Crear ahorro" icon="plus" onPress={() => nav.navigate('NewSaving')} />
 
-      <Sect>Sobres a la vista · sacás cuando querés</Sect>
-      {envelopes.map((a) => {
+      <Sect sub="Sacás cuando querés">Sobres a la vista</Sect>
+      {envelopes.map((a, i) => {
         const p = progress(a);
+        // Sobres sin recuadro (aprobado): ícono de sobre junto al nombre, línea fina entre uno y otro.
         return (
-          <Pressable key={a.id} style={st.goal} onPress={() => nav.navigate('Envelope', { account: a })} accessibilityRole="button">
+          <Pressable
+            key={a.id}
+            style={({ pressed }) => [st.goal, i === 0 && { borderTopWidth: 0 }, pressed && { opacity: 0.6 }]}
+            onPress={() => nav.navigate('Envelope', { account: a })}
+            accessibilityRole="button"
+          >
             <View style={st.goalHead}>
-              <Text style={st.goalName}>{a.name}</Text>
+              <Icon name="mail" size={20} color={colors.primary} />
+              <Text style={st.goalName} numberOfLines={1}>
+                {a.name}
+              </Text>
               <Cents style={st.amt}>{money(a.balance)}</Cents>
+              <Icon name="chev" size={15} color={colors.muted} />
             </View>
-            <View style={st.bar}>
-              <View style={[st.barFill, { width: `${p}%` }]} />
+            <View style={st.goalBody}>
+              <View style={st.bar}>
+                <View style={[st.barFill, { width: `${p}%` }]} />
+              </View>
+              <Small>{[a.goal_amount ? `${p}% de ${moneyShort(a.goal_amount)}` : 'Sin meta', shortMode(a.savings_mode)].filter(Boolean).join(' · ')}</Small>
             </View>
-            <Small>{a.goal_amount ? `${p}% de ${money(a.goal_amount)}` : 'Sin meta'}</Small>
-            {a.savings_mode ? <Small>{a.savings_mode}</Small> : null}
           </Pressable>
         );
       })}
@@ -457,11 +473,12 @@ const st = StyleSheet.create({
   delete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 28, paddingVertical: 10 },
   deleteText: { fontSize: 15, fontWeight: '600', color: colors.danger },
   amt: { fontSize: 14, fontWeight: '600', color: colors.amount },
-  goal: { borderWidth: 1.5, borderColor: colors.line, borderRadius: radius.md, padding: 12, marginTop: 8 },
-  goalHead: { flexDirection: 'row', justifyContent: 'space-between' },
-  goalName: { fontSize: 15, fontWeight: '600', color: colors.ink },
-  bar: { height: 7, backgroundColor: colors.card, borderRadius: 4, marginTop: 8, marginBottom: 4 },
-  barFill: { height: 7, backgroundColor: colors.emerald, borderRadius: 4 },
+  goal: { paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
+  goalHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  goalName: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.ink },
+  goalBody: { paddingLeft: 28, paddingRight: 23 },
+  bar: { height: 5, backgroundColor: colors.card, borderRadius: 3, marginTop: 8, marginBottom: 5 },
+  barFill: { height: 5, backgroundColor: colors.primary, borderRadius: 3 },
   choice: {
     flexDirection: 'row',
     gap: 12,

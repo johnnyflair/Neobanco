@@ -342,7 +342,8 @@ export function FieldStatic({ label, value }: { label: string; value: string }) 
 
 /** Sección (regla del inicio, para toda la App): franja gris de borde a borde y título.
  *  `plain` es para etiquetas de una pregunta dentro de un formulario (sin franja). */
-export const Sect = ({ children, plain, first }: { children: string; plain?: boolean; first?: boolean }) =>
+/** `sub`: subtítulo en gris debajo del título (sin resaltador). */
+export const Sect = ({ children, plain, first, sub }: { children: string; plain?: boolean; first?: boolean; sub?: string }) =>
   plain ? (
     <Text style={s.sect}>{children}</Text>
   ) : (
@@ -352,6 +353,7 @@ export const Sect = ({ children, plain, first }: { children: string; plain?: boo
         <Highlight soft header align="flex-start" style={s.sectTitle}>
           {children}
         </Highlight>
+        {sub ? <Text style={s.sectSub}>{sub}</Text> : null}
       </View>
     </>
   );
@@ -636,6 +638,7 @@ export const s = StyleSheet.create({
   bandWrap: { marginTop: 14 },
   sectWrap: { marginTop: 16, marginBottom: 4 },
   sectTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
+  sectSub: { fontSize: 13, color: colors.muted, marginTop: 4 },
   sect: { fontSize: 12, color: colors.muted, marginTop: 16, marginBottom: 4, fontWeight: '600', letterSpacing: 0.2 },
   btn: {
     flexDirection: 'row',

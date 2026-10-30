@@ -8,7 +8,7 @@ import { api } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
 import type { Card, CardSecrets } from '../../api/types';
 import { groupPan, money } from '../../format';
-import { colors, radius } from '../../theme';
+import { colors, MAX_FONT_SCALE_TIGHT, radius } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { CardChip, CardLogo, KooaCardFace } from '../../ui/Brand';
 import { Icon } from '../../ui/Icon';
@@ -151,8 +151,12 @@ function StolenBar() {
     <Pressable style={st.stolen} onPress={() => nav.navigate('Fraud', { reason: 'lost_card' })} accessibilityRole="button">
       <Icon name="alert" size={20} color={colors.danger} />
       <View style={{ flex: 1 }}>
-        <Text style={st.stolenT}>Bloquear por robo o pérdida</Text>
-        <Small>Es definitivo: te enviamos una tarjeta nueva</Small>
+        <Text style={st.stolenT} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>
+          Bloquear por robo o pérdida
+        </Text>
+        <Text style={st.stolenS} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>
+          Acción irreversible
+        </Text>
       </View>
       <Icon name="chev" size={16} color={colors.danger} />
     </Pressable>
@@ -419,8 +423,10 @@ const st = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.danger,
     borderRadius: radius.md,
-    padding: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
     marginTop: 16,
   },
   stolenT: { fontSize: 15, fontWeight: '700', color: colors.danger },
+  stolenS: { fontSize: 13, color: colors.danger },
 });

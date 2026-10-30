@@ -452,7 +452,7 @@ const st = StyleSheet.create({
   to: { alignItems: 'center', gap: 4, marginTop: -6 },
   toName: { fontSize: 18, fontWeight: '700', color: colors.ink, marginTop: 6 },
   verified: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.mint, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, marginTop: 6 },
-  verifiedTxt: { fontSize: 12, fontWeight: '700', color: colors.primaryInk },
+  verifiedTxt: { fontSize: 13, fontWeight: '700', color: colors.primaryInk },
   amount: { fontSize: 50, fontWeight: '700', color: colors.ink, textAlign: 'center', marginTop: 18, fontVariant: ['tabular-nums'] },
   quick: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 14 },
   chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 30, backgroundColor: colors.card },

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '../theme';
+import { colors, MAX_FONT_SCALE_TIGHT } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { Text } from './typography';
 
@@ -64,7 +64,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
               >
                 <Icon name={tab.icon} color={color} size={29} />
               </Animated.View>
-              <Text style={[st.label, { color }, focused && { fontWeight: '700' }]}>{tab.label}</Text>
+              <Text style={[st.label, { color }, focused && { fontWeight: '700' }]} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>{tab.label}</Text>
             </Pressable>
           );
         })}
@@ -87,5 +87,5 @@ const st = StyleSheet.create({
   indicator: { position: 'absolute', top: 0, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: colors.lime },
   row: { flexDirection: 'row', paddingTop: 10 },
   item: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
-  label: { fontSize: 12, fontWeight: '500' },
+  label: { fontSize: 13, fontWeight: '500' },
 });

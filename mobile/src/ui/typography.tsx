@@ -10,6 +10,8 @@ import {
   type TextStyle,
 } from 'react-native';
 
+import { MAX_FONT_SCALE } from '../theme';
+
 export const FONT = {
   regular: 'PlusJakartaSans_400Regular',
   medium: 'PlusJakartaSans_500Medium',
@@ -33,10 +35,10 @@ function withFont(style: TextProps['style']): TextStyle {
 }
 
 // En React 19 `ref` llega como una prop más y se pasa tal cual.
-export function Text({ style, ...props }: ComponentProps<typeof RNText>) {
-  return <RNText {...props} style={withFont(style)} />;
+export function Text({ style, maxFontSizeMultiplier = MAX_FONT_SCALE, ...props }: ComponentProps<typeof RNText>) {
+  return <RNText {...props} maxFontSizeMultiplier={maxFontSizeMultiplier} style={withFont(style)} />;
 }
 
-export function TextInput({ style, ...props }: ComponentProps<typeof RNTextInput>) {
-  return <RNTextInput {...props} style={withFont(style as TextProps['style'])} />;
+export function TextInput({ style, maxFontSizeMultiplier = MAX_FONT_SCALE, ...props }: ComponentProps<typeof RNTextInput>) {
+  return <RNTextInput {...props} maxFontSizeMultiplier={maxFontSizeMultiplier} style={withFont(style as TextProps['style'])} />;
 }

@@ -14,7 +14,7 @@ export const colors = {
   limeInk: '#3D4D06',
   orange: '#E8742E',
   ink: '#0D1B45',
-  muted: '#667085',
+  muted: '#475467', // texto de apoyo: gris oscuro (contraste ~7:1, pensado en vista cansada)
   line: '#E6E8EE',
   card: '#F5F7FA',
   white: '#FFFFFF',
@@ -30,7 +30,7 @@ export const colors = {
   heroSub: '#9FE1CB',
   orangeSoft: '#FCEFE6', // fondo del acceso a préstamos (naranja de la paleta)
   orangeInk: '#B85A1F',
-  amount: '#475467', // todos los montos: gris oscuro legible, para leerse como dinero y no como texto
+  amount: '#344054', // todos los montos: gris muy oscuro, para leerse como dinero y no como texto
   // Sombra larga de los ojos y el logo: siempre un tono del mismo fondo.
   shadowOnWhite: '#D3EFE6',
   shadowOnTeal: '#073A36',
@@ -43,7 +43,13 @@ export const radius = { sm: 10, md: 14, lg: 18, xl: 24 };
 
 export const type = {
   title: { fontSize: 22, fontWeight: '700' as const, color: colors.ink },
-  itemTitle: { fontSize: 15, fontWeight: '600' as const, color: colors.ink },
-  itemSub: { fontSize: 12, color: colors.muted },
-  amount: { fontSize: 14, fontWeight: '600' as const, color: colors.amount, fontVariant: ['tabular-nums' as const] },
+  itemTitle: { fontSize: 16, fontWeight: '600' as const, color: colors.ink },
+  itemSub: { fontSize: 14, color: colors.muted },
+  amount: { fontSize: 16, fontWeight: '600' as const, color: colors.amount, fontVariant: ['tabular-nums' as const] },
 };
+
+/** Tope del tamaño de letra del teléfono (igual que en Trueque): con letra «enorme» la App crece
+ *  hasta 25 % más que el diseño y no más, para que siga leyéndose sin deformarse. */
+export const MAX_FONT_SCALE = 1.25;
+/** Tope más bajo para etiquetas que deben caber en un renglón (menú, accesos rápidos). */
+export const MAX_FONT_SCALE_TIGHT = 1.1;

@@ -225,7 +225,7 @@ const st = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.line,
   },
-  k: { fontSize: 12, color: colors.muted },
+  k: { fontSize: 14, color: colors.muted },
   v: {
     fontSize: 15.5,
     fontWeight: '600',

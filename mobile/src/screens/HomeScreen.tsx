@@ -12,7 +12,7 @@ import type { Account, Me, Transaction } from '../api/types';
 import { money } from '../format';
 import { secureStore } from '../secureStore';
 import { AccountSheet } from './AccountSheet';
-import { colors, radius, type } from '../theme';
+import { colors, MAX_FONT_SCALE_TIGHT, radius, type } from '../theme';
 import { Highlight, KooaLogo } from '../ui/Brand';
 import { BottomSheet } from '../ui/BottomSheet';
 import { MoveList, MoveSheet } from '../ui/Moves';
@@ -192,7 +192,7 @@ export function HomeScreen() {
               <Icon name={q.icon} size={24} color={q.main ? colors.lime : q.more ? colors.ink : colors.emeraldDark} />
               {q.badge && <View style={s.badge} />}
             </View>
-            <Text style={s.quickText} numberOfLines={1}>
+            <Text style={s.quickText} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>
               {q.label}
             </Text>
           </Pressable>
@@ -258,7 +258,7 @@ function today() {
 
 const s = StyleSheet.create({
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.ink },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.ink },
   link: { fontSize: 14, fontWeight: '600', color: colors.primary },
   screen: { flex: 1, backgroundColor: colors.white },
   content: { padding: 18, paddingBottom: 40 },
@@ -282,18 +282,18 @@ const s = StyleSheet.create({
   },
   bellBadgeText: { color: colors.white, fontSize: 9.5, fontWeight: '700' },
   hello: { fontSize: 19, fontWeight: '700', color: colors.ink, marginTop: 20 },
-  date: { fontSize: 13, color: colors.muted, marginTop: 2 },
+  date: { fontSize: 14, color: colors.muted, marginTop: 2 },
   error: { color: colors.danger, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
   iconBox: { width: 22, alignItems: 'center' },
   icon: { fontSize: 20, fontWeight: '600', color: colors.primary },
-  amt: { fontSize: 15 },
+  amt: { fontSize: 16 },
   more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
   moreText: { fontSize: 14, fontWeight: '600', color: colors.primary },
   quick: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 4 },
   quickItem: { flex: 1, alignItems: 'center', gap: 7 },
-  quickIcon: { width: 54, height: 54, borderRadius: 17, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
-  quickText: { fontSize: 12.5, fontWeight: '600', textAlign: 'center', color: colors.ink },
+  quickIcon: { width: 56, height: 56, borderRadius: 17, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
+  quickText: { fontSize: 13.5, fontWeight: '600', textAlign: 'center', color: colors.ink },
   badge: {
     position: 'absolute',
     top: -3,
@@ -307,5 +307,5 @@ const s = StyleSheet.create({
   },
   sheetTitle: { fontSize: 18, fontWeight: '700', color: colors.ink, marginBottom: 6 },
   moreIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
-  version: { fontSize: 11, color: colors.muted, textAlign: 'center', marginTop: 18 },
+  version: { fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 18 },
 });

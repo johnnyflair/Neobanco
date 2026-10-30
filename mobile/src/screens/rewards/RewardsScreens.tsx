@@ -302,7 +302,7 @@ const st = StyleSheet.create({
   medalBox: { alignItems: 'center', width: 64 },
   medal: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   medalOn: { borderWidth: 3, borderColor: colors.orange },
-  medalT: { fontSize: 12, fontWeight: '700', marginTop: 5 },
+  medalT: { fontSize: 13, fontWeight: '700', marginTop: 5 },
   heroNext: { fontSize: 13.5, color: colors.ink, textAlign: 'center', marginTop: 14 },
   lvRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: 1, borderColor: colors.line },
   dot: { width: 12, height: 12, borderRadius: 6 },

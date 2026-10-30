@@ -288,12 +288,12 @@ export function MoveSheet({
 
 const st = StyleSheet.create({
   // El ícono va alineado con la primera línea (el nombre), no centrado entre los dos renglones.
-  ic: { width: 24, alignItems: 'center', alignSelf: 'flex-start', height: 21, justifyContent: 'center' },
+  ic: { width: 24, alignItems: 'center', alignSelf: 'flex-start', height: 22, justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderColor: colors.line },
-  day: { fontSize: 12.5, fontWeight: '600', color: colors.muted, paddingTop: 16, paddingBottom: 6, borderBottomWidth: 1, borderColor: '#D0D5DD' },
+  day: { fontSize: 14, fontWeight: '600', color: colors.muted, paddingTop: 16, paddingBottom: 6, borderBottomWidth: 1, borderColor: '#D0D5DD' },
   receipt: { backgroundColor: colors.white, paddingBottom: 4 },
   brand: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, marginBottom: 10, borderBottomWidth: 1, borderColor: colors.line },
-  brandTag: { fontSize: 12, color: colors.muted },
+  brandTag: { fontSize: 13, color: colors.muted },
   foot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 12, marginTop: 2, borderTopWidth: 1, borderColor: colors.line },
   footT: { fontSize: 13, fontWeight: '600', color: colors.teal },
   head: { alignItems: 'center', gap: 4, marginBottom: 10 },

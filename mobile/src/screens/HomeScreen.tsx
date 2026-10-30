@@ -7,6 +7,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, V
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError, api } from '../api/client';
+import { loadNotices } from '../api/notices';
 import type { Account, Me, Transaction } from '../api/types';
 import { money, shortDate } from '../format';
 import { secureStore } from '../secureStore';
@@ -16,7 +17,7 @@ import { Highlight, KooaEyes, KooaLogo } from '../ui/Brand';
 import { BottomSheet } from '../ui/BottomSheet';
 import { MoveList, MoveSheet } from '../ui/Moves';
 import { Icon, type IconName } from '../ui/Icon';
-import { Band } from '../ui/kit';
+import { Band, HelpButton } from '../ui/kit';
 import { Text } from '../ui/typography';
 import { Cents } from '../ui/Money';
 
@@ -36,6 +37,7 @@ export function HomeScreen() {
   const [more, setMore] = useState(false);
   // Cada vez que se llega al inicio, el logo saluda levantando las cejas dos veces.
   const [visits, setVisits] = useState(0);
+  const [unread, setUnread] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,6 +64,7 @@ export function HomeScreen() {
     useCallback(() => {
       load();
       setVisits((v) => v + 1);
+      loadNotices().then((n) => setUnread(n.filter((x) => x.isNew).length)).catch(() => {});
     }, [load]),
   );
 
@@ -77,9 +80,6 @@ export function HomeScreen() {
     (t) => t.category === 'sinpe' && Number(t.amount) > 0 && Date.now() - new Date(t.created_at).getTime() < 86_400_000,
   );
   const newSinpe = !!lastIn;
-  const received = moves.filter(
-    (t) => Number(t.amount) > 0 && t.category !== 'opening' && Date.now() - new Date(t.created_at).getTime() < 86_400_000,
-  ).length;
   // Cinco accesos fijos que caben completos; el último abre el resto.
   const QUICK: { label: string; icon: IconName; go: () => void; badge?: boolean; main?: boolean; more?: boolean }[] = [
     { label: 'SINPE', icon: 'phone', go: () => nav.navigate('SinpeNumber'), badge: newSinpe, main: true },
@@ -107,21 +107,19 @@ export function HomeScreen() {
       <View style={s.header}>
         <KooaLogo height={32} greet={visits} />
         <View style={s.headerRight}>
+          <HelpButton />
           <Pressable
-            onPress={() => nav.navigate('Movements')}
+            onPress={() => nav.navigate('Notices')}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel={received ? `Avisos: ${received} nuevos` : 'Avisos'}
+            accessibilityLabel={unread ? `Avisos: ${unread} nuevos` : 'Avisos'}
           >
             <Icon name="bell" size={25} color={colors.ink} />
-            {received > 0 && (
+            {unread > 0 && (
               <View style={s.bellBadge}>
-                <Text style={s.bellBadgeText}>{received > 9 ? '9+' : received}</Text>
+                <Text style={s.bellBadgeText}>{unread > 9 ? '9+' : unread}</Text>
               </View>
             )}
-          </Pressable>
-          <Pressable style={s.avatar} onPress={() => nav.navigate('Profile')} accessibilityLabel="Mi perfil">
-            <Text style={s.avatarText}>{me?.full_name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</Text>
           </Pressable>
         </View>
       </View>
@@ -274,7 +272,7 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.white },
   content: { padding: 18, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 20 },
   bellBadge: {
     position: 'absolute',
     top: -5,
@@ -290,8 +288,6 @@ const s = StyleSheet.create({
     borderColor: colors.white,
   },
   bellBadgeText: { color: colors.white, fontSize: 9.5, fontWeight: '700' },
-  avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: colors.navy, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: colors.navy, fontWeight: '700', fontSize: 13 },
   hello: { fontSize: 19, fontWeight: '700', color: colors.ink, marginTop: 20 },
   date: { fontSize: 13, color: colors.muted, marginTop: 2 },
   notice: {

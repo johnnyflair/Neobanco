@@ -16,11 +16,14 @@ export function Screen({
   back = true,
   children,
   footer,
+  right,
 }: {
   title?: string;
   back?: boolean;
   children: ReactNode;
   footer?: ReactNode;
+  /** Acción a la derecha del título (por ejemplo, Ayuda). */
+  right?: ReactNode;
 }) {
   const nav = useNavigation();
   const insets = useSafeAreaInsets();
@@ -39,9 +42,10 @@ export function Screen({
                 <Icon name="back" size={18} />
               </Pressable>
             )}
-            <Text style={s.h2} accessibilityRole="header">
+            <Text style={[s.h2, right ? { flex: 1 } : null]} accessibilityRole="header">
               {title}
             </Text>
+            {right}
           </View>
         )}
         {children}
@@ -539,6 +543,16 @@ export const Note = ({ children }: { children: ReactNode }) => (
     <Text style={s.noteText}>{children}</Text>
   </View>
 );
+
+/** Ayuda arriba a la derecha (inicio y Cuenta): abre el chat de Kooa. */
+export function HelpButton() {
+  const nav = useNavigation();
+  return (
+    <Pressable onPress={() => nav.navigate('Help')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ayuda">
+      <Icon name="headset" size={25} color={colors.ink} />
+    </Pressable>
+  );
+}
 
 export function Loading() {
   return (

@@ -58,7 +58,7 @@ export function HelpScreen() {
   const m = picked?.a;
 
   return (
-    <Screen back={false}>
+    <Screen title="Ayuda">
       <View style={st.hello}>
         <KooaEyes size={56} />
         <View style={{ flex: 1 }}>

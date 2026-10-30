@@ -32,12 +32,13 @@ import { ReceiveScreen } from './screens/transfer/ReceiveScreen';
 import { SendAmountScreen, SinpeDialScreen, SinpeNumberScreen } from './screens/transfer/SinpeScreens';
 import { TransferDoneScreen } from './screens/transfer/TransferDoneScreen';
 import { TransferHubScreen } from './screens/transfer/TransferHubScreen';
+import { NoticesScreen } from './screens/notices/NoticesScreen';
 import { ProfileScreen } from './screens/profile/ProfileScreen';
 import { AutoRuleScreen, RedeemScreen, RewardsScreen } from './screens/rewards/RewardsScreens';
 import { colors } from './theme';
 import { TabBar } from './ui/TabBar';
 
-export type TabParams = { Home: undefined; Cards: undefined; Grow: undefined; Help: undefined };
+export type TabParams = { Home: undefined; Cards: undefined; Grow: undefined; Account: undefined };
 
 export type RootParams = {
   Tabs: NavigatorScreenParams<TabParams>;
@@ -47,6 +48,8 @@ export type RootParams = {
   /** Monto, motivo, revisar y deslizar: igual para SINPE Móvil (a un celular) y para IBAN. */
   SendAmount: { kind: 'sinpe' | 'iban'; to: string; name: string; isNew?: boolean };
   Iban: undefined;
+  Help: undefined;
+  Notices: undefined;
   Pull: undefined;
   Receive: undefined;
   /** ¡Listo! común a todo movimiento de dinero: comprobante con filas, puntos y compartir. */
@@ -82,7 +85,6 @@ export type RootParams = {
   TermDeposit: { term: number };
   AccountDetail: { account: Account };
   Movements: undefined;
-  Profile: undefined;
   Rewards: undefined;
   Redeem: undefined;
   AutoRule: undefined;
@@ -109,7 +111,7 @@ function Tabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Cards" component={CardsScreen} />
       <Tab.Screen name="Grow" component={GrowScreen} />
-      <Tab.Screen name="Help" component={HelpScreen} />
+      <Tab.Screen name="Account" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -145,7 +147,8 @@ export function RootNavigator() {
       <Stack.Screen name="TermDeposit" component={TermDepositScreen} />
       <Stack.Screen name="AccountDetail" component={AccountDetailScreen} />
       <Stack.Screen name="Movements" component={MovementsScreen} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Help" component={HelpScreen} />
+      <Stack.Screen name="Notices" component={NoticesScreen} />
       <Stack.Screen name="Rewards" component={RewardsScreen} />
       <Stack.Screen name="Redeem" component={RedeemScreen} />
       <Stack.Screen name="AutoRule" component={AutoRuleScreen} />

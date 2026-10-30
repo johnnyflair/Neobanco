@@ -8,7 +8,7 @@ import { useLoad } from '../../api/hooks';
 import { formatPhone } from '../../format';
 import { useSession } from '../../session';
 import { colors, radius } from '../../theme';
-import { Btn, ErrorText, FieldStatic, Loading, Row, Screen, Small, Tag } from '../../ui/kit';
+import { Btn, ErrorText, FieldStatic, Loading, Row, Screen, Small, Tag, HelpButton } from '../../ui/kit';
 import { Text } from '../../ui/typography';
 
 async function loadProfile() {
@@ -36,7 +36,7 @@ export function ProfileScreen() {
   }
 
   return (
-    <Screen title="Mi perfil">
+    <Screen title="Cuenta" back={false} right={<HelpButton />}>
       <View style={st.head}>
         <View style={st.avatar}>
           <Text style={st.avatarText}>{initials}</Text>
@@ -63,7 +63,7 @@ export function ProfileScreen() {
         </View>
       )}
       <Row icon="shield" title="Seguridad" sub="Clave de 6 dígitos · huella o Face ID al entrar" />
-      <Row icon="file" title="Estados de cuenta" sub="Pedilos por Ayuda mientras los sumamos aquí" onPress={() => nav.navigate('Tabs', { screen: 'Help' })} />
+      <Row icon="file" title="Estados de cuenta" sub="Pedilos por Ayuda mientras los sumamos aquí" onPress={() => nav.navigate('Help')} />
       <Row
         icon="gift"
         title="Invitá a alguien"

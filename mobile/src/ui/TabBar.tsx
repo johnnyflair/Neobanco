@@ -14,7 +14,7 @@ const TABS: Record<string, { label: string; icon: IconName }> = {
   Home: { label: 'Inicio', icon: 'home' },
   Cards: { label: 'Tarjeta', icon: 'card' },
   Grow: { label: 'Invertir', icon: 'pig' },
-  Help: { label: 'Ayuda', icon: 'chat' },
+  Account: { label: 'Cuenta', icon: 'userCircle' },
 };
 
 export function TabBar({ state, navigation }: BottomTabBarProps) {

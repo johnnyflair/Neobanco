@@ -74,6 +74,10 @@ class MockCore:
         await self.s.flush()
         return account
 
+    async def close_account(self, account: Account) -> None:
+        account.is_open = False
+        await self.s.flush()
+
 
 class MockCards:
     def __init__(self, session: AsyncSession) -> None:

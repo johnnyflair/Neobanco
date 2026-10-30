@@ -154,6 +154,29 @@ async def test_envelope_and_term_deposit(client, ana):
     assert r.status_code == 201 and r.json()["annual_rate"] == "6.75"
 
 
+async def test_close_envelope_returns_balance(client, ana):
+    crc = await account(client, ana, "Colones")
+    body = {"name": "Para cerrar", "goal_amount": "100000", "months": 6, "mode": "roundup"}
+    env = (await client.post("/v1/savings/envelopes", headers=ana, json=body)).json()
+    await client.post(f"/v1/savings/envelopes/{env['id']}/deposit", headers={**ana, **idem()},
+                      json={"amount": "7500", "account_id": crc["id"]})
+    before = Decimal((await account(client, ana, "Colones"))["balance"])
+    key = idem()
+    r = await client.post(f"/v1/savings/envelopes/{env['id']}/close", headers={**ana, **key},
+                          json={"account_id": crc["id"]})
+    assert r.status_code == 200 and r.json()["returned"] == "7500.00"
+    again = await client.post(f"/v1/savings/envelopes/{env['id']}/close", headers={**ana, **key},
+                              json={"account_id": crc["id"]})
+    assert again.json() == r.json()  # reintento idempotente: no devuelve dos veces
+    after = Decimal((await account(client, ana, "Colones"))["balance"])
+    assert after - before == Decimal("7500")
+    names = [a["name"] for a in (await client.get("/v1/accounts", headers=ana)).json()["accounts"]]
+    assert "Para cerrar" not in names
+    r = await client.post(f"/v1/savings/envelopes/{env['id']}/deposit", headers={**ana, **idem()},
+                          json={"amount": "100", "account_id": crc["id"]})
+    assert r.status_code == 404
+
+
 async def test_rewards_redeem_to_account(client, ana):
     before = Decimal((await account(client, ana, "Colones"))["balance"])
     pts = (await client.get("/v1/rewards", headers=ana)).json()["points"]

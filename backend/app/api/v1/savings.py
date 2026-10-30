@@ -16,7 +16,7 @@ from app.db.models import Account, AccountType, Currency, Member
 from app.db.session import get_session
 from app.providers import Providers, get_providers
 from app.providers.base import InsufficientFunds
-from app.schemas import AccountOut, EnvelopeIn, MoveIn, RateOut, TermDepositIn
+from app.schemas import AccountOut, CloseEnvelopeIn, EnvelopeIn, MoveIn, RateOut, TermDepositIn
 from app.services import ENVELOPE_RATE, POINTS_RULES, TERM_RATES, earn, member_perks, new_reference
 
 router = APIRouter(prefix="/savings", tags=["Ahorro e inversión"])
@@ -48,7 +48,7 @@ async def create_envelope(body: EnvelopeIn, request: Request, member: Member = D
 
 async def _envelope(p: Providers, member: Member, envelope_id: uuid.UUID) -> Account:
     a = await p.core.get_account(member.id, envelope_id)
-    if a is None or a.type != AccountType.envelope:
+    if a is None or a.type != AccountType.envelope or not a.is_open:
         raise not_found("sobre")
     return a
 
@@ -88,6 +88,33 @@ async def withdraw(envelope_id: uuid.UUID, body: MoveIn, request: Request, key: 
                    member: Member = Depends(current_member), p: Providers = Depends(get_providers),
                    session: AsyncSession = Depends(get_session)):
     return await _move(-1, envelope_id, body, request, key, member, p, session)
+
+
+@router.post("/envelopes/{envelope_id}/close")
+async def close_envelope(envelope_id: uuid.UUID, body: CloseEnvelopeIn, request: Request,
+                         key: str = Depends(idempotency_key), member: Member = Depends(current_member),
+                         p: Providers = Depends(get_providers), session: AsyncSession = Depends(get_session)):
+    """Elimina un sobre: lo que tenga vuelve a la cuenta en colones elegida y se apaga su ahorro automático.
+    El sobre queda cerrado (no se borra) para que su historial siga en los movimientos."""
+    h = body_hash({"env": str(envelope_id), "close": True, **body.model_dump()})
+    if (prev := await replay(session, member.id, key, h)) is not None:
+        return prev
+    env = await _envelope(p, member, envelope_id)
+    dest = await p.core.get_account(member.id, body.account_id)
+    if dest is None or not dest.is_open or dest.currency != Currency.CRC or dest.type != AccountType.savings:
+        raise not_found("cuenta en colones")
+    returned = env.balance
+    ref = None
+    if returned > 0:
+        ref = new_reference("SB")
+        await p.core.post(env.id, -returned, f"Cierre del sobre {env.name}", "envelope", ref)
+        await p.core.post(dest.id, returned, f"Desde el sobre {env.name}", "envelope", ref)
+    await p.core.close_account(env)
+    resp = {"reference": ref, "returned": str(returned), "account_balance": str(dest.balance)}
+    remember(session, member.id, key, h, resp)
+    audit(session, request, "envelope_close", member_id=member.id, reference=ref)
+    await session.commit()
+    return resp
 
 
 @router.post("/term-deposits", status_code=201)

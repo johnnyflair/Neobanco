@@ -45,9 +45,15 @@ export function ReviewSheet({
   onConfirm,
   busy,
   error,
+  danger,
+  note,
 }: {
   visible: boolean;
   onClose: () => void;
+  /** Acción que no se puede deshacer: deslizador en rojo. */
+  danger?: boolean;
+  /** Texto corto debajo del título. */
+  note?: string;
   title?: string;
   warn?: string | null;
   rows: ReceiptRow[];
@@ -59,6 +65,7 @@ export function ReviewSheet({
   return (
     <BottomSheet visible={visible} onClose={() => !busy && onClose()}>
       <Text style={st.sheetTitle}>{title}</Text>
+      {note ? <Text style={st.note}>{note}</Text> : null}
       {warn ? (
         <View style={st.warn}>
           <Icon name="alert" size={18} color={colors.amberFg} />
@@ -68,7 +75,7 @@ export function ReviewSheet({
       <Rows rows={rows} />
       <ErrorText>{error ?? null}</ErrorText>
       <View style={{ marginTop: 14 }}>
-        <SlideToConfirm label={slideLabel} onConfirm={onConfirm} busy={busy} />
+        <SlideToConfirm label={slideLabel} onConfirm={onConfirm} busy={busy} danger={danger} />
       </View>
     </BottomSheet>
   );
@@ -127,6 +134,7 @@ export function receiptDate(iso?: string) {
 }
 
 const st = StyleSheet.create({
+  note: { fontSize: 14, lineHeight: 20, color: colors.muted, marginTop: -4, marginBottom: 8 },
   sheetTitle: { fontSize: 20, fontWeight: '700', color: colors.ink, marginBottom: 10 },
   warn: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: colors.amberBg, borderRadius: radius.md, padding: 12, marginBottom: 6 },
   warnTxt: { flex: 1, fontSize: 13, lineHeight: 18, color: colors.amberFg },

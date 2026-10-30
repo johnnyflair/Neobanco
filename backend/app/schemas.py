@@ -345,6 +345,10 @@ class RateOut(BaseModel):
     annual_rate: Decimal
 
 
+class CloseEnvelopeIn(BaseModel):
+    account_id: uuid.UUID  # cuenta en colones a la que vuelve el saldo
+
+
 class EnvelopeIn(BaseModel):
     name: Annotated[str, Field(min_length=2, max_length=60)]
     goal_amount: PositiveMoney

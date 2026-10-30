@@ -10,7 +10,8 @@ import { Text } from './typography';
 const KNOB = 54;
 const PAD = 5;
 
-export function SlideToConfirm({ label, onConfirm, busy }: { label: string; onConfirm: () => void; busy?: boolean }) {
+/** `danger`: en rojo, para acciones que no se pueden deshacer (por ejemplo, eliminar un sobre). */
+export function SlideToConfirm({ label, onConfirm, busy, danger }: { label: string; onConfirm: () => void; busy?: boolean; danger?: boolean }) {
   const [width, setWidth] = useState(0);
   const x = useRef(new Animated.Value(0)).current;
   const max = Math.max(0, width - KNOB - PAD * 2);
@@ -48,7 +49,7 @@ export function SlideToConfirm({ label, onConfirm, busy }: { label: string; onCo
 
   return (
     <View
-      style={st.track}
+      style={[st.track, danger && { backgroundColor: colors.dangerSoft }]}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       accessible
       accessibilityRole="button"
@@ -58,11 +59,11 @@ export function SlideToConfirm({ label, onConfirm, busy }: { label: string; onCo
       accessibilityActions={[{ name: 'activate' }]}
       onAccessibilityAction={() => !busy && onConfirm()}
     >
-      <Animated.View style={[st.fill, { width: fill }]} />
+      <Animated.View style={[st.fill, danger && { backgroundColor: 'rgba(163,45,45,0.14)' }, { width: fill }]} />
       <Animated.View style={[st.labelWrap, { opacity: busy ? 1 : labelOpacity }]} pointerEvents="none">
-        <Text style={st.label}>{busy ? 'Enviando…' : label}</Text>
+        <Text style={[st.label, danger && { color: colors.danger }]}>{busy ? (danger ? 'Eliminando…' : 'Enviando…') : label}</Text>
       </Animated.View>
-      <Animated.View style={[st.knob, { transform: [{ translateX: x }] }]} {...pan.panHandlers}>
+      <Animated.View style={[st.knob, danger && { backgroundColor: colors.danger }, { transform: [{ translateX: x }] }]} {...pan.panHandlers}>
         {busy ? <ActivityIndicator color={colors.white} /> : <Icon name="chev" size={24} color={colors.white} />}
       </Animated.View>
     </View>

@@ -253,6 +253,12 @@ export const api = {
   rates: () => request<Rate[]>('/v1/savings/rates'),
   createEnvelope: (body: { name: string; goal_amount: string; months: number; mode: 'fixed' | 'roundup' | 'percent' }) =>
     request<Account>('/v1/savings/envelopes', { method: 'POST', body: JSON.stringify(body) }),
+  envelopeClose: (envelopeId: string, accountId: string, key: string) =>
+    moneyMove<{ reference: string | null; returned: string; account_balance: string }>(
+      `/v1/savings/envelopes/${envelopeId}/close`,
+      { account_id: accountId },
+      key,
+    ),
   envelopeMove: (envelopeId: string, direction: 'deposit' | 'withdraw', amount: string, accountId: string, key: string) =>
     moneyMove<{ reference: string; envelope_balance: string }>(
       `/v1/savings/envelopes/${envelopeId}/${direction}`,

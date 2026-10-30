@@ -198,7 +198,13 @@ export function NewEnvelopeScreen() {
 }
 
 export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
+  const nav = useNavigation();
   const [env, setEnv] = useState<Account>(route.params.account);
+  // Eliminar sobre (opción A): link rojo al final; confirma con hoja y deslizador rojo.
+  const [closing, setClosing] = useState(false);
+  const [closeBusy, setCloseBusy] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
+  const closeKey = useRef(newIdempotencyKey());
   const accounts = useLoad(api.accounts);
   const crc = accounts.data?.find((a) => a.type === 'savings' && a.currency === 'CRC');
   const [amount, setAmount] = useState('10000');
@@ -230,6 +236,43 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
     }
   }
 
+  async function closeEnvelope() {
+    if (!crc) return;
+    setCloseBusy(true);
+    setCloseError(null);
+    try {
+      const r = await api.envelopeClose(env.id, crc.id, closeKey.current);
+      setClosing(false);
+      // Al terminar, "Listo" vuelve a Invertir (el sobre ya no aparece ahí).
+      nav.reset({
+        index: 1,
+        routes: [
+          { name: 'Tabs', params: { screen: 'Grow' } },
+          {
+            name: 'TransferDone',
+            params: {
+              hi: `Eliminaste el sobre «${env.name}»`,
+              amountLabel: Number(r.returned) > 0 ? 'Volvió a tu cuenta' : undefined,
+              amount: Number(r.returned) > 0 ? r.returned : undefined,
+              back: 'Grow',
+              rows: [
+                ['Sobre', env.name],
+                ['Volvió a', 'Cuenta colones'],
+                ...(r.reference ? ([['Comprobante', r.reference]] as [string, string][]) : []),
+                ['Ahorro automático', 'Apagado'],
+                ['Fecha', receiptDate()],
+              ],
+            },
+          },
+        ],
+      });
+    } catch (e) {
+      setCloseError(errorMessage(e));
+    } finally {
+      setCloseBusy(false);
+    }
+  }
+
   return (
     <Screen title={env.name}>
       <View style={st.heroBox}>
@@ -256,6 +299,33 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
         <Row title="Retiros" right={<Text style={[st.amt, { color: colors.emeraldDark }]}>Cuando querás, sin costo</Text>} />
         <Row title="Se mueve con" right={<Small>Cuenta colones · {crc ? money(crc.balance) : '…'}</Small>} />
       </View>
+      <Pressable
+        style={({ pressed }) => [st.delete, pressed && { opacity: 0.6 }]}
+        onPress={() => {
+          setCloseError(null);
+          setClosing(true);
+        }}
+        accessibilityRole="button"
+      >
+        <Icon name="trash" size={18} color={colors.danger} />
+        <Text style={st.deleteText}>Eliminar sobre</Text>
+      </Pressable>
+      <ReviewSheet
+        visible={closing}
+        onClose={() => setClosing(false)}
+        danger
+        title={`¿Eliminar "${env.name}"?`}
+        note="El saldo vuelve a tu cuenta y se apaga el ahorro automático. No se puede deshacer."
+        rows={[
+          ['Vuelve a', 'Cuenta colones'],
+          ['Monto', money(env.balance)],
+          ['Ahorro automático', 'Se apaga'],
+        ]}
+        slideLabel="Deslizá para eliminar"
+        onConfirm={closeEnvelope}
+        busy={closeBusy}
+        error={closeError}
+      />
     </Screen>
   );
 }
@@ -383,6 +453,8 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
 }
 
 const st = StyleSheet.create({
+  delete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 28, paddingVertical: 10 },
+  deleteText: { fontSize: 15, fontWeight: '600', color: colors.danger },
   amt: { fontSize: 14, fontWeight: '600', color: colors.amount },
   goal: { borderWidth: 1.5, borderColor: colors.line, borderRadius: radius.md, padding: 12, marginTop: 8 },
   goalHead: { flexDirection: 'row', justifyContent: 'space-between' },

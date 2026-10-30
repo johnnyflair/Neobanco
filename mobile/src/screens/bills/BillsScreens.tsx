@@ -4,12 +4,12 @@
 // - Detalle de un recibo guardado: pagar y pago automático (suma puntos la primera vez).
 import { useNavigation } from '@react-navigation/native';
 import { useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { api, newIdempotencyKey } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
 import type { BillPayment, BillProvider, BillQuote, SavedBill } from '../../api/types';
-import { dayMonth, money } from '../../format';
+import { dayMonth, longDate, money } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors } from '../../theme';
 import { Icon, type IconName } from '../../ui/Icon';
@@ -43,13 +43,14 @@ function daysUntil(isoDate: string): number {
 
 function dueText(b: SavedBill): { text: string; urgent: boolean } {
   if (!b.pending_amount) return { text: 'Al día', urgent: false };
-  if (b.autopay) return { text: `Automático${b.due_date ? ` · ${dayMonth(b.due_date)}` : ''}`, urgent: false };
+  if (b.autopay) return { text: b.due_date ? `Se paga solo el ${longDate(b.due_date)}` : 'Se paga solo cada mes', urgent: false };
   if (!b.due_date) return { text: 'Pendiente', urgent: false };
   const n = daysUntil(b.due_date);
-  if (n < 0) return { text: 'Vencido', urgent: true };
-  if (n === 0) return { text: 'Vence hoy', urgent: true };
-  if (n === 1) return { text: 'Vence mañana', urgent: true };
-  return { text: `Vence ${dayMonth(b.due_date)}`, urgent: false };
+  // Fechas escritas completas (pensado en personas mayores): "Vence mañana, 31 de octubre".
+  if (n < 0) return { text: `Venció el ${longDate(b.due_date)}`, urgent: true };
+  if (n === 0) return { text: `Vence hoy, ${longDate(b.due_date)}`, urgent: true };
+  if (n === 1) return { text: `Vence mañana, ${longDate(b.due_date)}`, urgent: true };
+  return { text: `Vence el ${longDate(b.due_date)}`, urgent: false };
 }
 
 async function loadBills() {
@@ -151,7 +152,7 @@ export function BillsScreen() {
               title="Recibos del mes"
               sub="Pendientes de pago"
               big={money(total)}
-              up={`${bills.filter((b) => b.autopay).length} de ${bills.length} en pago automático`}
+              up={`${bills.filter((b) => b.autopay).length} de ${bills.length} se paga solo cada mes`}
             />
             <View style={{ marginTop: 8 }}>
               {bills.map((b) => {
@@ -202,7 +203,7 @@ export function BillsScreen() {
               busy={paying}
               error={error}
             />
-            <Btn label="+ Agregar otro servicio" variant="l" onPress={() => setTab('other')} />
+            <Btn label="Agregar otro servicio" icon="plus" variant="o" onPress={() => setTab('other')} />
           </View>
         )
       ) : (
@@ -457,18 +458,19 @@ export function BillDetailScreen({ route }: RootProps<'BillDetail'>) {
       <Small center>
         {bill.reference_label} {bill.reference}
       </Small>
-      <Text style={{ fontSize: 34, fontWeight: '700', textAlign: 'center', color: colors.amount, marginTop: 14 }}>
+      <Cents style={{ fontSize: 34, fontWeight: '700', textAlign: 'center', color: colors.ink, marginTop: 14 }}>
         {bill.pending_amount ? money(bill.pending_amount) : 'Al día'}
-      </Text>
-      <Small center style={due.urgent ? { color: colors.danger } : undefined}>
-        {due.text}
-      </Small>
+      </Cents>
+      <View style={[st.dueTag, due.urgent && st.dueUrgent]}>
+        <Icon name="calendar" size={16} color={due.urgent ? colors.danger : colors.muted} />
+        <Text style={[st.dueText, due.urgent && { color: colors.danger }]}>{due.text}</Text>
+      </View>
       <View style={{ marginTop: 14 }}>
         <Row title="Pagar desde" right={<Small>Cuenta colones · {crc ? money(crc.balance) : '…'}</Small>} />
         <Row
-          title="Pago automático"
-          sub="Pagamos cada mes el día que vence · 20 puntos"
-          right={<Toggle value={bill.autopay} onChange={toggleAuto} label="Pago automático" />}
+          title="Pagarlo solo cada mes"
+          sub="Lo pagamos el día que vence. Ganás 20 puntos."
+          right={<Toggle value={bill.autopay} onChange={toggleAuto} label="Pagarlo solo cada mes" />}
         />
         {bill.autopay && (
           <Row
@@ -500,3 +502,9 @@ export function BillDetailScreen({ route }: RootProps<'BillDetail'>) {
     </Screen>
   );
 }
+
+const st = StyleSheet.create({
+  dueTag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', backgroundColor: colors.card, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, marginTop: 6 },
+  dueUrgent: { backgroundColor: colors.dangerSoft },
+  dueText: { fontSize: 14, fontWeight: '600', color: colors.muted },
+});

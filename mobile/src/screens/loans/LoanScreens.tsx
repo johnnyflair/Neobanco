@@ -1,10 +1,9 @@
 // Préstamos (según el prototipo aprobado):
 // simulador → opciones de plazo → revisar y firmar (con la clave) → dinero en la cuenta.
 // Si se necesita más que el preaprobado: solicitud y seguimiento.
-import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { api, newIdempotencyKey } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
@@ -12,7 +11,7 @@ import type { LoanSim } from '../../api/types';
 import { dayMonth, money, parseAmount, shortDate } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
-import { Btn, Check, Chips, ErrorText, Field, Hero, Opt, Row, Screen, Sect, Small, Steps, Tag } from '../../ui/kit';
+import { AmountInput, Btn, Check, Chips, ErrorText, Field, Opt, Row, Screen, Sect, Small, StepBar, Steps, Tag } from '../../ui/kit';
 import { usePin } from '../../ui/PinSheet';
 import { receiptDate } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
@@ -21,54 +20,105 @@ import { Cents } from '../../ui/Money';
 const TERMS = [12, 24, 36, 48, 60];
 const MIN = 100_000;
 
+// Pedí un préstamo en pasos (aprobado, igual que el ahorro a plazo): 1) cuánto, 2) en cuánto
+// tiempo, con la cuota de cada plazo a la vista, 3) revisar y firmar.
+const QUICK = [500_000, 1_000_000, 1_500_000, 3_000_000];
+
 export function LoanSimScreen() {
   const nav = useNavigation();
   const offer = useLoad(api.loanOffer);
   const max = Number(offer.data?.max_amount ?? 5_000_000);
-  const [amount, setAmount] = useState(1_500_000);
+  const [step, setStep] = useState(1);
+  const [amountText, setAmountText] = useState('1500000');
+  const amount = Number(amountText || 0);
   const [term, setTerm] = useState(36);
-  const [sim, setSim] = useState<LoanSim | null>(null);
+  const [sims, setSims] = useState<Record<number, LoanSim>>({});
+  const [error, setError] = useState<string | null>(null);
 
-  // Cuota calculada por la API (fuente de verdad), con una pequeña espera mientras se arrastra.
+  // Cuota de cada plazo calculada por la API (fuente de verdad) cuando se llega al paso 2.
   useEffect(() => {
-    const t = setTimeout(() => api.loanSimulate(amount, term).then(setSim, () => setSim(null)), 200);
-    return () => clearTimeout(t);
-  }, [amount, term]);
+    if (step !== 2) return;
+    let alive = true;
+    Promise.all(TERMS.map((t) => api.loanSimulate(amount, t).then((r) => [t, r] as const)))
+      .then((rs) => alive && setSims(Object.fromEntries(rs)))
+      .catch((e) => alive && setError(errorMessage(e)));
+    return () => {
+      alive = false;
+    };
+  }, [step, amount]);
+
+  function next() {
+    setError(null);
+    if (step === 1) {
+      if (!amount || amount < MIN) return setError(`El mínimo es ${money(MIN).replace(/\.00$/, '')}.`);
+      if (amount > max) return setError(`Tenés preaprobado hasta ${money(max)}. Para más, pedí otro monto.`);
+      setSims({});
+      return setStep(2);
+    }
+    const s = sims[term];
+    if (!s) return;
+    nav.navigate('LoanReview', { amount, term, monthly: s.monthly_payment, total: (Number(s.monthly_payment) * term).toFixed(2) });
+  }
+
+  const short = (v: number) => money(v).replace(/\.00$/, '');
 
   return (
     <Screen
-      title="¿Cuánto necesitás?"
+      title="Pedí un préstamo"
+      onBack={step > 1 ? () => setStep(1) : undefined}
       footer={
         <>
-          <Btn label="Ver mis opciones" onPress={() => nav.navigate('LoanOptions', { amount, term })} disabled={!sim} />
-          <Btn label="¿Necesitás más? Pedí otro monto" variant="l" onPress={() => nav.navigate('LoanApply')} />
+          <Btn label="Continuar" onPress={next} disabled={step === 2 && !sims[term]} />
+          {step === 1 && <Btn label="¿Necesitás más? Pedí otro monto" variant="l" onPress={() => nav.navigate('LoanApply')} />}
         </>
       }
     >
-      <Small>{offer.data ? `Preaprobado hasta ${money(offer.data.max_amount)}` : 'Simulación sin compromiso'}</Small>
-      <Cents style={st.amount}>{money(amount)}</Cents>
-      <Slider
-        value={amount}
-        minimumValue={MIN}
-        maximumValue={max}
-        step={50_000}
-        onValueChange={setAmount}
-        minimumTrackTintColor={colors.emerald}
-        maximumTrackTintColor={colors.line}
-        thumbTintColor={colors.primary}
-        accessibilityLabel="Monto del préstamo"
-      />
-      <Small style={{ marginBottom: 6, marginTop: 4 }}>Plazo en meses</Small>
-      <Chips options={TERMS.map((n) => ({ value: n, label: String(n) }))} value={term} onChange={setTerm} />
-      <View style={{ marginTop: 14 }}>
-        <Hero
-          title="Cuota mensual"
-          sub="Estimada según monto y plazo"
-          big={sim ? money(sim.monthly_payment) : '…'}
-          up={`Tasa de ejemplo ${sim?.annual_rate ?? '18'}% anual`}
-        />
-      </View>
-      <ErrorText>{offer.error}</ErrorText>
+      <StepBar n={step} total={3} />
+      <Small>{`Paso ${step} de 3`}</Small>
+      {step === 1 && (
+        <>
+          <Text style={st.ask}>¿Cuánto necesitás?</Text>
+          <AmountInput value={amountText} onChange={setAmountText} autoFocus={false} label="Monto del préstamo" boxed />
+          <View style={st.quick}>
+            {QUICK.filter((v) => v <= max).map((v) => (
+              <Pressable
+                key={v}
+                style={[st.quickChip, amount === v && st.quickOn]}
+                onPress={() => setAmountText(String(v))}
+                accessibilityRole="button"
+                accessibilityState={{ selected: amount === v }}
+              >
+                <Text style={[st.quickText, amount === v && { color: colors.primaryInk }]}>{short(v)}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Small>{offer.data ? `Tenés preaprobado hasta ${money(offer.data.max_amount)}.` : 'Simulación sin compromiso.'}</Small>
+        </>
+      )}
+      {step === 2 && (
+        <>
+          <Text style={st.ask}>{`¿En cuánto tiempo querés pagar ${short(amount)}?`}</Text>
+          {TERMS.map((t) => (
+            <Opt
+              key={t}
+              selected={t === term}
+              onPress={() => setTerm(t)}
+              title={`${t} meses`}
+              sub={sims[t] ? `Total a pagar ${money(Number(sims[t].monthly_payment) * t)}` : undefined}
+              right={
+                <Text style={[st.fee, t === term && { color: colors.primary }]}>
+                  {sims[t] ? <Cents style={st.fee}>{money(sims[t].monthly_payment)}</Cents> : '…'}
+                  <Text style={st.feeSub}> al mes</Text>
+                </Text>
+              }
+            />
+          ))}
+          <Small style={{ marginTop: 10 }}>
+            {`Tasa de ejemplo ${sims[term]?.annual_rate ?? '18'}% anual. Más plazo: cuota más baja, pero pagás más intereses.`}
+          </Small>
+        </>
+      )}
+      <ErrorText>{error ?? offer.error}</ErrorText>
     </Screen>
   );
 }
@@ -168,6 +218,8 @@ export function LoanReviewScreen({ route }: RootProps<'LoanReview'>) {
 
   return (
     <Screen title="Revisá y firmá" footer={<Btn label="Firmar con mi clave" icon="lock" onPress={sign} loading={busy} />}>
+      <StepBar n={3} total={3} />
+      <Small style={{ marginBottom: 8 }}>Paso 3 de 3</Small>
       <Row first title="Monto" right={<Cents style={st.amt}>{money(amount)}</Cents>} />
       <Row title="Cuota" right={<Cents style={st.amt}>{money(monthly)}</Cents>} />
       <Row title="Plazo" right={<Text style={st.amt}>{term} meses</Text>} />
@@ -261,6 +313,13 @@ export function LoanTrackScreen() {
 }
 
 const st = StyleSheet.create({
+  ask: { fontSize: 22, fontWeight: '700', color: colors.ink, marginTop: 10, marginBottom: 8, lineHeight: 28 },
+  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  quickChip: { borderWidth: 1.5, borderColor: colors.fieldBorder, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 12 },
+  quickOn: { borderColor: colors.primary, backgroundColor: colors.optOn },
+  quickText: { fontSize: 15, fontWeight: '600', color: colors.ink },
+  fee: { fontSize: 16, fontWeight: '700', color: colors.amount },
+  feeSub: { fontSize: 13, fontWeight: '400', color: colors.muted },
   amount: { fontSize: 32, fontWeight: '700', textAlign: 'center', color: colors.amount, marginTop: 12, marginBottom: 6 },
   amt: { fontSize: 14, fontWeight: '600', color: colors.amount },
   mint: { backgroundColor: colors.mint, borderRadius: radius.md, padding: 12, marginTop: 18 },

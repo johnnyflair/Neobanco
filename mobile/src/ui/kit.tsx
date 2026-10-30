@@ -471,9 +471,8 @@ export function Tabs<T extends string>({ options, value, onChange }: { options: 
       {options.map((o) => {
         const on = o.value === value;
         return (
-          <Pressable key={o.value} onPress={() => onChange(o.value)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={s.tab}>
-            <Text style={[s.tabText, on && { color: colors.navy }]}>{o.label}</Text>
-            {on && <View style={s.tabLine} />}
+          <Pressable key={o.value} onPress={() => onChange(o.value)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={[s.tab, on && s.tabOn]}>
+            <Text style={[s.tabText, on && s.tabTextOn]}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -638,10 +637,12 @@ export const s = StyleSheet.create({
   heroLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 11, borderTopWidth: 1, borderTopColor: colors.line },
   heroLineK: { fontSize: 16, color: colors.ink },
   heroLineV: { fontSize: 16, fontWeight: '600', color: colors.amount, fontVariant: ['tabular-nums'] },
-  tabs: { flexDirection: 'row', gap: 28, marginTop: 4, marginBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
-  tab: { paddingTop: 6, paddingBottom: 10, alignItems: 'center' },
-  tabText: { fontSize: 17, fontWeight: '700', color: '#98A2B3' },
-  tabLine: { position: 'absolute', bottom: -1, width: 36, height: 3, borderRadius: 2, backgroundColor: colors.emerald },
+  // Pestañas tipo interruptor (accesible): la elegida en blanco sobre gris claro, ninguna se ve apagada.
+  tabs: { flexDirection: 'row', gap: 6, marginTop: 4, marginBottom: 14, backgroundColor: '#F2F4F7', borderRadius: 14, padding: 4 },
+  tab: { flex: 1, height: 42, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  tabOn: { backgroundColor: colors.white, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+  tabText: { fontSize: 15, fontWeight: '600', color: '#344054' },
+  tabTextOn: { color: colors.ink, fontWeight: '700' },
   search: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -43,3 +43,9 @@ export function dayMonth(isoDate: string): string {
 
 /** "5123456789014417" → "5123 4567 8901 4417" */
 export const groupPan = (pan: string) => pan.replace(/(.{4})(?=.)/g, '$1 ');
+
+/** "2026-11-10" → "10 de noviembre": fecha escrita completa, más fácil de leer. */
+export function longDate(isoDate: string): string {
+  const [y, m, d] = isoDate.slice(0, 10).split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('es-CR', { day: 'numeric', month: 'long' });
+}

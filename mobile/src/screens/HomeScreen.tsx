@@ -101,7 +101,7 @@ export function HomeScreen() {
   return (
     <ScrollView style={s.screen} contentContainerStyle={[s.content, { paddingTop: insets.top + 12 }]} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
       <View style={s.header}>
-        <KooaLogo height={32} />
+        <KooaLogo height={32} greet />
         <View style={s.headerRight}>
           <Pressable
             onPress={() => nav.navigate('Movements')}

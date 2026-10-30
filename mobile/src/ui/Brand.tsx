@@ -115,9 +115,11 @@ type LogoProps = {
   color?: string;
   browColor?: string;
   shadowColor?: string | null;
+  /** Las cejas se levantan cada pocos segundos, como saludando (inicio). */
+  greet?: boolean;
 };
 
-function Wordmark({ color, browColor }: { color: string; browColor: string }) {
+function Wordmark({ color, browColor, brows = true }: { color: string; browColor: string; brows?: boolean }) {
   return (
     <>
       <SvgText x={30} y={80} textAnchor="middle" fontFamily={FONT.semibold} fontSize={80} fill={color}>
@@ -127,28 +129,72 @@ function Wordmark({ color, browColor }: { color: string; browColor: string }) {
       <SvgText x={162} y={80} textAnchor="middle" fontFamily={FONT.semibold} fontSize={80} fill={color}>
         a
       </SvgText>
-      <Brows expression="contenta" color={browColor} />
+      {brows && <Brows expression="contenta" color={browColor} />}
     </>
   );
 }
 
 /** El logo completo "kooa". Las cejas son siempre las del logo oficial (contenta). */
-export function KooaLogo({ height, color = colors.teal, browColor = colors.primary, shadowColor = colors.shadowOnWhite }: LogoProps) {
+export function KooaLogo({ height, color = colors.teal, browColor = colors.primary, shadowColor = colors.shadowOnWhite, greet = false }: LogoProps) {
   const w = (height * 210) / 100;
+  const lift = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!greet) return;
+    // Mismo gesto que los ojos de la bienvenida: cada 2 s suben las cejas y vuelven.
+    const up = (-8 * height) / 100;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(2000),
+        Animated.timing(lift, { toValue: up, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.delay(380),
+        Animated.timing(lift, { toValue: 0, duration: 260, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [greet, lift, height]);
+
+  if (!greet) {
+    return (
+      <Svg width={w} height={height} viewBox="0 0 210 100" accessibilityLabel="Kooa" accessibilityRole="image">
+        {shadowColor &&
+          SHADOW_STEPS.map((d) => (
+            <G key={d} transform={`translate(${d} ${d})`}>
+              <Wordmark color={shadowColor} browColor={shadowColor} />
+            </G>
+          ))}
+        <Wordmark color={color} browColor={browColor} />
+      </Svg>
+    );
+  }
+  // Animado: las letras quedan quietas y las cejas (con su sombra) van en una capa que sube y baja.
   return (
-    <Svg width={w} height={height} viewBox="0 0 210 100" accessibilityLabel="Kooa" accessibilityRole="image">
-      {shadowColor &&
-        SHADOW_STEPS.map((d) => (
-          <G key={d} transform={`translate(${d} ${d})`}>
-            <Wordmark color={shadowColor} browColor={shadowColor} />
-          </G>
-        ))}
-      <Wordmark color={color} browColor={browColor} />
-    </Svg>
+    <View style={{ width: w, height }} accessible accessibilityLabel="Kooa" accessibilityRole="image">
+      <Svg width={w} height={height} viewBox="0 0 210 100" style={StyleSheet.absoluteFill}>
+        {shadowColor &&
+          SHADOW_STEPS.map((d) => (
+            <G key={d} transform={`translate(${d} ${d})`}>
+              <Wordmark color={shadowColor} browColor={shadowColor} brows={false} />
+            </G>
+          ))}
+        <Wordmark color={color} browColor={browColor} brows={false} />
+      </Svg>
+      <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateY: lift }] }]}>
+        <Svg width={w} height={height} viewBox="0 0 210 100">
+          {shadowColor &&
+            SHADOW_STEPS.map((d) => (
+              <G key={d} transform={`translate(${d} ${d})`}>
+                <Brows expression="contenta" color={shadowColor} />
+              </G>
+            ))}
+          <Brows expression="contenta" color={browColor} />
+        </Svg>
+      </Animated.View>
+    </View>
   );
 }
 
-/** Texto con el subrayado lima de marca (montos, el eslogan, el nombre al celebrar). */
 /** Resaltador lima de la marca (como en "buena cara"). `soft`: la versión leve de los títulos de
  *  sección en toda la App (franja fina pegada a la base del texto, opción 1A). */
 export function Highlight({

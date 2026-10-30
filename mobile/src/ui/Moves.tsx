@@ -287,7 +287,8 @@ export function MoveSheet({
 }
 
 const st = StyleSheet.create({
-  ic: { width: 24, alignItems: 'center' },
+  // El ícono va alineado con la primera línea (el nombre), no centrado entre los dos renglones.
+  ic: { width: 24, alignItems: 'center', alignSelf: 'flex-start', height: 21, justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderColor: colors.line },
   day: { fontSize: 12.5, fontWeight: '600', color: colors.muted, paddingTop: 16, paddingBottom: 6, borderBottomWidth: 1, borderColor: '#D0D5DD' },
   receipt: { backgroundColor: colors.white, paddingBottom: 4 },

@@ -78,6 +78,6 @@ export function NoticesScreen() {
 const st = StyleSheet.create({
   group: { fontSize: 13, color: colors.muted, marginTop: 6, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: colors.line },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
-  ic: { width: 24, alignItems: 'center', paddingTop: 1 },
+  ic: { width: 24, alignItems: 'center', height: 21, justifyContent: 'center' },
   dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.lime, marginTop: 6 },
 });

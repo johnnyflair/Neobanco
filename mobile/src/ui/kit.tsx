@@ -182,7 +182,12 @@ export function Row({
 }) {
   const body = (
     <>
-      {icon && <Icon name={icon} size={22} color={colors.emeraldDark} />}
+      {/* Regla de la App: el ícono va alineado con la primera línea del texto. */}
+      {icon && (
+        <View style={s.rowIcon}>
+          <Icon name={icon} size={22} color={colors.emeraldDark} />
+        </View>
+      )}
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <Text style={s.rowTitle}>{title}</Text>
@@ -659,6 +664,7 @@ export const s = StyleSheet.create({
   // Lima con texto azul marino (nunca blanco sobre lima): acción principal sobre fondos oscuros.
   btn_lime: { backgroundColor: colors.lime },
   btnText: { fontSize: 15, fontWeight: '600' },
+  rowIcon: { alignSelf: 'flex-start', height: 21, justifyContent: 'center' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -5,7 +5,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, useWindowDimensions, View, type TextInputProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius } from '../theme';
+import { colors, MAX_FONT_SCALE_TIGHT, radius } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { Highlight } from './Brand';
 import { Text, TextInput } from './typography';
@@ -622,11 +622,21 @@ export const Note = ({ children }: { children: ReactNode }) => (
 );
 
 /** Ayuda arriba a la derecha (inicio y Cuenta): abre el chat de Kooa. */
+/** Botón "Ayuda" del encabezado (aprobado): audífonos + la palabra, en pastilla verde suave. */
 export function HelpButton() {
   const nav = useNavigation();
   return (
-    <Pressable onPress={() => nav.navigate('Help')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ayuda">
-      <Icon name="headset" size={25} color={colors.ink} />
+    <Pressable
+      onPress={() => nav.navigate('Help')}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel="Ayuda"
+      style={({ pressed }) => [s.help, pressed && { opacity: 0.7 }]}
+    >
+      <Icon name="headset" size={20} color={colors.primaryInk} />
+      <Text style={s.helpT} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>
+        Ayuda
+      </Text>
     </Pressable>
   );
 }
@@ -640,6 +650,8 @@ export function Loading() {
 }
 
 export const s = StyleSheet.create({
+  help: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.mint, borderRadius: 999, paddingVertical: 6, paddingLeft: 10, paddingRight: 13 },
+  helpT: { fontSize: 15, fontWeight: '700', color: colors.primaryInk },
   actions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, marginBottom: 6 },
   action: { alignItems: 'center', gap: 7 },
   actionIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },

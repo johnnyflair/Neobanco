@@ -269,8 +269,8 @@ export function LoanApplyScreen() {
       <Small>Te respondemos el mismo día hábil</Small>
       <Sect plain>¿Cómo generás ingresos?</Sect>
       <Chips options={[...INCOME]} value={incomeType} onChange={setIncomeType} />
-      <Field label="Ingreso mensual (₡)" value={income} onChangeText={setIncome} keyboardType="decimal-pad" placeholder="850,000" />
-      <Field label="Monto que necesitás (₡)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="2,000,000" />
+      <Field label="Ingreso mensual (₡)" value={income} onChangeText={setIncome} keyboardType="decimal-pad" placeholder="Ej: 850,000" />
+      <Field label="Monto que necesitás (₡)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="Ej: 2,000,000" />
       <Sect plain>Plazo en meses</Sect>
       <Chips options={TERMS.map((n) => ({ value: n, label: String(n) }))} value={term} onChange={setTerm} />
       <Small style={{ marginTop: 12 }}>

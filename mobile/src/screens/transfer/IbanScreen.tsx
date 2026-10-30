@@ -64,7 +64,7 @@ export function IbanScreen() {
           onChangeText={onType}
           keyboardType="number-pad"
           autoCorrect={false}
-          placeholder="00 0000 0000 0000 0000 00"
+          placeholder="Ej: 05 0152 0200 1026 2840 66"
           placeholderTextColor="#98A2B3"
           maxLength={25}
           autoFocus

@@ -253,15 +253,15 @@ export function Opt({
 }
 
 /** Barra de pasos como en la apertura de cuenta: lo hecho en teal y el paso actual en lima. */
+/** Avance de un trámite: "Paso n de total" en palabras y una barra continua (más fácil de leer
+ *  que segmentos sueltos). */
 export function StepBar({ n, total }: { n: number; total: number }) {
   return (
-    <View style={s.stepBar} accessibilityLabel={`Paso ${n} de ${total}`}>
-      {Array.from({ length: total }, (_, i) => (
-        <View
-          key={i}
-          style={[s.stepSeg, i < n - 1 && { backgroundColor: colors.teal }, i === n - 1 && { backgroundColor: n === total ? colors.teal : colors.lime }]}
-        />
-      ))}
+    <View style={s.stepWrap} accessibilityLabel={`Paso ${n} de ${total}`}>
+      <Text style={s.stepText}>{`Paso ${n} de ${total}`}</Text>
+      <View style={s.stepTrack}>
+        <View style={[s.stepFill, { width: `${(n / total) * 100}%` }]} />
+      </View>
     </View>
   );
 }
@@ -336,46 +336,43 @@ export function Seg<T extends string>({
   );
 }
 
-export function Field({ label, right, ...input }: TextInputProps & { label: string; right?: ReactNode }) {
-  return (
-    <View style={s.field}>
-      <Text style={s.sm}>{label}</Text>
-      <TextInput
-        {...input}
-        accessibilityLabel={input.accessibilityLabel ?? label}
-        placeholderTextColor={colors.muted}
-        style={s.fieldInput}
-      />
-      {right}
-    </View>
-  );
-}
-
-/** Campo con la etiqueta arriba (opción 2A del sobre): el texto se escribe a la izquierda y el
- *  ejemplo va en gris claro con "Ej:", para que nunca parezca que el campo ya está lleno.
+/** Campo único de todo el App (patrón del sobre, opción 2A): etiqueta arriba, el texto se escribe
+ *  a la izquierda y el ejemplo va en gris con "Ej:", para que nunca parezca que ya está lleno.
+ *  `prefix` (ej. +506) va dentro del campo, a la izquierda; `right` (ej. Pegar) a la derecha.
  *  El borde se pone esmeralda mientras se escribe. */
-export function FieldStacked({ label, ...input }: TextInputProps & { label: string }) {
+export function Field({
+  label,
+  right,
+  prefix,
+  ...input
+}: TextInputProps & { label: string; right?: ReactNode; prefix?: string }) {
   const [focus, setFocus] = useState(false);
   return (
     <View style={s.stackWrap}>
       <Text style={s.stackLabel}>{label}</Text>
-      <TextInput
-        {...input}
-        accessibilityLabel={input.accessibilityLabel ?? label}
-        placeholderTextColor="#98A2B3"
-        onFocus={(e) => {
-          setFocus(true);
-          input.onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setFocus(false);
-          input.onBlur?.(e);
-        }}
-        style={[s.stackInput, focus && s.stackInputOn]}
-      />
+      <View style={[s.stackBox, focus && s.stackInputOn]}>
+        {prefix ? <Text style={s.stackPrefix}>{prefix}</Text> : null}
+        <TextInput
+          {...input}
+          accessibilityLabel={input.accessibilityLabel ?? label}
+          placeholderTextColor="#98A2B3"
+          onFocus={(e) => {
+            setFocus(true);
+            input.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocus(false);
+            input.onBlur?.(e);
+          }}
+          style={s.stackBoxInput}
+        />
+        {right}
+      </View>
     </View>
   );
 }
+
+export const FieldStacked = Field;
 
 export function FieldStatic({ label, value }: { label: string; value: string }) {
   return (
@@ -744,8 +741,10 @@ export const s = StyleSheet.create({
   optTitle: { fontSize: 16, fontWeight: '700', color: colors.ink, flexShrink: 1 },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#98A2B3' },
   radioOn: { borderWidth: 7, borderColor: colors.primary },
-  stepBar: { flexDirection: 'row', gap: 4, marginBottom: 14 },
-  stepSeg: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.line },
+  stepWrap: { marginBottom: 16 },
+  stepText: { fontSize: 14, color: colors.muted, marginBottom: 6 },
+  stepTrack: { height: 6, borderRadius: 3, backgroundColor: colors.line, overflow: 'hidden' },
+  stepFill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
   amountBox: { flexDirection: 'row', alignItems: 'center', height: 60, borderRadius: 14, borderWidth: 1.5, borderColor: colors.primary, paddingHorizontal: 14, marginTop: 8, marginBottom: 6 },
   amountBoxed: { flex: 1, fontSize: 26, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'], outlineWidth: 0 },
   amt: { fontSize: 14, fontWeight: '600', color: colors.amount, fontVariant: ['tabular-nums'] },
@@ -794,7 +793,25 @@ export const s = StyleSheet.create({
     textAlign: 'left',
     outlineWidth: 0,
   },
-  stackInputOn: { borderWidth: 2, borderColor: colors.primary },
+  stackInputOn: { borderWidth: 2, borderColor: colors.primary, paddingHorizontal: 13.5 },
+  stackBox: {
+    borderWidth: 1.5,
+    borderColor: colors.fieldBorder,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  stackBoxInput: { flex: 1, fontSize: 18, color: colors.ink, textAlign: 'left', paddingVertical: 13, outlineWidth: 0, outlineStyle: 'none' } as object,
+  stackPrefix: {
+    fontSize: 18,
+    color: colors.muted,
+    paddingRight: 10,
+    borderRightWidth: 1,
+    borderRightColor: colors.fieldBorder,
+  },
   amountInput: {
     fontSize: 36,
     fontWeight: '700',

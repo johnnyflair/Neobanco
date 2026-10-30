@@ -75,10 +75,10 @@ export function HelpScreen() {
           accessibilityState={{ selected: picked?.q === c.q }}
           onPress={() => setPicked(c)}
         >
-          <View style={[st.topicIcon, picked?.q === c.q && { backgroundColor: colors.teal }]}>
-            <Icon name={c.icon} size={20} color={picked?.q === c.q ? colors.lime : colors.emeraldDark} />
+          <View style={st.topicIcon}>
+            <Icon name={c.icon} size={22} color={colors.primary} />
           </View>
-          <Text style={st.topicT}>{c.q}</Text>
+          <Text style={[st.topicT, picked?.q === c.q && { color: colors.primary }]}>{c.q}</Text>
           <Icon name="chev" size={16} color={colors.muted} />
         </Pressable>
       ))}
@@ -194,9 +194,9 @@ const st = StyleSheet.create({
   hello: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 10 },
   helloT: { fontSize: 22, fontWeight: '700', color: colors.ink },
   helloS: { fontSize: 14, color: colors.muted, marginTop: 2 },
-  topic: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line },
-  topicIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.mint, alignItems: 'center', justifyContent: 'center' },
-  topicT: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.ink },
+  topic: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, borderTopWidth: 1, borderTopColor: colors.line },
+  topicIcon: { width: 24, alignItems: 'center' },
+  topicT: { flex: 1, fontSize: 16, fontWeight: '600', color: colors.ink },
   answer: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 14, gap: 12, marginTop: 8 },
   answerHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   answerT: { flex: 1, fontSize: 15, lineHeight: 21, color: colors.ink },

@@ -92,10 +92,10 @@ export function SignInScreen() {
         keyboardType="number-pad"
         autoComplete="tel"
         textContentType="username"
-        placeholder="8811 2030"
+        placeholder="Ej: 8811 2030"
       />
       <Field
-        label="Clave"
+        label="Clave de 6 números"
         value={pin}
         onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, 6))}
         keyboardType="number-pad"

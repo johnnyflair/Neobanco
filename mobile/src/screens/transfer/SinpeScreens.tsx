@@ -370,7 +370,7 @@ export function SendAmountScreen({ route }: RootProps<'SendAmount'>) {
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder="Motivo (opcional): almuerzo, alquiler…"
+          placeholder="Motivo (opcional). Ej: almuerzo"
           placeholderTextColor={colors.muted}
           maxLength={60}
           style={st.noteInput}

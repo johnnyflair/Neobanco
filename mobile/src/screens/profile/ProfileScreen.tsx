@@ -53,7 +53,7 @@ export function ProfileScreen() {
       <Row
         first
         icon="star"
-        title="Mis recompensas"
+        title="Mis puntos"
         sub={`${rewards.points.toLocaleString('en-US')} puntos`}
         onPress={() => nav.navigate('Rewards')}
       />

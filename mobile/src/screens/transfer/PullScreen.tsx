@@ -123,7 +123,7 @@ export function PullScreen() {
             onChangeText={(v) => setIban(formatIban(v))}
             autoCapitalize="characters"
             autoCorrect={false}
-            placeholder="CR00 0000 0000 0000 0000 00"
+            placeholder="Ej: CR05 0152 0200 1026 2840 66"
             maxLength={27}
           />
           <Small style={{ marginTop: 6 }}>
@@ -132,7 +132,7 @@ export function PullScreen() {
         </View>
       )}
       <View style={{ marginTop: 14 }}>
-        <Field label="Monto (₡)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
+        <Field label="Monto (₡)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="Ej: 50,000" />
       </View>
       {amt && crc && selected !== NEW && (
         <Small style={{ marginTop: 6 }}>

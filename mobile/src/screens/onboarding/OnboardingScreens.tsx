@@ -13,21 +13,13 @@ import { usePublic, usePublicNav, type PublicProps } from '../../publicNavigatio
 import { colors, radius, type } from '../../theme';
 import { Highlight, KooaEyes } from '../../ui/Brand';
 import { Icon, type IconName } from '../../ui/Icon';
-import { Btn, Check, Chips, ErrorText, Field, Row, Screen, Small } from '../../ui/kit';
+import { Btn, Check, Chips, ErrorText, Field, Row, Screen, Small, StepBar as KitStepBar } from '../../ui/kit';
 import { Text } from '../../ui/typography';
 
 const WHATSAPP = process.env.EXPO_PUBLIC_SUPPORT_WHATSAPP ?? '50688000000';
 const TOTAL = 7;
 
-function StepBar({ n }: { n: number }) {
-  return (
-    <View style={st.stepBar} accessibilityLabel={`Paso ${n} de ${TOTAL}`}>
-      {Array.from({ length: TOTAL }, (_, i) => (
-        <View key={i} style={[st.stepSeg, i < n - 1 && { backgroundColor: colors.teal }, i === n - 1 && { backgroundColor: n === TOTAL ? colors.teal : colors.lime }]} />
-      ))}
-    </View>
-  );
-}
+const StepBar = ({ n }: { n: number }) => <KitStepBar n={n} total={TOTAL} />;
 
 const Lead = ({ children }: { children: string }) => <Small style={{ marginBottom: 14 }}>{children}</Small>;
 
@@ -59,13 +51,14 @@ export function OnbPhoneScreen() {
       <StepBar n={1} />
       <Lead>Va a ser tu número de SINPE Móvil. Te mandamos un código para confirmarlo.</Lead>
       <Field
-        label="Celular · +506"
+        label="Número de celular"
+        prefix="+506"
         value={formatPhone(digits)}
         onChangeText={(t) => setPhone(t.replace(/\D/g, '').slice(0, 8))}
         keyboardType="number-pad"
         autoComplete="tel"
         textContentType="telephoneNumber"
-        placeholder="8811 2030"
+        placeholder="Ej: 8811 2030"
         autoFocus
       />
       <ErrorText>{err}</ErrorText>
@@ -134,13 +127,13 @@ export function OnbCodeScreen({ route }: PublicProps<'OnbCode'>) {
       <StepBar n={2} />
       <Lead>{`Lo mandamos por SMS al ${formatPhone(phone)}.`}</Lead>
       <Field
-        label="Código"
+        label="Código de 6 números"
         value={code}
         onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 6))}
         keyboardType="number-pad"
         textContentType="oneTimeCode"
         autoComplete="sms-otp"
-        placeholder="••••••"
+        placeholder="Ej: 123456"
         autoFocus
       />
       {debug && <Small>{`Ambiente de prueba: tu código es ${debug}`}</Small>}
@@ -235,8 +228,8 @@ export function OnbDataScreen() {
     <Screen title="¿Todo bien?" footer={<Btn label="Continuar" onPress={next} />}>
       <StepBar n={4} />
       <Lead>Revisá tus datos tal como aparecen en tu cédula.</Lead>
-      <Field label="Nombre completo" value={name} onChangeText={setName} autoCapitalize="words" textContentType="name" />
-      <Field label="Cédula" value={cedula} onChangeText={(t) => setCedula(cedulaFmt(t))} keyboardType="number-pad" placeholder="1-2345-6789" />
+      <Field label="Nombre completo" value={name} onChangeText={setName} autoCapitalize="words" textContentType="name" placeholder="Ej: María Rodríguez Mora" />
+      <Field label="Cédula" value={cedula} onChangeText={(t) => setCedula(cedulaFmt(t))} keyboardType="number-pad" placeholder="Ej: 1-2345-6789" />
       <Field
         label="Correo"
         value={email}
@@ -244,10 +237,11 @@ export function OnbDataScreen() {
         keyboardType="email-address"
         autoCapitalize="none"
         textContentType="emailAddress"
+        placeholder="Ej: maria@correo.com"
       />
       <Small style={{ marginTop: 10, marginBottom: 6 }}>Provincia</Small>
       <Chips options={PROVINCES.map((p) => ({ value: p, label: p }))} value={province} onChange={setProvince} />
-      <Field label="Cantón" value={canton} onChangeText={setCanton} autoCapitalize="words" />
+      <Field label="Cantón" value={canton} onChangeText={setCanton} autoCapitalize="words" placeholder="Ej: Escazú" />
       <ErrorText>{err}</ErrorText>
     </Screen>
   );
@@ -358,7 +352,7 @@ export function OnbPinScreen() {
       <StepBar n={6} />
       <Lead>6 dígitos. No uses tu fecha de nacimiento ni números seguidos.</Lead>
       <Field
-        label="Clave"
+        label="Clave de 6 números"
         value={pin}
         onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, 6))}
         keyboardType="number-pad"
@@ -367,7 +361,7 @@ export function OnbPinScreen() {
         placeholder="••••••"
       />
       <Field
-        label="Repetila"
+        label="Repetí la clave"
         value={pin2}
         onChangeText={(t) => setPin2(t.replace(/\D/g, '').slice(0, 6))}
         keyboardType="number-pad"
@@ -426,8 +420,6 @@ export function OnbReviewScreen({ route }: PublicProps<'OnbReview'>) {
 }
 
 const st = StyleSheet.create({
-  stepBar: { flexDirection: 'row', gap: 4, marginBottom: 14 },
-  stepSeg: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.line },
   frame: {
     height: 210,
     borderRadius: radius.lg,

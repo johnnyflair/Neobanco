@@ -232,7 +232,7 @@ export function CardPayScreen({ route }: RootProps<'CardPay'>) {
       <Opt selected={mode === 'minimum'} onPress={() => setMode('minimum')} title="Pago mínimo" right={money(c.minimum_payment)} sub="El resto genera intereses" />
       <Opt selected={mode === 'other'} onPress={() => setMode('other')} title="Otro monto" sub="Entre el mínimo y el contado" />
       {mode === 'other' && (
-        <Field label="Monto (₡)" value={other} onChangeText={setOther} keyboardType="decimal-pad" placeholder="0.00" autoFocus />
+        <Field label="Monto (₡)" value={other} onChangeText={setOther} keyboardType="decimal-pad" placeholder="Ej: 25,000" autoFocus />
       )}
       <View style={{ marginTop: 8 }}>
         <Row title="Pagar desde" right={<Text style={st.amt}>Colones · {money(crc.balance)}</Text>} />

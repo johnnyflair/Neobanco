@@ -7,11 +7,10 @@ import { Share, StyleSheet, View } from 'react-native';
 import { api } from '../../api/client';
 import { errorMessage, useLoad } from '../../api/hooks';
 import type { RedeemDestination, Rewards } from '../../api/types';
-import { money, shortDate } from '../../format';
+import { longDate, money } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
-import { KooaEyes } from '../../ui/Brand';
-import { Btn, ErrorText, Loading, Opt, Row, Screen, Sect, Small, Tag } from '../../ui/kit';
+import { Btn, ErrorText, Loading, Opt, Row, Screen, Small, Tabs, Tag } from '../../ui/kit';
 import { Icon } from '../../ui/Icon';
 import { receiptDate } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
@@ -60,60 +59,28 @@ async function loadRewards() {
   return { ...r, rule: rule.destination };
 }
 
+type RTab = 'earn' | 'levels' | 'history';
+
+/** Opción B (aprobada): arriba solo puntos, nivel y Canjear; lo demás en pestañas
+ *  Ganar / Niveles / Historial (mismo patrón que Invertir), para no saturar la pantalla. */
 export function RewardsScreen() {
   const nav = useNavigation();
   const { data, error } = useLoad(loadRewards);
   const [tooFew, setTooFew] = useState(false);
-  if (!data) return error ? <Screen title="Mis recompensas"><ErrorText>{error}</ErrorText></Screen> : <Loading />;
+  const [tab, setTab] = useState<RTab>('earn');
+  if (!data) return error ? <Screen title="Mis puntos"><ErrorText>{error}</ErrorText></Screen> : <Loading />;
   const missing = data.next_level_at ? data.next_level_at - data.points_lifetime : 0;
   const nextName = data.level === 'Bronce' ? 'Plata' : 'Oro';
-  // Camino Bronce → Plata → Oro: cada tramo ocupa la mitad del recorrido.
-  const [plata, oro] = [data.levels[1]?.from_points ?? 2000, data.levels[2]?.from_points ?? 5000];
-  const life = data.points_lifetime;
-  const pathPct = life < plata ? (life / plata) * 50 : 50 + Math.min(1, (life - plata) / (oro - plata)) * 50;
+  const prevAt = data.levels.find((l) => l.name === data.level)?.from_points ?? 0;
+  const pct = data.next_level_at
+    ? Math.max(0, Math.min(1, (data.points_lifetime - prevAt) / (data.next_level_at - prevAt))) * 100
+    : 100;
 
   return (
-    <Screen title="Mis recompensas">
+    <Screen title="Mis puntos">
       <View style={st.hero}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ flex: 1 }}>
-            <Text style={st.heroK}>Tus puntos</Text>
-            <Text style={st.heroBig}>{n0(data.points)}</Text>
-            <Text style={st.heroUp}>{`Valen ${money(data.value_crc)}`}</Text>
-          </View>
-          <KooaEyes size={78} expression="guau" browColor={colors.orange} />
-        </View>
-        <View style={st.path} accessibilityLabel={`Nivel ${data.level}`}>
-          <View style={st.track} />
-          <View style={[st.trackFill, { width: `${pathPct * 0.84}%` }]} />
-          {data.levels.map((lv) => {
-            const current = lv.name === data.level;
-            return (
-              <View key={lv.name} style={st.medalBox}>
-                <View
-                  style={[
-                    st.medal,
-                    { backgroundColor: lv.reached ? LEVEL_COLOR[lv.name] : colors.card },
-                    current && st.medalOn,
-                  ]}
-                >
-                  <Icon name={lv.name === 'Oro' ? 'crown' : 'medal'} size={20} color={lv.reached ? colors.white : LEVEL_COLOR[lv.name]} />
-                </View>
-                <Text style={[st.medalT, { color: lv.reached ? colors.ink : colors.muted }]}>{lv.name}</Text>
-              </View>
-            );
-          })}
-        </View>
-        <Text style={st.heroNext}>
-          {data.next_level_at ? (
-            <>
-              Te faltan <Text style={{ color: colors.orangeInk, fontWeight: '700' }}>{`${n0(Math.max(0, missing))} puntos`}</Text>
-              {` para ${nextName}`}
-            </>
-          ) : (
-            'Llegaste al nivel más alto'
-          )}
-        </Text>
+        <Text style={st.heroBig}>{n0(data.points)}</Text>
+        <Text style={st.heroUp}>{`Valen ${money(data.value_crc)} · Nivel ${data.level}`}</Text>
       </View>
       <Btn
         label="Canjear puntos"
@@ -124,52 +91,87 @@ export function RewardsScreen() {
         first
         icon="clock"
         title="Canje automático"
-        tag={data.rule ? 'Activado' : 'Desactivado'}
+        tag={data.rule ? 'Activado' : 'Apagado'}
         tagTone={data.rule ? 'ok' : 'neutral'}
-        sub={data.rule ? `Al final de cada mes, ${destLabel(data.rule)}` : 'Movemos tus puntos al final de cada mes'}
+        sub={data.rule ? `Al final de cada mes, ${destLabel(data.rule)}` : 'Al final de cada mes'}
         onPress={() => nav.navigate('AutoRule')}
       />
 
-      <Sect>Lo que ganás en cada nivel</Sect>
-      {data.levels.map((lv, i) => (
-        <View key={lv.name} style={[st.lvRow, i === 0 && { borderTopWidth: 0 }]}>
-          <View style={[st.dot, { backgroundColor: LEVEL_COLOR[lv.name] }]} />
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={st.histT}>{lv.name}</Text>
-              {lv.name === data.level ? <Tag tone="ok">Tu nivel</Tag> : lv.from_points ? <Small>{`desde ${n0(lv.from_points)} puntos`}</Small> : null}
+      <View style={{ marginTop: 18 }}>
+        <Tabs
+          options={[
+            { value: 'earn', label: 'Ganar' },
+            { value: 'levels', label: 'Niveles' },
+            { value: 'history', label: 'Historial' },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
+      </View>
+
+      {tab === 'earn' && (
+        <>
+          {EARN.map((e, i) => (
+            <Row key={e.t} first={i === 0} icon="star" title={e.t} sub={e.s} />
+          ))}
+          <Row
+            icon="gift"
+            title="Invitá a un amigo"
+            sub="500 puntos para cada uno"
+            onPress={() => Share.share({ message: 'Abrí tu cuenta en Kooa y ganamos 500 puntos cada uno.' })}
+          />
+        </>
+      )}
+
+      {tab === 'levels' && (
+        <>
+          <View style={st.nextRow}>
+            <Text style={st.histT}>{data.level}</Text>
+            <Text style={st.nextT}>
+              {data.next_level_at ? `${nextName} en ${n0(Math.max(0, missing))} puntos` : 'Nivel más alto'}
+            </Text>
+          </View>
+          <View style={st.bar} accessibilityLabel={`Nivel ${data.level}`}>
+            <View style={[st.barFill, { width: `${pct}%`, backgroundColor: LEVEL_COLOR[data.level] }]} />
+          </View>
+          {data.levels.map((lv, i) => (
+            <View key={lv.name} style={[st.lvRow, i === 0 && { borderTopWidth: 0 }]}>
+              <View style={st.lvIcon}>
+                <Icon name={lv.name === 'Oro' ? 'crown' : 'medal'} size={20} color={LEVEL_COLOR[lv.name]} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={st.histT}>
+                  {lv.name}
+                  {lv.name === data.level ? <Text style={st.mine}>{'  ·  Tu nivel'}</Text> : null}
+                </Text>
+                {lv.from_points ? <Small>{`Desde ${n0(lv.from_points)} puntos`}</Small> : null}
+                <Small>{perksText(lv)}</Small>
+              </View>
+              <View style={st.lvIcon}>
+                <Icon name={lv.reached ? 'check' : 'lock'} size={18} color={lv.reached ? colors.primary : colors.muted} />
+              </View>
             </View>
-            <Small>{perksText(lv)}</Small>
-          </View>
-          <Icon name={lv.reached ? 'check' : 'lock'} size={18} color={lv.reached ? colors.primary : colors.muted} />
-        </View>
-      ))}
+          ))}
+        </>
+      )}
 
-      <Sect>Cómo ganar puntos</Sect>
-      {EARN.map((e, i) => (
-        <Row key={e.t} first={i === 0} icon="star" title={e.t} sub={e.s} />
-      ))}
-      <Row
-        icon="gift"
-        title="Invitá a un amigo"
-        sub="500 puntos para cada uno"
-        onPress={() => Share.share({ message: 'Abrí tu cuenta en Kooa y ganamos 500 puntos cada uno.' })}
-      />
-
-      <Sect>Últimos puntos</Sect>
-      {data.history.slice(0, 8).map((h, i) => (
-        <View key={`${h.at}-${i}`} style={st.hist}>
-          <View style={{ flex: 1 }}>
-            <Text style={st.histT}>{h.reason}</Text>
-            <Small>{shortDate(h.at)}</Small>
-          </View>
-          <Text style={[st.amt, h.points > 0 && { color: colors.primary }]}>
-            {h.points > 0 ? '+' : ''}
-            {n0(h.points)}
-          </Text>
-        </View>
-      ))}
-      {!data.history.length && <Small>Todavía no tenés movimientos de puntos.</Small>}
+      {tab === 'history' && (
+        <>
+          {data.history.slice(0, 12).map((h, i) => (
+            <View key={`${h.at}-${i}`} style={[st.hist, i === 0 && { borderTopWidth: 0 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={st.histT}>{h.reason}</Text>
+                <Small>{longDate(h.at)}</Small>
+              </View>
+              <Text style={[st.amt, h.points > 0 && { color: colors.primary }]}>
+                {h.points > 0 ? '+' : ''}
+                {n0(h.points)}
+              </Text>
+            </View>
+          ))}
+          {!data.history.length && <Small>Todavía no tenés movimientos de puntos.</Small>}
+        </>
+      )}
     </Screen>
   );
 }
@@ -292,26 +294,19 @@ export function AutoRuleScreen() {
 }
 
 const st = StyleSheet.create({
-  hero: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.line, padding: 18, marginBottom: 12 },
-  heroK: { fontSize: 13, color: colors.muted, fontWeight: '600' },
-  heroBig: { fontSize: 34, fontWeight: '700', color: colors.orangeInk, fontVariant: ['tabular-nums'] },
-  heroUp: { fontSize: 13, color: colors.muted },
-  path: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginHorizontal: 4 },
-  track: { position: 'absolute', top: 20, left: '8%', right: '8%', height: 5, borderRadius: 3, backgroundColor: colors.orangeSoft },
-  trackFill: { position: 'absolute', top: 20, left: '8%', height: 5, borderRadius: 3, backgroundColor: colors.orange },
-  medalBox: { alignItems: 'center', width: 64 },
-  medal: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  medalOn: { borderWidth: 3, borderColor: colors.orange },
-  medalT: { fontSize: 13, fontWeight: '700', marginTop: 5 },
-  heroNext: { fontSize: 13.5, color: colors.ink, textAlign: 'center', marginTop: 14 },
-  lvRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderTopWidth: 1, borderColor: colors.line },
-  dot: { width: 12, height: 12, borderRadius: 6 },
-  level: { marginTop: 4, marginBottom: 4 },
-  bar: { height: 8, borderRadius: 4, backgroundColor: colors.line, overflow: 'hidden', marginBottom: 6 },
-  barFill: { height: 8, borderRadius: 4, backgroundColor: colors.lime },
+  hero: { marginTop: 4, marginBottom: 14 },
+  heroBig: { fontSize: 36, fontWeight: '700', color: colors.orangeInk, fontVariant: ['tabular-nums'] },
+  heroUp: { fontSize: 14, color: colors.muted, marginTop: 2 },
+  nextRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 },
+  nextT: { fontSize: 14, color: colors.muted },
+  bar: { height: 10, borderRadius: 5, backgroundColor: colors.line, overflow: 'hidden', marginTop: 8, marginBottom: 6 },
+  barFill: { height: 10, borderRadius: 5 },
+  lvRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderColor: colors.line },
+  lvIcon: { height: 22, justifyContent: 'center' },
+  mine: { fontSize: 14, fontWeight: '600', color: colors.primary },
   hist: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderTopWidth: 1, borderColor: colors.line },
-  histT: { fontSize: 15, fontWeight: '600', color: colors.ink },
-  amt: { fontSize: 14, fontWeight: '600', color: colors.amount },
+  histT: { fontSize: 16, fontWeight: '600', color: colors.ink },
+  amt: { fontSize: 16, fontWeight: '600', color: colors.amount },
   mult: {
     fontSize: 12,
     fontWeight: '700',

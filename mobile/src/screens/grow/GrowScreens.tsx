@@ -2,7 +2,6 @@
 // - Pestaña Invertir: total, sobres con su meta, plazos con vencimiento, tasas.
 // - Crear: sobre (meta, meses, forma de ahorrar) o ahorro a plazo (monto, plazo, qué hacer al vencer).
 // - Sobre: meter y sacar dinero.
-import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -14,7 +13,7 @@ import { dayMonth, money, parseAmount } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
 import { Icon } from '../../ui/Icon';
-import { AmountInput, Btn, Chips, ErrorText, Field, Hero, Loading, Opt, Row, Screen, Sect, Small } from '../../ui/kit';
+import { AmountInput, Btn, ErrorText, Field, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar } from '../../ui/kit';
 import { receiptDate, ReviewSheet } from '../../ui/Receipt';
 import { Text } from '../../ui/typography';
 import { Cents } from '../../ui/Money';
@@ -124,10 +123,10 @@ export function NewSavingScreen() {
   return (
     <Screen title="¿Qué querés crear?">
       <Pressable style={[st.choice]} onPress={() => nav.navigate('NewEnvelope')} accessibilityRole="button">
-        <Icon name="pig" size={24} color={colors.emeraldDark} />
+        <Icon name="mail" size={24} color={colors.emeraldDark} />
         <View style={{ flex: 1 }}>
           <Text style={st.choiceT}>Sobre a la vista</Text>
-          <Small>Separá dinero para algo. Metés y sacás cuando querás. Tasa de ejemplo 3% anual.</Small>
+          <Small>Separá dinero para algo. Agregás y retirás cuando querás. Tasa de ejemplo 3% anual.</Small>
         </View>
       </Pressable>
       <Pressable style={[st.choice]} onPress={() => nav.navigate('TermDeposit', { term: 6 })} accessibilityRole="button">
@@ -244,7 +243,7 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
     try {
       const r = await api.envelopeMove(env.id, direction, amt, crc.id, key.current.key);
       setEnv({ ...env, balance: r.envelope_balance });
-      setMsg(direction === 'deposit' ? `Metiste ${money(amt)} en ${env.name}` : `Sacaste ${money(amt)} de ${env.name}`);
+      setMsg(direction === 'deposit' ? `Agregaste ${money(amt)} a ${env.name}` : `Retiraste ${money(amt)} de ${env.name}`);
       accounts.reload();
     } catch (e) {
       setError(errorMessage(e));
@@ -303,18 +302,19 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
           <View style={[st.heroBarFill, { width: `${p}%` }]} />
         </View>
       </View>
-      <AmountInput value={amount} onChange={setAmount} autoFocus={false} label="Monto a mover" />
+      <Text style={st.moveLabel}>¿Cuánto querés mover?</Text>
+      <AmountInput value={amount} onChange={setAmount} autoFocus={false} label="Monto a mover" boxed />
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Btn label="Meter" icon="plus" onPress={() => move('deposit')} loading={busy === 'deposit'} style={{ flex: 1 }} />
-        <Btn label="Sacar" icon="minus" variant="o" onPress={() => move('withdraw')} loading={busy === 'withdraw'} style={{ flex: 1 }} />
+        <Btn label="Agregar al sobre" icon="plus" onPress={() => move('deposit')} loading={busy === 'deposit'} style={{ flex: 1 }} />
+        <Btn label="Retirar" icon="minus" variant="o" onPress={() => move('withdraw')} loading={busy === 'withdraw'} style={{ flex: 1 }} />
       </View>
+      <Small center>{`Se mueve desde y hacia tu cuenta colones (${crc ? money(crc.balance) : '…'})`}</Small>
       {msg && <Small center style={{ marginTop: 8, color: colors.emeraldDark }}>{msg}</Small>}
       <ErrorText>{error}</ErrorText>
       <View style={{ marginTop: 12 }}>
-        <Row title="Ahorro automático" right={<Small>{env.savings_mode ?? '—'}</Small>} />
+        <Row title="Ahorro automático" sub={env.savings_mode ?? 'Sin ahorro automático'} />
         <Row title="Tasa a la vista" right={<Text style={st.amt}>{pct(env.rate ?? 3)}</Text>} />
         <Row title="Retiros" right={<Text style={[st.amt, { color: colors.emeraldDark }]}>Cuando querás, sin costo</Text>} />
-        <Row title="Se mueve con" right={<Small>Cuenta colones · {crc ? money(crc.balance) : '…'}</Small>} />
       </View>
       <Pressable
         style={({ pressed }) => [st.delete, pressed && { opacity: 0.6 }]}
@@ -348,26 +348,38 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
 }
 
 const END = [
-  { value: 'renew', label: 'Renovar automático' },
-  { value: 'to_account', label: 'Pasar a mi cuenta' },
-  { value: 'to_envelope', label: 'Pasar a un sobre' },
+  { value: 'renew', label: 'Volver a ahorrar' },
+  { value: 'to_account', label: 'Pasarlo a mi cuenta' },
+  { value: 'to_envelope', label: 'Pasarlo a un sobre' },
 ] as const;
+
+// Ahorro a plazo (opción B aprobada): una pregunta por pantalla, como la apertura de cuenta.
+// 1) cuánto, 2) por cuánto tiempo (cada plazo muestra cuánto ganás), 3) qué hacer al terminar.
+const QUICK_AMOUNTS = [100_000, 250_000, 500_000, 1_000_000];
+const END_SUB: Record<(typeof END)[number]['value'], string> = {
+  renew: 'Se vuelve a ahorrar solo, por el mismo plazo',
+  to_account: 'El dinero y los intereses vuelven a tu cuenta colones',
+  to_envelope: 'Todo pasa a uno de tus sobres',
+};
 
 export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
   const nav = useNavigation();
   const data = useLoad(loadGrow);
   const crc = data.data?.accounts.find((a) => a.type === 'savings' && a.currency === 'CRC');
   const termRates = data.data?.rates.filter((r) => r.product === 'term') ?? [];
-  const [amount, setAmount] = useState(500_000);
+  const [step, setStep] = useState(1);
+  const [amountText, setAmountText] = useState('100000');
+  const amount = Number(amountText || 0);
   const [term, setTerm] = useState(route.params.term);
   const [end, setEnd] = useState<(typeof END)[number]['value']>('renew');
   const [busy, setBusy] = useState(false);
   const [review, setReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const key = useRef({ sig: '', key: newIdempotencyKey() });
-  const rate = Number(termRates.find((r) => r.term_months === term)?.annual_rate ?? 0);
-  const gain = (amount * rate) / 100 * (term / 12);
-  const max = Math.max(50_000, Math.min(5_000_000, Math.floor(Number(crc?.balance ?? 5_000_000) / 50_000) * 50_000));
+  const rateOf = (m: number) => Number(termRates.find((r) => r.term_months === m)?.annual_rate ?? 0);
+  const gainOf = (m: number) => ((amount * rateOf(m)) / 100) * (m / 12);
+  const rate = rateOf(term);
+  const gain = gainOf(term);
 
   async function open() {
     if (!crc) return;
@@ -409,58 +421,97 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
     }
   }
 
+  function next() {
+    setError(null);
+    if (step === 1) {
+      if (!amount || amount < 50_000) return setError('El mínimo es ₡50,000.');
+      if (crc && amount > Number(crc.balance)) return setError('No te alcanza el saldo de tu cuenta colones.');
+    }
+    if (step < 3) return setStep(step + 1);
+    setReview(true);
+  }
+
+  const shortMoney = (v: number) => money(v).replace(/\.00$/, '');
+
   return (
     <Screen
       title="Ahorro a plazo"
-      footer={
-        <Btn
-          label="Abrir ahorro a plazo"
-          onPress={() => {
-            if (crc && amount > Number(crc.balance)) return setError('No te alcanza el saldo de tu cuenta colones.');
-            setError(null);
-            setReview(true);
-          }}
-          disabled={!crc}
-        />
-      }
+      onBack={step > 1 ? () => setStep(step - 1) : undefined}
+      footer={<Btn label={step < 3 ? 'Continuar' : 'Revisar y abrir'} onPress={next} disabled={!crc} />}
     >
-      <Small>¿Cuánto querés invertir?</Small>
-      <Cents style={st.big}>{money(amount)}</Cents>
-      <Slider
-        value={Math.min(amount, max)}
-        minimumValue={50_000}
-        maximumValue={max}
-        step={50_000}
-        onValueChange={setAmount}
-        minimumTrackTintColor={colors.emerald}
-        maximumTrackTintColor={colors.line}
-        thumbTintColor={colors.primary}
-        accessibilityLabel="Monto a invertir"
-      />
-      <Small style={{ marginBottom: 6, marginTop: 4 }}>¿Por cuánto tiempo?</Small>
-      <Chips
-        options={termRates.map((r) => ({ value: r.term_months ?? 0, label: `${r.term_months} meses · ${Number(r.annual_rate)}%` }))}
-        value={term}
-        onChange={setTerm}
-      />
-      <View style={{ marginTop: 14 }}>
-        <Hero title="Ganarías" sub="Intereses al vencer" big={money(gain)} up={`Tasa de ejemplo ${pct(rate)} · ${term} meses`} />
-      </View>
-      <Sect plain>Al vencer</Sect>
-      <Chips options={[...END]} value={end} onChange={setEnd} />
+      <StepBar n={step} total={3} />
+      <Small>{`Paso ${step} de 3`}</Small>
+
+      {step === 1 && (
+        <>
+          <Text style={st.ask}>¿Cuánto querés ahorrar?</Text>
+          <AmountInput value={amountText} onChange={setAmountText} autoFocus={false} label="Monto a ahorrar" boxed />
+          <View style={st.quick}>
+            {QUICK_AMOUNTS.filter((v) => !crc || v <= Number(crc.balance)).map((v) => (
+              <Pressable
+                key={v}
+                style={[st.quickChip, amount === v && st.quickOn]}
+                onPress={() => setAmountText(String(v))}
+                accessibilityRole="button"
+                accessibilityState={{ selected: amount === v }}
+              >
+                <Text style={[st.quickText, amount === v && { color: colors.primaryInk }]}>{shortMoney(v)}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {crc && <Small>{`Tenés ${money(crc.balance)} en tu cuenta colones.`}</Small>}
+        </>
+      )}
+
+      {step === 2 && (
+        <>
+          <Text style={st.ask}>{`¿Por cuánto tiempo querés ahorrar ${shortMoney(amount)}?`}</Text>
+          {termRates.map((r) => {
+            const m = r.term_months ?? 0;
+            return (
+              <Opt
+                key={m}
+                selected={m === term}
+                onPress={() => setTerm(m)}
+                title={`${m} meses`}
+                sub={`${Number(r.annual_rate)}% anual`}
+                right={
+                  <Text style={[st.gain, m === term && { color: colors.primary }]}>
+                    ganás <Cents style={st.gain}>{money(gainOf(m))}</Cents>
+                  </Text>
+                }
+              />
+            );
+          })}
+          <Small style={{ marginTop: 10 }}>Tasas de ejemplo. Más plazo, mejor tasa.</Small>
+        </>
+      )}
+
+      {step === 3 && (
+        <>
+          <Text style={st.ask}>Cuando termine el plazo, ¿qué hacemos con tu dinero?</Text>
+          {END.map((e) => (
+            <Opt key={e.value} selected={e.value === end} onPress={() => setEnd(e.value)} title={e.label} sub={END_SUB[e.value]} />
+          ))}
+          <View style={{ marginTop: 16 }}>
+            <Row first title="Ahorrás" right={<Cents style={st.amt}>{money(amount)}</Cents>} />
+            <Row title={`Por ${term} meses · ${pct(rate)}`} right={<Cents style={[st.amt, { color: colors.primary }]}>{`+${money(gain)}`}</Cents>} />
+          </View>
+        </>
+      )}
       <ErrorText>{error ?? data.error}</ErrorText>
       <ReviewSheet
         visible={review}
         onClose={() => setReview(false)}
-        title="Revisá antes de invertir"
+        title="Revisá antes de abrir"
         rows={[
           ['Monto', money(amount)],
           ['Plazo', `${term} meses · ${pct(rate)}`],
           ['Ganarías', money(gain)],
-          ['Al vencer', END.find((x) => x.value === end)?.label ?? ''],
+          ['Al terminar', END.find((x) => x.value === end)?.label ?? ''],
           ['Desde', 'Cuenta en colones'],
         ]}
-        slideLabel="Deslizá para invertir"
+        slideLabel="Deslizá para abrir"
         onConfirm={open}
         busy={busy}
         error={error}
@@ -470,6 +521,13 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
 }
 
 const st = StyleSheet.create({
+  ask: { fontSize: 22, fontWeight: '700', color: colors.ink, marginTop: 10, marginBottom: 8, lineHeight: 28 },
+  quick: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  quickChip: { borderWidth: 1.5, borderColor: colors.fieldBorder, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 12 },
+  quickOn: { borderColor: colors.primary, backgroundColor: colors.optOn },
+  quickText: { fontSize: 15, fontWeight: '600', color: colors.ink },
+  gain: { fontSize: 15, fontWeight: '600', color: colors.amount },
+  moveLabel: { fontSize: 16, fontWeight: '600', color: colors.ink, marginTop: 18 },
   delete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 28, paddingVertical: 10 },
   deleteText: { fontSize: 15, fontWeight: '600', color: colors.danger },
   amt: { fontSize: 14, fontWeight: '600', color: colors.amount },

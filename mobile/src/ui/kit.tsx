@@ -17,7 +17,10 @@ export function Screen({
   children,
   footer,
   right,
+  onBack,
 }: {
+  /** Atrás propio (por ejemplo, volver al paso anterior en vez de salir). */
+  onBack?: () => void;
   title?: string;
   back?: boolean;
   children: ReactNode;
@@ -38,7 +41,7 @@ export function Screen({
         {title !== undefined && (
           <View style={s.top}>
             {back && nav.canGoBack() && (
-              <Pressable style={s.back} onPress={() => nav.goBack()} accessibilityRole="button" accessibilityLabel="Volver">
+              <Pressable style={s.back} onPress={() => (onBack ? onBack() : nav.goBack())} accessibilityRole="button" accessibilityLabel="Volver">
                 <Icon name="back" size={18} />
               </Pressable>
             )}
@@ -84,17 +87,20 @@ export function AmountInput({
   currency = 'CRC',
   autoFocus = true,
   label = 'Monto',
+  boxed,
 }: {
   value: string;
   onChange: (v: string) => void;
   currency?: 'CRC' | 'USD';
   autoFocus?: boolean;
   label?: string;
+  /** Con borde y lápiz: se nota que es un campo para escribir (pensado en personas mayores). */
+  boxed?: boolean;
 }) {
   const symbol = currency === 'USD' ? '$' : '₡';
   const [int, dec] = value.split('.');
   const shown = value === '' ? '' : `${symbol}${Number(int || '0').toLocaleString('en-US')}${dec !== undefined ? `.${dec}` : ''}`;
-  return (
+  const input = (
     <TextInput
       value={shown}
       onChangeText={(t) => onChange(cleanAmount(t))}
@@ -103,8 +109,15 @@ export function AmountInput({
       keyboardType="decimal-pad"
       autoFocus={autoFocus}
       accessibilityLabel={label}
-      style={s.amountInput}
+      style={boxed ? s.amountBoxed : s.amountInput}
     />
+  );
+  if (!boxed) return input;
+  return (
+    <View style={s.amountBox}>
+      {input}
+      <Icon name="pencil" size={20} color={colors.primary} />
+    </View>
   );
 }
 
@@ -243,11 +256,26 @@ export function Opt({
       accessibilityState={{ selected }}
     >
       <View style={s.optHead}>
-        <Text style={s.optTitle}>{title}</Text>
+        <View style={[s.radio, selected && s.radioOn]} />
+        <Text style={[s.optTitle, { flex: 1 }]}>{title}</Text>
         {typeof right === 'string' ? <Cents style={s.amt}>{right}</Cents> : right}
       </View>
-      {sub ? <Text style={s.sm}>{sub}</Text> : null}
+      {sub ? <Text style={[s.sm, { marginLeft: 32 }]}>{sub}</Text> : null}
     </Pressable>
+  );
+}
+
+/** Barra de pasos como en la apertura de cuenta: lo hecho en teal y el paso actual en lima. */
+export function StepBar({ n, total }: { n: number; total: number }) {
+  return (
+    <View style={s.stepBar} accessibilityLabel={`Paso ${n} de ${total}`}>
+      {Array.from({ length: total }, (_, i) => (
+        <View
+          key={i}
+          style={[s.stepSeg, i < n - 1 && { backgroundColor: colors.teal }, i === n - 1 && { backgroundColor: n === total ? colors.teal : colors.lime }]}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -677,7 +705,13 @@ export const s = StyleSheet.create({
   opt: { borderWidth: 1.5, borderColor: colors.line, borderRadius: radius.md, padding: 12, marginTop: 8 },
   optOn: { borderColor: colors.emerald, borderWidth: 2, backgroundColor: colors.optOn },
   optHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  optTitle: { fontSize: 14, fontWeight: '700', color: colors.ink, flexShrink: 1 },
+  optTitle: { fontSize: 16, fontWeight: '700', color: colors.ink, flexShrink: 1 },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#98A2B3' },
+  radioOn: { borderWidth: 7, borderColor: colors.primary },
+  stepBar: { flexDirection: 'row', gap: 4, marginBottom: 14 },
+  stepSeg: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.line },
+  amountBox: { flexDirection: 'row', alignItems: 'center', height: 60, borderRadius: 14, borderWidth: 1.5, borderColor: colors.primary, paddingHorizontal: 14, marginTop: 8, marginBottom: 6 },
+  amountBoxed: { flex: 1, fontSize: 26, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'], outlineWidth: 0 },
   amt: { fontSize: 14, fontWeight: '600', color: colors.amount, fontVariant: ['tabular-nums'] },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   chipsScroll: { marginHorizontal: -18, marginTop: 6, flexGrow: 0 },

@@ -209,7 +209,7 @@ export function HomeScreen() {
         ))}
       </View>
 
-      <View style={[s.sectionRow, { marginTop: 22 }]}>
+      <View style={[s.sectionRow, { marginTop: 34 }]}>
         <Highlight soft header align="flex-start" style={s.sectionTitle}>
           Movimientos
         </Highlight>

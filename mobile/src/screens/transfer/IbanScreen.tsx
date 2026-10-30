@@ -52,7 +52,7 @@ export function IbanScreen() {
 
   return (
     <Screen
-      title="Enviar a cuenta IBAN"
+      title="Enviar a otros bancos"
       footer={<Btn label={holder ? `Sí, es ${holder.split(' ')[0]}` : 'Continuar'} onPress={go} disabled={!holder} />}
     >
       <Text style={st.ask}>Escribí la cuenta IBAN</Text>

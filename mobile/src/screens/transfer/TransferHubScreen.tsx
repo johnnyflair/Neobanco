@@ -13,7 +13,7 @@ export function TransferHubScreen() {
     <Screen title="Transferir dinero">
       <Sect first>Enviar</Sect>
       <Row icon="phone" title="SINPE Móvil" sub="A un número de celular, al instante" onPress={() => nav.navigate('SinpeNumber')} first />
-      <Row icon="bank" title="Cuenta IBAN" sub="A cualquier cuenta en otro banco o cooperativa" onPress={() => nav.navigate('Iban')} />
+      <Row icon="bank" title="A otros bancos" sub="A cualquier banco o cooperativa, con la cuenta IBAN" onPress={() => nav.navigate('Iban')} />
       <Sect>Traer</Sect>
       <Row
         icon="pull"

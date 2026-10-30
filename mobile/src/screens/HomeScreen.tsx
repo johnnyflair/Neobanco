@@ -133,7 +133,6 @@ export function HomeScreen() {
       <Text style={s.hello}>
         {greeting()}, {first}
       </Text>
-      <Text style={s.date}>{today()}</Text>
 
       {error && <Text style={s.error}>{error}</Text>}
 
@@ -224,11 +223,6 @@ function greeting() {
   return h >= 5 && h < 12 ? 'Buenos días' : h >= 12 && h < 19 ? 'Buenas tardes' : 'Buenas noches';
 }
 
-function today() {
-  const d = new Date().toLocaleDateString('es-CR', { weekday: 'long', day: 'numeric', month: 'long' });
-  return d.charAt(0).toUpperCase() + d.slice(1).replace(',', '');
-}
-
 const s = StyleSheet.create({
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.ink },
@@ -238,7 +232,6 @@ const s = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   hello: { fontSize: 19, fontWeight: '700', color: colors.ink, marginTop: 20 },
-  date: { fontSize: 14, color: colors.muted, marginTop: 2 },
   error: { color: colors.danger, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
   iconBox: { width: 22, alignItems: 'center' },

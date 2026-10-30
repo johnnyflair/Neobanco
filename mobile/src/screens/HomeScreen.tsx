@@ -130,9 +130,9 @@ export function HomeScreen() {
             accessibilityLabel={unread ? `Avisos: ${unread} nuevos` : 'Avisos'}
             style={({ pressed }) => [pill.base, unread > 0 ? pill.bellOn : pill.bell, pressed && { opacity: 0.7 }]}
           >
-            <Icon name="bell" size={18} color={unread > 0 ? colors.white : colors.ink} />
+            <Icon name="bell" size={18} color={unread > 0 ? BELL_INK : colors.ink} />
             {unread > 0 && (
-              <Text style={[pill.text, { color: colors.white }]} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>
+              <Text style={[pill.text, { color: BELL_INK }]} maxFontSizeMultiplier={MAX_FONT_SCALE_TIGHT}>
                 {unread > 9 ? '9+' : unread}
               </Text>
             )}
@@ -300,11 +300,13 @@ const s = StyleSheet.create({
   version: { fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 18 },
 });
 
+const BELL_INK = '#4A3300'; // café oscuro sobre amarillo (contraste alto)
+
 // Pastillas del encabezado (Puntos, Ayuda y Avisos): misma altura, forma y letra; cambia solo el color.
 export const pill = StyleSheet.create({
   base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, height: 36, minWidth: 36, borderRadius: 18, paddingHorizontal: 11 },
   text: { fontSize: 15, fontWeight: '700' },
   points: { backgroundColor: colors.orangeSoft },
   bell: { backgroundColor: '#EEF1F6' },
-  bellOn: { backgroundColor: '#DD6230' }, // naranja un poco más suave, el número en blanco y en negrita se sigue leyendo
+  bellOn: { backgroundColor: '#F6C343' }, // amarillo: con texto oscuro (no blanco) para que se lea bien
 });

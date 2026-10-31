@@ -369,7 +369,9 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
   // El monto siempre empieza vacío: la persona escribe cuánto mover.
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState<'deposit' | 'withdraw' | null>(null);
-  const [dir, setDir] = useState<'deposit' | 'withdraw'>('deposit');
+  const [dirPicked, setDir] = useState<'deposit' | 'withdraw'>('deposit');
+  const empty = Number(env.balance) <= 0;
+  const dir = empty ? 'deposit' : dirPicked;
   const [msg, setMsg] = useState<string | null>(route.params.created ? 'Listo, creaste tu sobre. Ganaste 50 puntos.' : null);
   const [error, setError] = useState<string | null>(null);
   const key = useRef({ sig: '', key: newIdempotencyKey() });
@@ -470,17 +472,20 @@ export function EnvelopeScreen({ route }: RootProps<'Envelope'>) {
         ) : null}
       </View>
       {msg && <Small style={{ marginBottom: 10, color: colors.emeraldDark }}>{msg}</Small>}
-      <Tabs
-        options={[
-          { value: 'deposit', label: 'Agregar' },
-          { value: 'withdraw', label: 'Retirar' },
-        ]}
-        value={dir}
-        onChange={(v) => {
-          setDir(v);
-          setError(null);
-        }}
-      />
+      {/* Con el sobre en cero (por ejemplo, recién creado) no hay nada que retirar: solo Agregar. */}
+      {empty ? null : (
+        <Tabs
+          options={[
+            { value: 'deposit', label: 'Agregar' },
+            { value: 'withdraw', label: 'Retirar' },
+          ]}
+          value={dir}
+          onChange={(v) => {
+            setDir(v);
+            setError(null);
+          }}
+        />
+      )}
       <Text style={st.moveLabel}>{dir === 'deposit' ? '¿Cuánto querés agregar?' : '¿Cuánto querés retirar?'}</Text>
       <AmountInput value={amount} onChange={setAmount} autoFocus={false} label="Monto" boxed />
       <Small>

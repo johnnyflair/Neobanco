@@ -73,7 +73,7 @@ async def test_kyc_approval_lets_the_member_in(client):
 
 async def test_read_only_role_sees_masked_data_and_cannot_act(client):
     ro = await staff_login(client, "lectura@demo.coop")
-    found = (await client.get("/admin/api/members", params={"q": "Ana Rojas"}, headers=ro)).json()["items"][0]
+    found = (await client.get("/admin/api/members", params={"q": "Johnny Schmidt"}, headers=ro)).json()["items"][0]
     assert "•" in found["cedula"] and "•" in found["phone"] and "•" in found["email"]
     r = await client.post(f"/admin/api/members/{found['id']}/notes", json={"text": "Hola"}, headers=ro)
     assert r.status_code == 403 and r.json()["code"] == "read_only"

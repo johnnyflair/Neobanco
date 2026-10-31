@@ -3,7 +3,7 @@
     python -m app.seed            # agrega datos si la base está vacía
     python -m app.seed --reset    # borra y vuelve a sembrar (solo local, dev y test)
 
-Asociada de demostración: celular 88112030, cédula 1-1234-0567, clave 482915.
+Asociado de pruebas (Johnny): celular 88112030, cédula 1-1234-0567, clave 482915.
 Panel (/admin), solo en local, dev y test: diana@demo.coop (operaciones), johnny@demo.coop (admin) y
 lectura@demo.coop (solo lectura), todos con la contraseña Panel-Demo-2026.
 """
@@ -66,7 +66,7 @@ CATALOG = {
 }
 
 DEMO_MEMBERS = [
-    ("Ana Rojas Mora", "1-1234-0567", "88112030", "ana.rojas@correo.com", "San José", "Aserrí"),
+    ("Johnny Schmidt Rojas", "1-1234-0567", "88112030", "johnny.schmidt@correo.com", "San José", "Aserrí"),
     ("Carlos Mora Solís", "2-0456-0789", "70231188", "carlos.mora@correo.com", "Alajuela", "Grecia"),
     ("Lucía Vargas Araya", "3-0321-0654", "61049932", "lucia.vargas@correo.com", "Cartago", "La Unión"),
 ]
@@ -98,6 +98,7 @@ async def seed(reset: bool = False) -> None:
             print("La base ya tiene datos; usá --reset para volver a sembrar.")
             await demo_panel(s)
             await demo_visitor(s)
+            await rename_test_member(s)
             return
         for cat, (label, names) in CATALOG.items():
             prefix = "recarga-" if cat == "Recargas" else "marchamo-" if cat == "Marchamo y RTV" else ""
@@ -257,6 +258,20 @@ async def _build_member(s: AsyncSession, i: int, name: str, ced: str, phone: str
                            created_at=now - timedelta(days=200)),
                RewardEntry(member_id=m.id, points=186, reason="Compras con tarjeta en octubre"),
                RewardEntry(member_id=m.id, points=20, reason="Recibo AyA automático")])
+
+
+async def rename_test_member(s: AsyncSession) -> None:
+    """El asociado de pruebas (88112030) lleva el nombre de Johnny. Actualiza bases ya sembradas."""
+    if get_settings().env not in ("local", "dev", "test"):
+        return
+    name, _, phone, email, *_ = DEMO_MEMBERS[0]
+    m = await s.scalar(select(Member).where(Member.phone == phone))
+    if m is None or m.full_name == name:
+        return
+    m.full_name, m.email = name, email
+    for card in await s.scalars(select(Card).where(Card.member_id == m.id)):
+        card.holder_name = " ".join(name.split()[:2])
+    await s.commit()
 
 
 # Demo para visitantes ("Explorar" en la bienvenida): una asociada ficticia de solo lectura.

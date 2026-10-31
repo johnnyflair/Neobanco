@@ -208,7 +208,7 @@ async def test_account_detail_has_client_account(client, ana):
     d = (await client.get(f"/v1/accounts/{crc['id']}", headers=ana)).json()
     assert d["iban"].startswith("CR") and len(d["iban"]) == 22
     assert d["client_account"] == d["iban"][5:] and len(d["client_account"]) == 17
-    assert d["holder_name"] == "Ana Rojas Mora"
+    assert d["holder_name"] == "Johnny Schmidt Rojas"
 
 
 async def test_saved_bills_and_autopay(client, ana):

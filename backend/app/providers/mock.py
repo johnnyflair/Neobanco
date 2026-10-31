@@ -112,7 +112,7 @@ def _pick(seed: str, items: list[str], salt: str = "") -> str:
 
 # Directorio fijo para que los datos de prueba sean coherentes (contactos frecuentes, asociados demo).
 KNOWN_PHONES = {
-    "88112030": ("Ana Rojas M.", "Coopecaja"),
+    "88112030": ("Johnny Schmidt R.", "Coopecaja"),
     "70231188": ("Carlos Mora S.", "Coopecaja"),
     "61049932": ("Lucía Vargas A.", "Coopecaja"),
     "88124455": ("María Rojas M.", "BAC Credomatic"),

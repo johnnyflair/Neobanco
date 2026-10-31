@@ -657,7 +657,6 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
       footer={<Btn label={step < 3 ? 'Continuar' : 'Revisar y abrir'} onPress={next} disabled={!crc} />}
     >
       <StepBar n={step} total={3} />
-      <Small>{`Paso ${step} de 3`}</Small>
 
       {step === 1 && (
         <>

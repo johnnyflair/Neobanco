@@ -125,7 +125,6 @@ export function LoanSimScreen() {
       }
     >
       <StepBar n={step} total={3} />
-      <Small>{`Paso ${step} de 3`}</Small>
       {step === 1 && (
         <>
           <Text style={st.ask}>¿Cuánto necesitás?</Text>

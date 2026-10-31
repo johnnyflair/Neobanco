@@ -269,7 +269,6 @@ export function LoanReviewScreen({ route }: RootProps<'LoanReview'>) {
   return (
     <Screen title="Revisá y firmá" footer={<Btn label="Firmar con mi clave" icon="lock" onPress={sign} loading={busy} />}>
       <StepBar n={3} total={3} />
-      <Small style={{ marginBottom: 8 }}>Paso 3 de 3</Small>
       <Row first title="Monto" right={<Cents style={st.amt}>{money(amount)}</Cents>} />
       <Row title="Cuota" right={<Cents style={st.amt}>{money(monthly)}</Cents>} />
       <Row title="Plazo" right={<Text style={st.amt}>{term} meses</Text>} />

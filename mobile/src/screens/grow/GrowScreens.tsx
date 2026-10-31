@@ -12,6 +12,7 @@ import type { Account } from '../../api/types';
 import { dayMonth, longDate, money, parseAmount } from '../../format';
 import type { RootProps } from '../../navigation';
 import { colors, radius } from '../../theme';
+import { BottomSheet } from '../../ui/BottomSheet';
 import { Icon } from '../../ui/Icon';
 import { AmountInput, Btn, ErrorText, Field, FieldStacked, Hero, Loading, Opt, Row, Screen, Sect, Small, StepBar, Tabs } from '../../ui/kit';
 import { receiptDate, ReviewSheet } from '../../ui/Receipt';
@@ -92,6 +93,7 @@ export function SaveScreen() {
 export function GrowScreen() {
   const nav = useNavigation();
   const { data, error } = useLoad(loadGrow);
+  const [ratesOpen, setRatesOpen] = useState(false);
   if (!data) return error ? <Screen title="Invertir" back={false}><ErrorText>{error}</ErrorText></Screen> : <Loading />;
   const terms = data.accounts.filter((a) => a.type === 'term');
   const total = terms.reduce((acc, a) => acc + Number(a.balance), 0);
@@ -100,7 +102,24 @@ export function GrowScreen() {
   const firstTerm = months.includes(6) ? 6 : (months[0] ?? 6);
 
   return (
-    <Screen title="Invertir" back={false}>
+    <Screen
+      title="Invertir"
+      back={false}
+      right={
+        rates.length ? (
+          <Pressable
+            onPress={() => setRatesOpen(true)}
+            style={({ pressed }) => [st.ratesBtn, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Ver las tasas de hoy"
+            hitSlop={8}
+          >
+            <Icon name="grow" size={16} color={colors.primaryInk} />
+            <Text style={st.ratesBtnT}>Tasas</Text>
+          </Pressable>
+        ) : undefined
+      }
+    >
       <Small>Ganan más, con fecha de vencimiento</Small>
       <View style={{ marginTop: 14 }}>
         <Hero title="Tenés invertido" big={money(total)} />
@@ -119,20 +138,25 @@ export function GrowScreen() {
       ))}
       {!terms.length && <Small style={{ marginTop: 10 }}>Todavía no tenés ahorros a plazo. Abrí uno desde ₡50,000.</Small>}
       {terms.length > 0 && <Btn label="Abrir otro ahorro a plazo" icon="plus" variant="o" onPress={() => nav.navigate('TermDeposit', { term: firstTerm })} />}
-      {rates.length > 0 && (
-        <>
-          <Sect sub="Tasa fija por todo el plazo">Tasas de hoy</Sect>
+      {/* Tasas de hoy en una hoja que sube desde abajo (botón "Tasas" arriba). */}
+      <BottomSheet visible={ratesOpen} onClose={() => setRatesOpen(false)}>
+        <Text style={st.sheetT}>Tasas de hoy</Text>
+        <Small>Tasa fija por todo el plazo. Tocá un plazo para abrirlo.</Small>
+        <View style={{ marginTop: 8 }}>
           {rates.map((r, i) => (
             <Row
               key={r.term_months}
               first={i === 0}
               title={`${r.term_months} meses`}
-              right={<Text style={st.amt}>{pctShort(Number(r.annual_rate))}</Text>}
-              onPress={() => nav.navigate('TermDeposit', { term: r.term_months as number })}
+              right={<Text style={st.amt}>{`${pctShort(Number(r.annual_rate))} anual`}</Text>}
+              onPress={() => {
+                setRatesOpen(false);
+                nav.navigate('TermDeposit', { term: r.term_months as number });
+              }}
             />
           ))}
-        </>
-      )}
+        </View>
+      </BottomSheet>
     </Screen>
   );
 }
@@ -714,6 +738,9 @@ export function TermDepositScreen({ route }: RootProps<'TermDeposit'>) {
 }
 
 const st = StyleSheet.create({
+  ratesBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 30, borderRadius: 15, paddingHorizontal: 10, backgroundColor: colors.mint },
+  ratesBtnT: { fontSize: 14, fontWeight: '700', color: colors.primaryInk },
+  sheetT: { fontSize: 20, fontWeight: '700', color: colors.ink, marginBottom: 4 },
   sectAmt: { fontSize: 18, fontWeight: '700', color: colors.ink, fontVariant: ['tabular-nums'] },
   ask: { fontSize: 22, fontWeight: '700', color: colors.ink, marginTop: 10, marginBottom: 8, lineHeight: 28 },
   quick: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },

@@ -4,9 +4,9 @@
   "high": true,
   "skip-dev": true,
   "allowlist": [
-    // Ambas llegan solo por @expo/cli (herramienta de desarrollo y compilación). No viajan
-    // dentro de la App que se publica en las tiendas. Revisar en cada actualización de Expo.
-    "GHSA-86w9-cpqp-85rv", // node-forge: verificación de firmas RSA (certificados de desarrollo de @expo/cli)
+    // Llega solo por @expo/cli (herramienta de desarrollo y compilación). No viaja dentro de la
+    // App que se publica en las tiendas. Revisar en cada actualización de Expo.
+    // node-forge ya no está aquí: se fuerza la versión corregida (1.4.2) con "overrides".
     "GHSA-mrhx-c7xc-m3w5" // zod: validación de colecciones enormes (configuración de @expo/cli)
   ]
 }
